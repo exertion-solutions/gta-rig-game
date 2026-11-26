@@ -59,6 +59,13 @@ tests/{unit/*.test.ts, e2e/*.e2e.ts, ui-publico.test.ts}
 
 ---
 
+
+## Herramientas disponibles en esta PC (relevadas 2026-11-26; a usar en las Tasks 16 y 18)
+
+Instaladas: AutoCAD 2027 (con "Autodesk AutoCAD MCP Server" instalado), Autodesk Fusion, Rhino 9, Blender 5.3, QGIS 4.0.2. Conectadas a esta sesión de Claude Code: Blender (herramientas `mcp__blender__*`) y Rhino (`mcp__rhino__*`). AutoCAD y Fusion están instaladas pero no expuestas como herramientas MCP en esta sesión: se pueden usar por línea de comandos o scripts (AutoCAD: `accoreconsole.exe` con scripts .scr/.lsp; Fusion: skill `fusion-cad`) o habilitando su conexión.
+
+Cadena de modelado para las adiciones al escenario: (1) dimensionar y modelar piezas paramétricas (escaleras, barandas, plataformas, volantes) en Rhino o Fusion/AutoCAD con proporciones reales y registrar cada medida y su origen (medida de GLB o estimada) en `docs/scenario-additions.md`; (2) exportar a glTF/STEP; (3) limpieza, UV, materiales PBR y decimación en Blender; (4) compresión con `@gltf-transform/cli` (meshopt); (5) integración con colisión simplificada. Los agentes eligen la herramienta por pieza y dejan constancia en `NOTICE.md` y en el inventario. Prohibido enviar datos del proyecto a servicios externos para esto; todo corre local.
+
 ### Task 1: Scaffold y sync-assets
 
 **Files:**
