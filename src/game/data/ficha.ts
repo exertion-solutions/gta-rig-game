@@ -42,6 +42,20 @@ export interface FichaPoint {
   asRequirement: boolean
 }
 
+export interface ConflictLine {
+  label: string
+  level: Level
+  sourceId: string
+  /** Estatus según el tipo real de la fuente (no el del Libro). */
+  evidence: Evidence
+}
+
+/** Dos fuentes del dataset que clasifican distinto la misma área; no se resuelve. */
+export interface FuenteEnConflicto {
+  title: 'Fuente en conflicto'
+  lines: ConflictLine[]
+}
+
 /** Zona A2 de una sección: solo texto cualitativo; nunca radios, alturas ni distancias. */
 export interface FichaZone {
   sectionId: string
@@ -50,7 +64,7 @@ export interface FichaZone {
   text: string
   evidence: Evidence
   sourceId: string
-  conflict: { a2: Level; rcco: 'alto'; text: string; sourceId: string } | null
+  conflict: FuenteEnConflicto | null
 }
 
 export interface Ficha {
@@ -68,20 +82,36 @@ const LEVEL_LABEL: Record<Level, string> = { alto: 'Alto', medio: 'Medio', bajo:
 
 const sectionPoints = (s: DropsSection) => dropsJson.points.filter((p) => p.sectionId === s.id)
 
+// Fuente citada en zoneBasis -> id de `sources` del dataset.
+const SOURCE_KEYWORDS: [RegExp, string, string][] = [
+  [/RCCO/i, 'RCCO', 'proc-drops-a3'],
+  [/procedimiento\s+(?:DROPS\s+)?([\d.]+)/i, 'Procedimiento', 'proc-drops'],
+]
+const sourceEvidence = (id: string): Evidence =>
+  dropsJson.sources.find((x) => x.id === id)?.kind === 'procedure' ? 'procedure' : 'pendingValidation'
+
+/** Cualquier zoneBasis con marcador "Conflicto:" o "no coincide" produce el bloque, con ambas fuentes y su sourceId. */
+function buildConflict(s: DropsSection, a2: Level): FuenteEnConflicto | null {
+  const sentence = s.zoneBasis.split(/(?<=\.)\s+(?=[A-Za-zÁ-ú])/).find((x) => /Conflicto:|no coincide/i.test(x))
+  if (!sentence) return null
+  const lvl = /Riesgo\s+(Alto|Medio|Bajo)/i.exec(sentence)?.[1].toLowerCase() as Level | undefined
+  const src = SOURCE_KEYWORDS.find(([re]) => re.test(sentence))
+  if (!lvl || !src) throw new Error(`conflicto no interpretable en ${s.id}: ${sentence}`)
+  const num = src[0].exec(sentence)?.[1]
+  return {
+    title: 'Fuente en conflicto',
+    lines: [
+      { label: 'Layout A2', level: a2, sourceId: A2_SOURCE, evidence: sourceEvidence(A2_SOURCE) },
+      { label: num ? `${src[1]} ${num}` : src[1], level: lvl, sourceId: src[2], evidence: sourceEvidence(src[2]) },
+    ],
+  }
+}
+
 function buildZone(s: DropsSection): FichaZone {
   const level = (s.zone as Level | null) ?? null
   const pts = sectionPoints(s)
   const evidence = (pts[0]?.basis.status ?? 'pendingValidation') as Evidence
-  // Conflicto declarado por el propio dataset en zoneBasis ("Conflicto: el RCCO ... Riesgo Alto"); no se resuelve.
-  const conflict =
-    level && level !== 'alto' && /Conflicto:.*RCCO.*Riesgo Alto/.test(s.zoneBasis)
-      ? {
-          a2: level,
-          rcco: 'alto' as const,
-          text: `Conflicto sin resolver: el layout A2 clasifica esta área como ${LEVEL_LABEL[level]} y el RCCO la marca como Alto.`,
-          sourceId: s.sourceId,
-        }
-      : null
+  const conflict = level ? buildConflict(s, level) : null
   return {
     sectionId: s.id,
     sectionLabel: s.label,
@@ -107,7 +137,8 @@ const buildPoint = (p: DropsPoint): FichaPoint => ({
   evidence: p.basis.status as Evidence,
   sourceId: p.basis.sourceId,
   page: p.basis.page ?? null,
-  asRequirement: p.basis.status === 'procedure' || p.basis.status === 'confirmed',
+  // Un punto con marcas del dataset (dudoso / texto-ambiguo / no-aplica) nunca se presenta como requisito.
+  asRequirement: (p.basis.status === 'procedure' || p.basis.status === 'confirmed') && p.flags.length === 0,
 })
 
 /** Falla si un punto o dato numérico no lleva sourceId, o si el estatus no es uno de los 4. */
@@ -139,7 +170,7 @@ export function buildFicha(sectorId: string): Ficha {
   ]
   const ficha: Ficha = {
     sectorId,
-    name: sector.name,
+    name: uiSafe(sector.name),
     position: sector.position,
     legend: LEYENDA,
     texts,

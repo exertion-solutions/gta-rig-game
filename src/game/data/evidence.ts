@@ -27,6 +27,8 @@ export const containsForbiddenUiWord = (text: string): boolean => FORBIDDEN.test
  */
 export function uiSafe(text: string): string {
   const out = text
+    .replace(/\s*\(Koomey\)/gi, '') // marca comercial: no se muestra (el JSON vendorizado queda literal)
+    .replace(/\bKoomey\b/gi, 'acumulador')
     .replace(/\bcertificados? vigentes?\b/gi, 'certificación vigente')
     .replace(/\bcertificad[oa]s?\b/gi, 'con certificación')
   if (containsForbiddenUiWord(out)) throw new Error(`texto con palabra prohibida en UI: "${out}"`)

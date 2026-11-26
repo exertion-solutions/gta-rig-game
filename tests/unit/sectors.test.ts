@@ -105,19 +105,58 @@ describe('buildFicha', () => {
     expect(jsonZones).not.toMatch(/"(radius|radiusM|radio|distance|distancia)"/i)
   })
 
-  it('boca de pozo muestra el conflicto A2=Medio vs RCCO=Alto, tomado de los datos', () => {
+  it('boca de pozo: bloque "Fuente en conflicto" con Layout A2: Medio y RCCO: Alto, cada uno con su sourceId', () => {
     const z = buildFicha('bop').zones.find((x) => x.sectionId === 'boca-pozo')!
     expect(z.level).toBe('medio')
-    expect(z.conflict).toMatchObject({ a2: 'medio', rcco: 'alto' })
-    expect(z.conflict?.text).toMatch(/Medio/)
-    expect(z.conflict?.text).toMatch(/Alto/)
-    // y solo ahí: ninguna otra zona del dataset declara ese conflicto
-    const otros = all()
-      .flatMap((f) => f.zones)
-      .filter((x) => x.sectionId !== 'boca-pozo')
-    expect(otros.every((x) => x.conflict === null)).toBe(true)
-    const declarantes = drops.sections.filter((s) => /Conflicto:.*RCCO.*Riesgo Alto/.test(s.zoneBasis))
-    expect(declarantes.map((s) => s.id)).toEqual(['boca-pozo'])
+    expect(z.conflict?.title).toBe('Fuente en conflicto')
+    expect(z.conflict?.lines).toEqual([
+      { label: 'Layout A2', level: 'medio', sourceId: 'proc-drops-a2', evidence: 'pendingValidation' },
+      { label: 'RCCO', level: 'alto', sourceId: 'proc-drops-a3', evidence: 'procedure' },
+    ])
+    const html = renderToStaticMarkup(createElement(FichaView, { ficha: buildFicha('bop') }))
+    expect(html).toContain('Fuente en conflicto')
+    expect(html).toContain('Layout A2: Medio')
+    expect(html).toContain('RCCO: Alto')
+    expect(html).toContain('proc-drops-a2')
+    expect(html).toContain('proc-drops-a3')
+  })
+
+  it('conflictos: exactamente los sectores cuyo zoneBasis declara conflicto (bop y carrier)', () => {
+    const conSector = all().filter((f) => f.zones.some((z) => z.conflict))
+    expect(conSector.map((f) => f.sectorId).sort()).toEqual(['bop', 'carrier'])
+    const declarantes = drops.sections.filter((s) => /Conflicto:|no coincide/i.test(s.zoneBasis)).map((s) => s.id)
+    expect(declarantes.sort()).toEqual(['boca-pozo', 'subestructura-carrier'])
+    const z = buildFicha('carrier').zones.find((x) => x.sectionId === 'subestructura-carrier')!
+    expect(z.conflict?.lines).toEqual([
+      { label: 'Layout A2', level: 'medio', sourceId: 'proc-drops-a2', evidence: 'pendingValidation' },
+      { label: 'Procedimiento 6.3.5', level: 'bajo', sourceId: 'proc-drops', evidence: 'procedure' },
+    ])
+    expect(renderToStaticMarkup(createElement(FichaView, { ficha: buildFicha('carrier') }))).toContain('Fuente en conflicto')
+  })
+
+  it('puntos con marcas del dataset nunca son requisito; los procedure sin marcas sí', () => {
+    const pts = all().flatMap((f) => f.points)
+    const flagged = ['COR-5', 'COR-10', 'COR-11', 'PLA-1', 'PRL-1', 'PRL-2', 'BP-2']
+    for (const id of flagged) {
+      const p = pts.find((x) => x.id === id)!
+      expect(p.flags.length, id).toBeGreaterThan(0)
+      expect(p.asRequirement, id).toBe(false)
+      expect(p.sourceId, id).toBeTruthy()
+    }
+    const limpios = pts.filter((p) => !flagged.includes(p.id))
+    expect(limpios.length).toBeGreaterThan(30)
+    limpios.forEach((p) => expect(p.asRequirement, p.id).toBe(true))
+    const html = renderToStaticMarkup(createElement(FichaView, { ficha: buildFicha('bop') }))
+    expect(html).toContain('dato dudoso, no presentado como requisito') // BP-2
+    expect(html).toContain('requisito del procedimiento') // BP-1
+  })
+
+  it('marca comercial: la ficha del acumulador no contiene "Koomey" (el JSON vendorizado sigue literal)', () => {
+    const f = buildFicha('acumulador')
+    expect(f.name).toBe('Acumulador del BOP')
+    expect(JSON.stringify(f)).not.toMatch(/Koomey/i)
+    expect(f.texts[0].text).toMatch(/^Unidad de cierre del BOP: almacena/)
+    expect(JSON.stringify(viewpoints)).toMatch(/Koomey/)
   })
 
   it('piso de trabajo y poste-llave: "No clasificada en layout A2", nunca Baja', () => {
@@ -135,7 +174,7 @@ describe('buildFicha', () => {
   it('leyenda fija; solo procedure/confirmed son requisito; sector sin puntos DROPS lo dice', () => {
     const f = buildFicha('mastil')
     expect(f.legend).toBe(LEYENDA)
-    f.points.forEach((p) => expect(p.asRequirement).toBe(p.evidence === 'procedure' || p.evidence === 'confirmed'))
+    f.points.forEach((p) => expect(p.asRequirement).toBe((p.evidence === 'procedure' || p.evidence === 'confirmed') && p.flags.length === 0))
     f.texts.forEach((t) => expect(t.evidence).toBe('pendingValidation'))
     expect(buildFicha('acumulador').points).toEqual([])
     expect(() => buildFicha('no-existe')).toThrow(/sector/)
@@ -144,18 +183,18 @@ describe('buildFicha', () => {
   it('ningún texto de ficha ni de UI usa palabras prohibidas ni marcas/códigos internos', () => {
     const json = JSON.stringify(all())
     expect(containsForbiddenUiWord(json)).toBe(false)
-    expect(json).not.toMatch(/YPF|INC\d{4,}|SIGEO/i)
+    expect(json).not.toMatch(/YPF|INC\d{4,}|SIGEO|Koomey/i)
     const html = all()
       .map((f) => renderToStaticMarkup(createElement(FichaView, { ficha: f })))
       .join('\n')
     expect(containsForbiddenUiWord(html)).toBe(false)
     expect(html).toContain(LEYENDA)
-    expect(html).not.toMatch(/YPF|INC\d{4,}|SIGEO/i)
+    expect(html).not.toMatch(/YPF|INC\d{4,}|SIGEO|Koomey/i)
   })
 
   it('la ficha rendereada muestra conflicto y "sin posición documentada"', () => {
     const html = renderToStaticMarkup(createElement(FichaView, { ficha: buildFicha('bop') }))
-    expect(html).toMatch(/Conflicto/)
+    expect(html).toMatch(/Fuente en conflicto/)
     const sinPos = { ...buildFicha('acumulador'), position: null }
     expect(renderToStaticMarkup(createElement(FichaView, { ficha: sinPos }))).toContain('sin posición documentada')
   })

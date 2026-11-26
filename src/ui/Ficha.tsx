@@ -26,9 +26,14 @@ export function Ficha({ ficha }: { ficha: FichaData }) {
             {z.text} <EvidenceBadge evidence={z.evidence} sourceId={z.sourceId} />
           </p>
           {z.conflict && (
-            <p className="mt-1 rounded border border-amber-500 p-2 text-amber-300" role="note">
-              {z.conflict.text} <EvidenceBadge evidence="pendingValidation" sourceId={z.conflict.sourceId} />
-            </p>
+            <div className="mt-1 rounded border border-amber-500 p-2 text-amber-300" role="note" data-conflict>
+              <p className="font-semibold">{z.conflict.title}</p>
+              {z.conflict.lines.map((l) => (
+                <p key={l.label}>
+                  {l.label}: {l.level[0].toUpperCase() + l.level.slice(1)} <EvidenceBadge evidence={l.evidence} sourceId={l.sourceId} />
+                </p>
+              ))}
+            </div>
           )}
         </section>
       ))}
@@ -41,7 +46,7 @@ export function Ficha({ ficha }: { ficha: FichaData }) {
             <li key={p.id} className="rounded border border-white/20 p-2">
               <p className="font-semibold">
                 {p.id} · {p.name} <EvidenceBadge evidence={p.evidence} sourceId={p.sourceId} />
-                {p.asRequirement ? ' · requisito del procedimiento' : ''}
+                {p.asRequirement ? ' · requisito del procedimiento' : p.flags.length > 0 ? ' · dato dudoso, no presentado como requisito' : ''}
               </p>
               {p.primary && <p>Sujeción primaria: {p.primary}</p>}
               {p.secondary && <p>Secundaria: {p.secondary}</p>}
