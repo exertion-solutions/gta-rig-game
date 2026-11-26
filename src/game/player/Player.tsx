@@ -1,5 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { CapsuleCollider, RigidBody, useRapier, type RapierRigidBody } from '@react-three/rapier'
+import { CapsuleCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierRigidBody } from '@react-three/rapier'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { create } from 'zustand'
@@ -16,7 +16,7 @@ export const usePlayerStore = create<{ position: Vec3; yaw: number; mode: 'foot'
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
 const FOOT = HALF + PLAYER_RADIUS // centro de la cápsula sobre los pies
 const GRAVITY = 9.81
-const MAX_DT = 0.05
+const FIXED_DT = 1 / 60 // = timeStep por defecto de <Physics>
 const keys = new Set<string>()
 let override: { x: number; z: number; run: boolean } | null = null // solo lo usa window.__game (tests)
 let pitch = 0
@@ -87,11 +87,13 @@ export function Player() {
     }
   }, [gl, scene])
 
-  useFrame((_, delta) => {
+  // Movimiento en el paso fijo de Rapier (timeStep 1/60): rb.translation() está al día en cada llamada,
+  // así la velocidad no depende de los fps (antes, a >60 fps se movía desde una base vieja).
+  useBeforePhysicsStep(() => {
     const rb = body.current
     const c = ctl.current
     if (!rb || !c) return
-    const dt = Math.min(delta, MAX_DT)
+    const dt = FIXED_DT
     const { yaw } = usePlayerStore.getState()
     const { vx, vz } = stepMovement(readInput(), yaw, dt)
     vy.current -= GRAVITY * dt
@@ -111,6 +113,10 @@ export function Player() {
     }
     rb.setNextKinematicTranslation(next)
     usePlayerStore.setState({ position: pos })
+  })
+
+  useFrame(() => {
+    const { position: pos, yaw } = usePlayerStore.getState()
     camera.position.set(pos[0], pos[1] + EYE_HEIGHT, pos[2])
     camera.rotation.set(pitch, yaw, 0, 'YXZ')
   })

@@ -23,6 +23,28 @@ describe('movement', () => {
     expect(r.vz).toBeCloseTo(-WALK_SPEED, 9)
   })
 
+  it('signos: strafe derecha con yaw 0 => vx>0; avance con yaw pi/2 => vx<0', () => {
+    expect(stepMovement({ x: 1, z: 0, run: false }, 0, 0.016).vx).toBeGreaterThan(0)
+    expect(stepMovement({ x: 0, z: 1, run: false }, Math.PI / 2, 0.016).vx).toBeLessThan(0)
+  })
+
+  it('distancia por segundo de reloj no depende de los fps (paso fijo 1/60 con acumulador, como Rapier)', () => {
+    const FIXED = 1 / 60
+    const dist = (fps: number) => {
+      let acc = 0
+      let x = 0
+      for (let f = 0; f < fps * 2; f++) {
+        acc += 1 / fps
+        while (acc >= FIXED - 1e-9) {
+          x += -stepMovement({ x: 0, z: 1, run: true }, Math.PI / 2, FIXED).vx * FIXED
+          acc -= FIXED
+        }
+      }
+      return x
+    }
+    for (const fps of [30, 60, 144]) expect(dist(fps)).toBeCloseTo(RUN_SPEED * 2, 1)
+  })
+
   it('clampToBounds reubica un punto fuera del vallado al borde', () => {
     expect(clampToBounds([-100, 1, 50], LOCACION_BOUNDS)).toEqual([-45, 1, 30.5])
     expect(clampToBounds([100, 1, -50], LOCACION_BOUNDS)).toEqual([33.5, 1, -30.5])
