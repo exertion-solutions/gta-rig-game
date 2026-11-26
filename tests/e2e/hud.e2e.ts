@@ -41,7 +41,7 @@ test('misión de prueba de punta a punta (a pie): M, iniciar, llegar, elegir, ma
   const p1 = await g<number[]>(page, 'getPosition')
   expect(Math.hypot(p1[0] - p0[0], p1[2] - p0[2])).toBeLessThan(0.05)
 
-  await panel.getByRole('button', { name: 'Iniciar' }).click()
+  await panel.locator('[data-mission="dev-fixture"]').getByRole('button', { name: 'Iniciar' }).click()
   await expect(panel).toHaveCount(0)
   await expect(page.getByTestId('hud-objective')).toHaveText('Andá hasta el acumulador')
   await page.waitForTimeout(500) // el reporter informa "estás en el Acceso" antes de que cuente la llegada

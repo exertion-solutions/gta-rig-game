@@ -4,28 +4,38 @@ import type { GameData, GameEvent, MissionDef, MissionState, Objective, Omitted 
 /** Radio de llegada (m): regla de interacción del juego. No se muestra en pantalla. */
 export const ARRIVAL_RADIUS = 6
 
-const FORBIDDEN = /aprobad|habilitad|certificad/i
+// Raíces prohibidas (sin acentos, sin mayúsculas) en los TEXTOS de misión; ids y kinds no se revisan.
+const FORBIDDEN = /aprob|habilit|certific/
+const plain = (t: string) => t.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+const textsOf = (def: MissionDef): string[] => [
+  def.title,
+  def.briefing,
+  ...def.objectives.flatMap((o) => [
+    o.text,
+    ...(o.kind === 'choose' ? o.options.map((x) => x.text) : o.kind === 'order' ? o.items.map((x) => x.text) : []),
+  ]),
+]
 
-/** Sector cuyo radio contiene (x,z) (el más cercano); ignora sectores sin posición documentada. */
-export function sectorAt(pos: Vec3, sectors: Sector[], radius = ARRIVAL_RADIUS): string | null {
-  let best: string | null = null
-  let bestD = radius
-  for (const s of sectors) {
-    if (!s.position) continue
-    const d = Math.hypot(pos[0] - s.position[0], pos[2] - s.position[2])
-    if (d <= bestD) {
-      best = s.id
-      bestD = d
-    }
-  }
-  return best
+/** Sectores cuyo radio contiene (x,z), del más cercano al más lejano; ignora sectores sin posición documentada. */
+export function sectorsAt(pos: Vec3, sectors: Sector[], radius = ARRIVAL_RADIUS): string[] {
+  return sectors
+    .flatMap((s) => (s.position ? [{ id: s.id, d: Math.hypot(pos[0] - s.position[0], pos[2] - s.position[2]) }] : []))
+    .filter((x) => x.d <= radius)
+    .sort((a, b) => a.d - b.d)
+    .map((x) => x.id)
 }
+
+/** Sector más cercano cuyo radio contiene (x,z) (null = ninguno). */
+export const sectorAt = (pos: Vec3, sectors: Sector[], radius = ARRIVAL_RADIUS): string | null =>
+  sectorsAt(pos, sectors, radius)[0] ?? null
 
 export const idleState = (): MissionState => ({
   status: 'idle', missionId: null, objectiveIndex: 0, visited: [], results: {}, feedback: null,
 })
 
 const sectorRefs = (o: Objective) => (o.kind === 'reach' ? [o.sectorId] : o.kind === 'visitAll' ? o.sectorIds : [])
+
+const sameSet = (a: string[], b: string[]) => a.length === b.length && b.every((x) => a.includes(x))
 
 function problems(def: MissionDef, data: GameData): string[] {
   const out: string[] = []
@@ -35,12 +45,25 @@ function problems(def: MissionDef, data: GameData): string[] {
     out.push(`requires falló: ${String(e)}`)
   }
   if (def.objectives.length === 0) out.push('sin objetivos')
-  if (FORBIDDEN.test(JSON.stringify([def.title, def.briefing, def.objectives])))
-    out.push('texto con términos no permitidos (aprobado/habilitado/certificado)')
+  if (textsOf(def).some((t) => FORBIDDEN.test(plain(t))))
+    out.push('texto con términos no permitidos (raíces aprob/habilit/certific)')
   const ids = new Set<string>()
   for (const o of def.objectives) {
     if (ids.has(o.id)) out.push(`objetivo duplicado: ${o.id}`)
     ids.add(o.id)
+    if (o.kind === 'visitAll' && (o.sectorIds.length === 0 || new Set(o.sectorIds).size !== o.sectorIds.length))
+      out.push(`visitAll ${o.id}: sectorIds vacío o con repetidos (no se puede completar)`)
+    if (o.kind === 'choose') {
+      const oids = o.options.map((x) => x.id)
+      if (new Set(oids).size !== oids.length) out.push(`choose ${o.id}: opciones con id repetido`)
+      if (o.correct.length === 0 || new Set(o.correct).size !== o.correct.length || o.correct.some((c) => !oids.includes(c)))
+        out.push(`choose ${o.id}: correct vacío, repetido o fuera de options (no se puede completar)`)
+    }
+    if (o.kind === 'order') {
+      const iids = o.items.map((x) => x.id)
+      if (o.items.length === 0 || new Set(iids).size !== iids.length || !sameSet(iids, o.correctOrder) || new Set(o.correctOrder).size !== o.correctOrder.length)
+        out.push(`order ${o.id}: correctOrder no coincide con items (no se puede completar)`)
+    }
     for (const sid of sectorRefs(o)) {
       const s = data.sectors.find((x) => x.id === sid)
       if (!s) out.push(`sector inexistente: ${sid}`)
@@ -50,13 +73,14 @@ function problems(def: MissionDef, data: GameData): string[] {
   return out
 }
 
-const sameSet = (a: string[], b: string[]) => a.length === b.length && b.every((x) => a.includes(x))
-
 export function createEngine(defs: MissionDef[], data: GameData) {
   const available: MissionDef[] = []
   const omitted: Omitted[] = []
+  const seen = new Set<string>()
   for (const def of defs) {
     const p = problems(def, data)
+    if (seen.has(def.id)) p.push(`id de misión duplicado: ${def.id}`)
+    seen.add(def.id)
     if (p.length) {
       const reason = p.join('; ')
       omitted.push({ id: def.id, reason })
@@ -109,17 +133,18 @@ export function createEngine(defs: MissionDef[], data: GameData) {
       if (!c) return
       const { obj } = c
       if (ev.type === 'at') {
-        // Todo sector distinto del actual queda "fuera": desde ahí puede contar una llegada.
-        for (const s of data.sectors) if (s.id !== ev.sectorId) armed.add(s.id)
-        const sid = ev.sectorId
-        if (!sid || !armed.has(sid)) return
-        if (obj.kind === 'reach' && obj.sectorId === sid) {
-          armed.delete(sid)
+        // Todo sector en cuyo radio NO está el jugador queda "fuera": desde ahí puede contar una llegada.
+        const inside = ev.inside ?? (ev.sectorId ? [ev.sectorId] : [])
+        for (const s of data.sectors) if (!inside.includes(s.id)) armed.add(s.id)
+        if (obj.kind === 'reach' && inside.includes(obj.sectorId) && armed.has(obj.sectorId)) {
+          armed.delete(obj.sectorId)
           advance()
-        } else if (obj.kind === 'visitAll' && obj.sectorIds.includes(sid) && !st.visited.includes(sid)) {
-          armed.delete(sid)
-          const visited = [...st.visited, sid]
-          if (visited.length >= obj.sectorIds.length) advance()
+        } else if (obj.kind === 'visitAll') {
+          const fresh = obj.sectorIds.filter((id) => inside.includes(id) && armed.has(id) && !st.visited.includes(id))
+          if (fresh.length === 0) return
+          fresh.forEach((id) => armed.delete(id))
+          const visited = [...st.visited, ...fresh]
+          if (obj.sectorIds.every((id) => visited.includes(id))) advance()
           else set({ ...st, visited })
         }
         return

@@ -4,25 +4,33 @@ import * as THREE from 'three'
 import { getSectors } from '../data/sectors'
 import { usePlayerStore } from '../player/store'
 import { useHudStore } from '../../ui/hudStore'
-import { sectorAt } from './engine'
+import { sectorsAt } from './engine'
 import { useMissionStore } from './store'
 import { objectiveTargets } from './targets'
 import type { MissionState } from './types'
 
-/** Cada frame: sector en el que está el jugador (o la camioneta que conduce: su posición es la del jugador) -> motor de misiones. */
+/** Cada frame: sectores en cuyo radio está el jugador (o la camioneta que conduce: su posición es la del jugador) -> motor de misiones. */
 export function SectorReporter() {
   const sectors = useMemo(getSectors, [])
-  const last = useRef<{ sid: string | null | undefined; m: MissionState | null }>({ sid: undefined, m: null })
+  const last = useRef<{ key: string | undefined; m: MissionState | null }>({ key: undefined, m: null })
   useFrame(() => {
-    const sid = sectorAt(usePlayerStore.getState().position, sectors)
+    const inside = sectorsAt(usePlayerStore.getState().position, sectors)
+    const key = inside.join('|')
     const ms = useMissionStore.getState()
     const l = last.current
-    // Solo ante cambio de sector o de estado de misión; al empezar/avanzar se re-informa para que el motor sepa dónde está el jugador.
-    if (sid === l.sid && ms.mission === l.m) return
-    if (sid !== l.sid) useHudStore.getState().setAt(sid)
-    l.sid = sid
-    ms.report({ type: 'at', sectorId: sid })
-    l.m = useMissionStore.getState().mission
+    // Solo ante cambio de sectores o de estado de misión; al empezar/avanzar se re-informa para que el motor sepa dónde está el jugador.
+    if (key === l.key && ms.mission === l.m) return
+    if (key !== l.key) useHudStore.getState().setAt(inside[0] ?? null)
+    l.key = key
+    // Varios sectores comparten planta (mástil, pisos, BOP): tras avanzar se re-informa por si el siguiente objetivo ya se cumple.
+    let m = ms.mission
+    for (let i = 0; i < 20; i++) {
+      ms.report({ type: 'at', sectorId: inside[0] ?? null, inside })
+      const n = useMissionStore.getState().mission
+      if (n === m) break
+      m = n
+    }
+    l.m = m
   })
   return null
 }

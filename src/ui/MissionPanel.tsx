@@ -164,6 +164,13 @@ export function MissionPanel() {
         {def && mission.status === 'completed' && (
           <section className="space-y-3" data-testid="mission-completed">
             <p className="text-sm text-slate-300">Terminaste el recorrido. Lo que marcaste queda en este navegador como registro propio.</p>
+            {def.summary && (
+              <ul className="space-y-1 rounded border border-white/10 bg-white/5 p-3 text-sm" data-testid="mission-summary">
+                {def.summary(mission.results).map((l) => (
+                  <li key={l}>{l}</li>
+                ))}
+              </ul>
+            )}
             <ul className="space-y-1 text-sm">
               {def.objectives.map((o) => (
                 <li key={o.id} className="flex justify-between gap-3 border-b border-white/10 pb-1">

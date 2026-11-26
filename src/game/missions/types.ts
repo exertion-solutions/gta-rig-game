@@ -30,6 +30,8 @@ export type MissionDef = {
   objectives: Objective[]
   /** Datos faltantes o que no coinciden con la fuente (vacío = la misión se puede jugar). */
   requires: (data: GameData) => string[]
+  /** Resumen de registro propio para la pantalla final (se calcula con `results`; no califica al jugador). */
+  summary?: (results: Record<string, ObjectiveResult>) => string[]
 }
 
 /**
@@ -39,7 +41,7 @@ export type MissionDef = {
  *   el inicio de la misión (o desde la última vez que esa llegada contó). El spawn en el Acceso no cuenta.
  */
 export type GameEvent =
-  | { type: 'at'; sectorId: string | null }
+  | { type: 'at'; sectorId: string | null; /** todos los sectores cuyo radio contiene al jugador (varios comparten planta: mástil, pisos, BOP); por defecto [sectorId]. */ inside?: string[] }
   | { type: 'choose'; objectiveId: string; picked: string[] }
   | { type: 'order'; objectiveId: string; order: string[] }
   | { type: 'mark'; objectiveId: string; value: MarkValue }
