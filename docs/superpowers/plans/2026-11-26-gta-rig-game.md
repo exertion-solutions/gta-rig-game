@@ -284,3 +284,21 @@ tests/{unit/*.test.ts, e2e/*.e2e.ts, ui-publico.test.ts}
 
 1 → 2 → {3, 5, 7} en paralelo → 4 (necesita 3) → 6 (3 y 4) → 8 (7) → 9 (5 y 8) → 10 → {11, 12} en paralelo → 13 → 14.
 Cada rama paralela vive en su worktree y se integra con revisión fresca antes de la siguiente.
+
+### Task 15: Personaje realista animado (agregada por pedido del dueño; se ejecuta después de la Task 7)
+
+**Files:**
+- Create: `public/models/character/worker.glb`, `src/game/player/CharacterModel.tsx`, `src/game/player/characterAnim.ts`
+- Modify: `src/game/player/Player.tsx` (reemplaza la cápsula visible por el modelo; el collider cápsula no cambia), `NOTICE.md` (origen y licencia del modelo y de cada animación)
+- Test: `tests/unit/characterAnim.test.ts`, `tests/e2e/character.e2e.ts`
+
+**Interfaces:**
+- Consumes: `usePlayerStore` (`position`, `yaw`, `mode`), velocidad del jugador a pie.
+- Produces: `pickClip(speed: number, mode: 'foot'|'truck'): 'idle'|'walk'|'run'|'seated'` con umbrales entre `WALK_SPEED` (1.4) y `RUN_SPEED` (4.5); `<CharacterModel />` con `AnimationMixer`, crossfade entre clips (≈0.2 s) y orientación según `yaw`.
+
+- [ ] **Step 1: Test `pickClip`**: 0 → 'idle'; `WALK_SPEED` → 'walk'; `RUN_SPEED` → 'run'; modo 'truck' → 'seated' (o 'idle' si no hay clip sentado, documentado).
+- [ ] **Step 2: Correr; esperar FAIL.**
+- [ ] **Step 3: Conseguir el modelo.** Requisitos: humanoide con esqueleto (skinned), proporciones realistas (~1.75 m, pies en y=0), sin armas ni uniforme militar, preferible trabajador con casco y chaleco (EPP genérico, sin marca ni logos), ≤ 25 k triángulos, texturas en webp, comprimido con Meshopt o Draco, animaciones idle/walk/run (sentado opcional). Orden de intentos (el implementador decide y documenta por qué): (a) modelos de `three/examples/models/gltf` y glTF-Sample-Assets con licencia verificada y sin armas; (b) personaje CC0 realista (verificar licencia en la página de origen); (c) generar un trabajador con 3D AI Studio (plan gratis, Prism preview) y rigearlo/animarlo con Blender MCP. Mixamo y Ready Player Me no se usan (requieren login manual / servicio discontinuado). Registrar en `NOTICE.md` origen, autor, licencia y URL. Si ninguna opción cumple "realista", informar el límite en el reporte en vez de entregar una cápsula.
+- [ ] **Step 4: Integrar** `<CharacterModel />` en `Player.tsx` con `useGLTF` (decoders locales), crossfade por `pickClip`, oculto en modo 'truck' salvo que haya clip 'seated'.
+- [ ] **Step 5: E2E** `el personaje camina con clip 'walk' al mover y vuelve a 'idle' al soltar` (hook dev `window.__game.currentClip()`), `la altura del modelo está entre 1.6 y 1.9 m`, y que `npm test`, `npm run test:e2e`, `npm run build` siguen verdes.
+- [ ] **Step 6: Commit `feat: personaje realista animado`.**
