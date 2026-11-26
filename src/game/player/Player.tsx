@@ -1,15 +1,17 @@
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierRigidBody } from '@react-three/rapier'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { create } from 'zustand'
+import { clampPitch } from '../camera/followCamera'
 import { exposeGame } from '../dev'
 import { LOCACION_BOUNDS } from '../world/frame'
-import { EYE_HEIGHT, PLAYER_RADIUS, RESPAWN, needsRespawn, stepMovement, type Vec3 } from './movement'
+import { PLAYER_RADIUS, RESPAWN, needsRespawn, stepMovement, type Vec3 } from './movement'
 
-export const usePlayerStore = create<{ position: Vec3; yaw: number; mode: 'foot' | 'truck' }>(() => ({
+export const usePlayerStore = create<{ position: Vec3; yaw: number; pitch: number; mode: 'foot' | 'truck' }>(() => ({
   position: RESPAWN,
   yaw: 0,
+  pitch: 0.3, // elevación de la cámara de seguimiento
   mode: 'foot',
 }))
 
@@ -19,7 +21,8 @@ const GRAVITY = 9.81
 const FIXED_DT = 1 / 60 // = timeStep por defecto de <Physics>
 const keys = new Set<string>()
 let override: { x: number; z: number; run: boolean } | null = null // solo lo usa window.__game (tests)
-let pitch = 0
+// cuerpo del jugador: la cámara de seguimiento lo excluye de su raycast
+export const playerBody: { current: RapierRigidBody | null } = { current: null }
 
 const readInput = () =>
   override ?? {
@@ -32,7 +35,6 @@ export function Player() {
   const body = useRef<RapierRigidBody>(null)
   const { world } = useRapier()
   const gl = useThree((s) => s.gl)
-  const camera = useThree((s) => s.camera)
   const scene = useThree((s) => s.scene)
   const vy = useRef(0)
   const ctl = useRef<ReturnType<typeof world.createCharacterController> | null>(null)
@@ -54,8 +56,8 @@ export function Player() {
     const up = (e: KeyboardEvent) => keys.delete(e.code)
     const move = (e: MouseEvent) => {
       if (document.pointerLockElement !== gl.domElement) return
-      usePlayerStore.setState((s) => ({ yaw: s.yaw - e.movementX * 0.002 }))
-      pitch = Math.max(-1.4, Math.min(1.4, pitch - e.movementY * 0.002))
+      // mouse arriba (movementY < 0) baja la cámara => mira hacia arriba
+      usePlayerStore.setState((s) => ({ yaw: s.yaw - e.movementX * 0.002, pitch: clampPitch(s.pitch + e.movementY * 0.002) }))
     }
     const lock = () => void gl.domElement.requestPointerLock?.()
     window.addEventListener('keydown', down)
@@ -115,20 +117,22 @@ export function Player() {
     usePlayerStore.setState({ position: pos })
   })
 
-  useFrame(() => {
-    const { position: pos, yaw } = usePlayerStore.getState()
-    camera.position.set(pos[0], pos[1] + EYE_HEIGHT, pos[2])
-    camera.rotation.set(pitch, yaw, 0, 'YXZ')
-  })
-
   return (
     <RigidBody
-      ref={body}
+      ref={(rb) => {
+        body.current = rb
+        playerBody.current = rb
+      }}
       type="kinematicPosition"
       colliders={false}
       position={[RESPAWN[0], RESPAWN[1] + FOOT + 0.02, RESPAWN[2]]}
     >
       <CapsuleCollider args={[HALF, PLAYER_RADIUS]} />
+      {/* PLACEHOLDER visible en tercera persona; sin modelo de personaje todavía */}
+      <mesh castShadow>
+        <capsuleGeometry args={[PLAYER_RADIUS, 2 * HALF]} />
+        <meshStandardMaterial color="#e8832a" />
+      </mesh>
     </RigidBody>
   )
 }

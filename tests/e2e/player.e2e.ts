@@ -100,3 +100,18 @@ test('si cae o sale del vallado reaparece en el acceso provisional [-35, 0, 0]',
   const p = await pos(page)
   expect(Math.hypot(p[0] + 35, p[2])).toBeLessThan(0.5)
 })
+
+test('cámara de seguimiento: detrás del jugador y no dentro del mástil con el jugador pegado a él', async ({ page }) => {
+  const m = (await rendered(page, 'sk575_mastil'))!
+  const zMid = (m.min[2] + m.max[2]) / 2
+  // pegado a la cara +X del mástil, mirando hacia +X: "detrás" del jugador queda justo contra/dentro del mástil
+  await place(page, [m.max[0] + PLAYER_RADIUS + 0.05, 0, zMid], YAW.toPlusX)
+  await page.waitForTimeout(1200)
+  const p = await pos(page)
+  const c = await page.evaluate(() => (window as any).__game.getCamera() as Pos)
+  const inside = c.every((v, i) => v > m.min[i] && v < m.max[i])
+  expect(inside).toBe(false)
+  expect(c[0]).toBeGreaterThan(m.max[0]) // del lado del jugador, no atravesó la pared
+  const facing = [-Math.sin(YAW.toPlusX), -Math.cos(YAW.toPlusX)] // (1, ~0)
+  expect((c[0] - p[0]) * facing[0] + (c[2] - p[2]) * facing[1]).toBeLessThan(0) // detrás del jugador
+})
