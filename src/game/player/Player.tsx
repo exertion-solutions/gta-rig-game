@@ -6,6 +6,7 @@ import { clampPitch } from '../camera/followCamera'
 import { exposeGame } from '../dev'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { PLAYER_RADIUS, RESPAWN, needsRespawn, stepMovement, type Vec3 } from './movement'
+import { CharacterModel } from './CharacterModel'
 import { teleportTo, usePlayerStore } from './store'
 
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
@@ -16,6 +17,8 @@ export const keys = new Set<string>()
 let override: { x: number; z: number; run: boolean } | null = null // solo lo usa window.__game (tests)
 // cuerpo del jugador: la cámara de seguimiento lo excluye de su raycast
 export const playerBody: { current: RapierRigidBody | null } = { current: null }
+// rapidez horizontal real (m/s) del último paso de física; la usa CharacterModel para elegir clip
+export const playerSpeed = { current: 0 }
 
 const readInput = () =>
   override ?? {
@@ -29,7 +32,6 @@ export function Player() {
   const { world } = useRapier()
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
-  const mesh = useRef<THREE.Mesh>(null)
   const vy = useRef(0)
   const ctl = useRef<ReturnType<typeof world.createCharacterController> | null>(null)
 
@@ -83,14 +85,13 @@ export function Player() {
     }
   }, [gl, scene])
 
-  // Al subir a la camioneta el cuerpo del jugador se desactiva y se oculta; al bajar reaparece donde indica el store.
+  // Al subir a la camioneta el cuerpo del jugador se desactiva (CharacterModel se oculta solo); al bajar reaparece donde indica el store.
   useEffect(
     () =>
       usePlayerStore.subscribe((s, prev) => {
         if (s.mode === prev.mode) return
         const rb = body.current
         if (!rb) return
-        if (mesh.current) mesh.current.visible = s.mode === 'foot'
         if (s.mode === 'truck') return rb.setEnabled(false)
         rb.setTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] }, true)
         rb.setNextKinematicTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] })
@@ -105,7 +106,7 @@ export function Player() {
   useBeforePhysicsStep(() => {
     const rb = body.current
     const c = ctl.current
-    if (!rb || !c || usePlayerStore.getState().mode === 'truck') return
+    if (!rb || !c || usePlayerStore.getState().mode === 'truck') return void (playerSpeed.current = 0)
     const dt = FIXED_DT
     const { yaw } = usePlayerStore.getState()
     const { vx, vz } = stepMovement(readInput(), yaw, dt)
@@ -113,6 +114,7 @@ export function Player() {
     c.computeColliderMovement(rb.collider(0), { x: vx * dt, y: vy.current * dt, z: vz * dt })
     if (c.computedGrounded() && vy.current < 0) vy.current = 0
     const m = c.computedMovement()
+    playerSpeed.current = Math.hypot(m.x, m.z) / dt
     const t = rb.translation()
     const next = { x: t.x + m.x, y: t.y + m.y, z: t.z + m.z }
     let pos: Vec3 = [next.x, next.y - FOOT, next.z]
@@ -142,11 +144,7 @@ export function Player() {
       position={[RESPAWN[0], RESPAWN[1] + FOOT + 0.02, RESPAWN[2]]}
     >
       <CapsuleCollider args={[HALF, PLAYER_RADIUS]} />
-      {/* PLACEHOLDER visible en tercera persona; sin modelo de personaje todavía */}
-      <mesh ref={mesh} castShadow>
-        <capsuleGeometry args={[PLAYER_RADIUS, 2 * HALF]} />
-        <meshStandardMaterial color="#e8832a" />
-      </mesh>
+      <CharacterModel footY={FOOT} />
     </RigidBody>
   )
 }
