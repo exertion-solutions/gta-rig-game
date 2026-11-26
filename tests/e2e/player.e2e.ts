@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { PLAYER_RADIUS } from '../../src/game/player/movement'
+import { PLAYER_RADIUS, RESPAWN } from '../../src/game/player/movement'
 
 type Box = { min: number[]; max: number[] }
 type Pos = [number, number, number]
@@ -94,11 +94,11 @@ test('planchada y piso: sin colisión propia; la planchada está a nivel del sue
   expect(Math.abs(end[1])).toBeLessThan(0.1) // sin escalones ni rampas inventadas
 })
 
-test('si cae o sale del vallado reaparece en el acceso provisional [-35, 0, 0]', async ({ page }) => {
+test('si cae o sale del vallado reaparece en el Acceso (RESPAWN)', async ({ page }) => {
   await page.evaluate(() => (window as any).__game.teleport([200, 0, 0]))
   await page.waitForTimeout(500)
   const p = await pos(page)
-  expect(Math.hypot(p[0] + 35, p[2])).toBeLessThan(0.5)
+  expect(Math.hypot(p[0] - RESPAWN[0], p[2] - RESPAWN[2])).toBeLessThan(0.5)
 })
 
 test('cámara de seguimiento: detrás del jugador y no dentro del mástil con el jugador pegado a él', async ({ page }) => {

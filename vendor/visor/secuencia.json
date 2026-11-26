@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "status": "pendingValidation",
+  "nota": "Secuencia típica de montaje de un equipo de workover aportada por el usuario. No es el procedimiento de la empresa ni un requisito de empresa, cliente o legal: validar contra el procedimiento vigente antes de presentarla como requisito. Los pasos 1, 2 y 8 son documentales. No incluye tiempos, cargas ni distancias.",
+  "pasos": [
+    {
+      "orden": 1,
+      "texto": "Reunión pre-tarea, ATS y asignación de responsabilidades.",
+      "documental": true
+    },
+    {
+      "orden": 2,
+      "texto": "Verificación de acceso, nivelación, capacidad portante, drenajes y anclajes de locación.",
+      "documental": true
+    },
+    {
+      "orden": 3,
+      "texto": "Descarga y alineación de componentes, respetando plan de izaje y zonas de riesgo.",
+      "documental": false
+    },
+    {
+      "orden": 4,
+      "texto": "Posicionamiento y nivelación de subestructura.",
+      "documental": false
+    },
+    {
+      "orden": 5,
+      "texto": "Montaje de malacate, motores, transmisión, cabina, BOP y equipos auxiliares.",
+      "documental": false
+    },
+    {
+      "orden": 6,
+      "texto": "Izamiento del mástil, con control de plomo, contravientos y verificación estructural.",
+      "documental": false
+    },
+    {
+      "orden": 7,
+      "texto": "Instalación de líneas de circulación, choke manifold, separador/golpeador, líneas de retorno, piletas y antorcha.",
+      "documental": false
+    },
+    {
+      "orden": 8,
+      "texto": "Pruebas funcionales, prueba de presión cuando corresponda, checklists previos a la operación y liberación para workover.",
+      "documental": true
+    }
+  ]
+}

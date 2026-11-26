@@ -1,9 +1,8 @@
 import { create } from 'zustand'
 import { RESPAWN, type Vec3 } from './movement'
 
-// PROVISIONAL (igual que RESPAWN): la camioneta aparece junto al acceso, desplazada para no pisar al jugador.
-// Task 7 lo reemplaza por el Acceso real.
-export const TRUCK_SPAWN: Vec3 = [-35, 0, 3.5]
+// La camioneta aparece en el Acceso, desplazada 3,5 m en +Z para no pisar al jugador.
+export const TRUCK_SPAWN: Vec3 = [RESPAWN[0], RESPAWN[1], RESPAWN[2] + 3.5]
 export const TRUCK_SPAWN_HEADING = -Math.PI / 2 // mira a +X (hacia el mástil)
 
 export type PlayerState = {

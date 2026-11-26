@@ -44,7 +44,7 @@ function placeTruck(rb: RapierRigidBody, ground: Vec3, heading: number) {
   if (usePlayerStore.getState().mode === 'truck') teleportTo(ground) // el conductor viaja con ella (y la cámara se reinicia)
 }
 
-// Vuelve a ponerla en el Acceso (provisional: ver TRUCK_SPAWN).
+// Vuelve a ponerla en el Acceso (ver TRUCK_SPAWN).
 export function respawnTruck() {
   if (truckBody.current) placeTruck(truckBody.current, TRUCK_SPAWN, TRUCK_SPAWN_HEADING)
 }

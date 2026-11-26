@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { TRUCK_SPAWN } from '../../src/game/player/store'
 
 type Box = { min: number[]; max: number[] }
 type Pos = [number, number, number]
@@ -86,7 +87,7 @@ test('al volcarse >60° por 3 s vuelve al acceso', async ({ page }) => {
   await page.evaluate(() => (window as any).__game.flipTruck())
   await page.waitForTimeout(500)
   expect((await truck(page)).inclination).toBeGreaterThan(60)
-  await page.waitForFunction(() => Math.hypot((window as any).__game.getTruck().position[0] + 35, (window as any).__game.getTruck().position[2] - 3.5) < 1, null, { timeout: 15_000 })
+  await page.waitForFunction(([sx, sz]) => Math.hypot((window as any).__game.getTruck().position[0] - sx, (window as any).__game.getTruck().position[2] - sz) < 1, [TRUCK_SPAWN[0], TRUCK_SPAWN[2]], { timeout: 15_000 })
   expect((await truck(page)).inclination).toBeLessThan(10)
 })
 

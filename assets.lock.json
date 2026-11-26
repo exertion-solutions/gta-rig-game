@@ -42,6 +42,8 @@
   "vendor": {
     "viewpoints.json": "a6d48b1efbcee104cb52e668c2a16f29759f44b50a45bab7a905f4073456ed01",
     "drops.json": "5e7beae7bb2a19e61a8c1b9b5204c1c0ece76226e721d8a698f299c98cdc205a",
-    "types.ts": "3b9e15457e97469b816f25126f6466ddac04ce1482e630c3ccbe6be4b8385966"
+    "types.ts": "3b9e15457e97469b816f25126f6466ddac04ce1482e630c3ccbe6be4b8385966",
+    "layout_locacion.json": "c1d9639965e134e83bce02cd04d528ef856d0b2c91ae48bafc4df45b5e835e13",
+    "secuencia.json": "56b94e98eeff52ecaa461bb22697e5e8e22b26ade7804cd84679396328df5598"
   }
 }

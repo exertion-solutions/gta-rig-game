@@ -1,3 +1,4 @@
+import { ACCESO_POSITION } from '../data/sectors'
 export type Vec3 = [number, number, number]
 export type Bounds = { minX: number; maxX: number; minZ: number; maxZ: number }
 
@@ -6,9 +7,8 @@ export const RUN_SPEED = 4.5
 export const PLAYER_RADIUS = 0.35
 export const EYE_HEIGHT = 1.7
 
-// PROVISIONAL: punto de reaparición en el acceso de la locación (borde -X, frente al carrier).
-// Task 7 lo reemplaza por el Acceso de `sectors`.
-export const RESPAWN: Vec3 = [-35, 0, 0]
+// Reaparición en el Acceso real (camPos del viewpoint "acceso" del visor), ver data/sectors.ts.
+export const RESPAWN: Vec3 = ACCESO_POSITION
 
 // input.x = strafe (+ derecha), input.z = avance (+ adelante). yaw 0 mira hacia -Z (convención three).
 // Devuelve velocidad en el plano XZ del mundo (m/s). dt se acepta por contrato; sin rampa de aceleración.
