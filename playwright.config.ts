@@ -8,6 +8,7 @@ export default defineConfig({
   workers: 1,
   use: {
     baseURL: 'http://localhost:5173',
+    headless: true, // sin ventanas de navegador visibles
     channel: process.env.E2E_CHANNEL || undefined,
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] },
   },
