@@ -52,6 +52,7 @@ El dueño pidió "un juego con misiones, estilo GTA". No indicó audiencia. Mi l
 - GLB copiados al repo nuevo (hecho).
 - Juego de misiones estilo GTA.
 - Usar todos los recursos disponibles: Remotion, Fusion, Blender MCP, 3D AI Studio, ElevenLabs, Codex y agentes en paralelo.
+- Escenario modificable (2026-11-26): el dueño autorizó modificar el escenario cuando haga falta para recorrerlo y para que sea lo más realista posible. Se hace en una capa propia de adiciones (`public/models/scenario/`, `src/game/world/scenario/`), sin editar los GLB copiados del visor (siguen verificados por `assets.lock.json`). Todo lo agregado se rotula como "escenario ilustrativo añadido por el juego, no as-built"; las dimensiones se toman de las medidas de los GLB cuando existen y, si no existen, se marcan como estimadas en `docs/scenario-additions.md`, nunca como dato documentado. No se agregan distancias de seguridad, zonas de exclusión, barreras operativas ni procedimientos.
 
 ## Llamados míos (a revisar)
 
