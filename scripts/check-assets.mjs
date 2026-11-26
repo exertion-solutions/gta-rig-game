@@ -7,7 +7,10 @@ const sha256 = (f) => createHash('sha256').update(readFileSync(f)).digest('hex')
 
 /** Verifica `lock[key]` ({archivo: sha256}) contra los archivos bajo `root`. */
 export function checkAssets(lockPath, root, key = 'files') {
-  const entries = Object.entries(JSON.parse(readFileSync(lockPath, 'utf8'))[key] ?? {})
+  const section = JSON.parse(readFileSync(lockPath, 'utf8'))[key]
+  if (!section || typeof section !== 'object' || Array.isArray(section) || !Object.keys(section).length)
+    throw new Error(`assets.lock.json: la sección "${key}" falta o está vacía`)
+  const entries = Object.entries(section)
   const missing = []
   const mismatched = []
   for (const [name, hash] of entries) {

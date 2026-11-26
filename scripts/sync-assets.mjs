@@ -39,9 +39,11 @@ function pull(entries, destRoot, srcOf, hashes) {
 }
 
 pull(Object.keys(lock.files), resolve('public/models/rig10'), (n) => `public/models/rig10/${n}`, lock.files)
-// vendor: la primera vez fija los hashes en el lock; luego los exige.
-const vendor = pull(Object.keys(VENDOR), resolve('vendor/visor'), (n) => VENDOR[n], lock.vendor)
-if (!lock.vendor) {
+// vendor: los hashes del lock se exigen; fijarlos es una acción explícita (--pin-vendor).
+const pin = process.argv.includes('--pin-vendor')
+if (!lock.vendor && !pin) throw new Error('assets.lock.json sin "vendor": corré con --pin-vendor para fijarlo a propósito')
+const vendor = pull(Object.keys(VENDOR), resolve('vendor/visor'), (n) => VENDOR[n], pin ? undefined : lock.vendor)
+if (pin) {
   writeFileSync(lockPath, JSON.stringify({ ...lock, vendor }, null, 2) + '\n')
   console.log('assets.lock.json: vendor fijado')
 }

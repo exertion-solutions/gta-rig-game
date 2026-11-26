@@ -18,7 +18,7 @@ afterEach(() => tmps.splice(0).forEach((d) => rmSync(d, { recursive: true, force
 describe('checkAssets', () => {
   it('reporta ok con los 36 archivos de rig10', () => {
     const r = checkAssets(lock, rig)
-    expect(JSON.parse(readFileSync(lock, 'utf8')).files).toBeDefined()
+    expect(Object.keys(JSON.parse(readFileSync(lock, 'utf8')).files)).toHaveLength(36)
     expect(r).toEqual({ ok: true, missing: [], mismatched: [] })
   })
   it('reporta mismatched si se altera un byte', () => {
@@ -37,5 +37,17 @@ describe('checkAssets', () => {
     const r = checkAssets(lock, d)
     expect(r.ok).toBe(false)
     expect(r.missing).toEqual(['mastil.glb'])
+  })
+  it('lanza si falta `files` en el lock', () => {
+    const d = copy()
+    const l = join(d, 'lock.json')
+    writeFileSync(l, JSON.stringify({ vendor: { a: 'b' } }))
+    expect(() => checkAssets(l, d)).toThrow(/"files"/)
+  })
+  it('lanza si `vendor` está vacío', () => {
+    const d = copy()
+    const l = join(d, 'lock.json')
+    writeFileSync(l, JSON.stringify({ files: { a: 'b' }, vendor: {} }))
+    expect(() => checkAssets(l, d, 'vendor')).toThrow(/"vendor"/)
   })
 })
