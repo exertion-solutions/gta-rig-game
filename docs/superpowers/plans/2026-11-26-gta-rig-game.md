@@ -282,7 +282,7 @@ tests/{unit/*.test.ts, e2e/*.e2e.ts, ui-publico.test.ts}
 
 ## Orden y paralelismo
 
-1 → 2 → {3, 5, 7} en paralelo → 4 (necesita 3) → 6 (3 y 4) → 8 (7) → 9 (5 y 8) → 10 → {11, 12} en paralelo → 13 → 14.
+Orden real de ejecución: 1, 2, 3, 4, 5, 6, 7, 15, 8, 9, 10, 11, 12, 16, 17, 13, (14 opcional). Plan original: 1 → 2 → {3, 5, 7} en paralelo → 4 (necesita 3) → 6 (3 y 4) → 8 (7) → 9 (5 y 8) → 10 → {11, 12} en paralelo → 13 → 14.
 Cada rama paralela vive en su worktree y se integra con revisión fresca antes de la siguiente.
 
 ### Task 15: Personaje realista animado (agregada por pedido del dueño; se ejecuta después de la Task 7)
@@ -320,3 +320,21 @@ Cada rama paralela vive en su worktree y se integra con revisión fresca antes d
 - [ ] **Step 4: Correr tests; esperar PASS.**
 - [ ] **Step 5: E2E** en navegador real: el juego arranca en cada calidad, `draw calls < 250` y `triángulos < 1 M` en calidad Alta, la degradación automática baja de nivel con FPS simulados bajos, y `npm test`, `npm run test:e2e`, `npm run build` siguen verdes. Sin capturas como entregable (el dueño mira el juego en vivo).
 - [ ] **Step 6: Commit `feat: realismo visual (cielo, suelo PBR, props, camioneta, calidad adaptativa)`.**
+
+### Task 17: Calidad de vida (agregada por pedido del dueño: "agrega lo que sirve siempre"; se ejecuta después de la Task 16 y antes de la 13)
+
+Criterio de selección: solo funciones de juego de uso general que ya vimos en los juegos de referencia y que encajan con las reglas del proyecto (sin combate, armas, inventario ni violencia; sin inventar datos).
+
+**Files:**
+- Create: `src/game/settings/settings.ts` (ajustes persistidos), `src/ui/PauseMenu.tsx`, `src/ui/ControlsHelp.tsx`, `src/ui/LoadingScreen.tsx`, `src/ui/FullMap.tsx`, `src/game/input/gamepad.ts`, `tests/unit/settings.test.ts`, `tests/unit/gamepad.test.ts`, `tests/e2e/qol.e2e.ts`
+- Modify: `src/game/player/Player.tsx` (salto, sensibilidad, invertir Y), `src/ui/Hud.tsx` (atajos), `src/app/App.tsx`
+
+**Interfaces:**
+- Produces: `type Settings = { mouseSensitivity: number; invertY: boolean; masterVolume: number; quality: 'auto'|'high'|'medium'|'low' }`; `DEFAULT_SETTINGS: Settings`; `loadSettings(): Settings` y `saveSettings(s: Settings): void` (localStorage en try/catch con memoria de respaldo; valores fuera de rango se acotan; JSON inválido devuelve los valores por defecto); `mapGamepad(pad: { axes: readonly number[]; buttons: readonly { pressed: boolean }[] }, deadzone?: number): { move: { x: number; z: number }; look: { x: number; y: number }; run: boolean; jump: boolean; interact: boolean }` pura y testeada.
+
+- [ ] **Step 1: Tests**: `loadSettings` con localStorage que lanza devuelve defaults; con JSON inválido devuelve defaults; acota `mouseSensitivity` y `masterVolume` a su rango; `mapGamepad` aplica zona muerta (0.15 por defecto), mapea stick izquierdo a `move`, derecho a `look`, gatillo/botón a `run`, `jump` e `interact`.
+- [ ] **Step 2: Correr; esperar FAIL.**
+- [ ] **Step 3: Implementar**: (a) menú de pausa con Esc (reanudar, ajustes, controles, salir de la misión), el juego queda en pausa de verdad (física y cronómetros), sin perder el pointer-lock de forma confusa; (b) ajustes: sensibilidad del mouse, invertir Y, volumen general, calidad (auto/alta/media/baja; se enlaza con la Task 16); (c) ayuda de controles (tecla H y desde el menú); (d) pantalla de carga con progreso real (carga de GLB) y texto "referencia digital, no as-built / ilustrativo"; (e) mapa completo con la tecla N (la M queda para misiones): sectores con nombre sanitizado y posición del jugador y la camioneta, sin zonas dibujadas ni distancias; (f) salto con Espacio a pie (altura de juego, sin pretensión realista; en la camioneta Espacio sigue siendo freno); (g) soporte de gamepad (Gamepad API) para mover, mirar, correr, saltar, interactuar y subir/bajar de la camioneta; (h) guardado automático ya existe para misiones: mostrar un aviso discreto "Progreso guardado" sin datos sensibles.
+- [ ] **Step 4: Correr tests; esperar PASS.**
+- [ ] **Step 5: E2E**: Esc pausa y reanuda (la posición del jugador no cambia durante la pausa); un ajuste de sensibilidad persiste tras recargar; H abre y cierra la ayuda; N abre el mapa completo sin etiquetas de zona ni distancias; el salto sube y vuelve a y=0; `npm test`, `npm run test:e2e`, `npm run build` verdes. Sin capturas.
+- [ ] **Step 6: Commit `feat: pausa, ajustes, ayuda, mapa completo, salto y gamepad`.**
