@@ -302,3 +302,21 @@ Cada rama paralela vive en su worktree y se integra con revisión fresca antes d
 - [ ] **Step 4: Integrar** `<CharacterModel />` en `Player.tsx` con `useGLTF` (decoders locales), crossfade por `pickClip`, oculto en modo 'truck' salvo que haya clip 'seated'.
 - [ ] **Step 5: E2E** `el personaje camina con clip 'walk' al mover y vuelve a 'idle' al soltar` (hook dev `window.__game.currentClip()`), `la altura del modelo está entre 1.6 y 1.9 m`, y que `npm test`, `npm run test:e2e`, `npm run build` siguen verdes.
 - [ ] **Step 6: Commit `feat: personaje realista animado`.**
+
+### Task 16: Realismo visual (agregada por pedido del dueño: "lo más realista posible"; se ejecuta después de la Task 12)
+
+**Files:**
+- Create: `src/game/world/Environment.tsx` (cielo HDRI, niebla, exposición), `src/game/world/GroundMaterial.tsx` (suelo PBR), `src/game/vehicle/truckModel.glb` (camioneta realista, reemplaza la procedural si la licencia y el peso lo permiten), `src/game/world/Props.tsx` (conos, tambores, vallas, bidones; instanciados), `src/game/quality.ts` (calidad Alta/Media/Baja con degradación automática), `public/hdri/*`, `public/textures/*` (webp/ktx2 no; webp), `NOTICE.md`
+- Modify: `src/game/world/DayNight.tsx` (integra el HDRI con la hora), `src/game/vehicle/Truck.tsx`, `src/app/App.tsx`
+- Test: `tests/unit/quality.test.ts`, `tests/e2e/realism.e2e.ts`
+
+**Interfaces:**
+- Consumes: `useTimeOfDay` (Task 12), `RIG_PARTS`, `LOCACION_M`, `usePlayerStore`.
+- Produces: `type Quality = 'high'|'medium'|'low'`; `pickQuality(avgFrameMs: number, current: Quality): Quality` (baja de nivel si el promedio supera 20 ms durante una ventana, sube solo con margen amplio y nunca oscila); `useQuality(): { quality: Quality; set(q: Quality): void }`; `<Environment />`, `<GroundMaterial />`, `<Props />`.
+
+- [ ] **Step 1: Test `pickQuality`**: estable por debajo de 14 ms; baja de nivel tras sostener >20 ms; no sube hasta 10 ms sostenidos; no oscila entre dos niveles con valores cerca del umbral.
+- [ ] **Step 2: Correr; esperar FAIL.**
+- [ ] **Step 3: Implementar** (todo con licencia verificada y anotada en `NOTICE.md`; ninguna textura/HDRI con marca ni logos): (a) cielo HDRI CC0 (Poly Haven o equivalente) con exposición y tone mapping (ACES o AgX) coherentes con la hora; (b) suelo PBR de tierra/grava (CC0: ambientCG, Poly Haven, 3DTexel) con normal/roughness, repetición sin patrón visible (mezcla o variación por ruido) — el suelo sigue siendo plano y sin caminos, porque no hay fuente de terreno; (c) niebla suave de distancia; (d) environment map para los metales de los GLB (solo tienen factores PBR), sin cambiar su geometría ni colores base; (e) camioneta realista CC0 o modelada en Blender (≤ 40 k triángulos, webp, meshopt); (f) props instanciados (conos, tambores, vallas) dispuestos solo en zonas libres, sin invenciones sobre distribución real del equipo y sin sugerir zonas de exclusión ni "áreas seguras"; (g) SSAO y bloom suaves solo en calidad Alta; (h) sombras de contacto bajo el personaje y la camioneta.
+- [ ] **Step 4: Correr tests; esperar PASS.**
+- [ ] **Step 5: E2E** en navegador real: el juego arranca en cada calidad, `draw calls < 250` y `triángulos < 1 M` en calidad Alta, la degradación automática baja de nivel con FPS simulados bajos, y `npm test`, `npm run test:e2e`, `npm run build` siguen verdes. Sin capturas como entregable (el dueño mira el juego en vivo).
+- [ ] **Step 6: Commit `feat: realismo visual (cielo, suelo PBR, props, camioneta, calidad adaptativa)`.**
