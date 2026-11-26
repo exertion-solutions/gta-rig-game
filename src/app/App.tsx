@@ -1,3 +1,17 @@
+import { OrbitControls } from '@react-three/drei'
+import { Canvas } from '@react-three/fiber'
+import { Suspense } from 'react'
+import { RigScene } from '../game/world/loadRig'
+
+// OrbitControls provisional: se reemplaza por la cámara de seguimiento.
 export function App() {
-  return <h1 className="p-4 text-2xl font-bold">GTA RIG GAME</h1>
+  return (
+    <Canvas camera={{ position: [-40, 30, 50], fov: 50, far: 500 }} style={{ height: '100vh' }}>
+      <color attach="background" args={['#9fc3e8']} />
+      <Suspense fallback={null}>
+        <RigScene />
+      </Suspense>
+      <OrbitControls target={[-5, 8, 0]} />
+    </Canvas>
+  )
 }
