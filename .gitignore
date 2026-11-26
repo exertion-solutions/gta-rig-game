@@ -3,3 +3,5 @@ dist/
 .env*
 !.env.example
 .superpowers/
+test-results/
+playwright-report/

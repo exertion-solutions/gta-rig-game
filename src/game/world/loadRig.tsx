@@ -16,7 +16,7 @@ function Part({ glb }: { glb: string }) {
     stripLines(c)
     return c
   }, [scene])
-  return <primitive object={clone} />
+  return <primitive object={clone} name={glb.replace(/\.glb$/, '')} /> // nombre = id de la pieza (lo usan los tests)
 }
 
 export function RigScene() {

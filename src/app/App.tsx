@@ -1,10 +1,10 @@
-import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense } from 'react'
+import { Player } from '../game/player/Player'
 import { Ground, PhysicsWorld, RigColliders } from '../game/world/Ground'
 import { RigScene } from '../game/world/loadRig'
 
-// OrbitControls provisional: se reemplaza por la cámara de seguimiento.
+// Cámara en primera persona dentro de <Player/>; la cámara de seguimiento del camión llega después.
 export function App() {
   return (
     <Canvas camera={{ position: [-40, 30, 50], fov: 50, far: 500 }} style={{ height: '100vh' }}>
@@ -13,10 +13,10 @@ export function App() {
         <PhysicsWorld>
           <Ground />
           <RigColliders />
+          <Player />
         </PhysicsWorld>
         <RigScene />
       </Suspense>
-      <OrbitControls target={[-5, 8, 0]} />
     </Canvas>
   )
 }
