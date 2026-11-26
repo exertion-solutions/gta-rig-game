@@ -56,3 +56,21 @@ describe('followCamera', () => {
     close(run(60, 3), [10, 5, -3], 1e-3) // converge
   })
 })
+
+import { advancePivot } from '../../src/game/camera/followCamera'
+
+describe('advancePivot (reinicio del pivote tras teletransporte)', () => {
+  it('sin pivote previo arranca en la meta; con el mismo seq suaviza', () => {
+    const a = advancePivot(null, [0, 0, 0], 0, 12, 1 / 60)
+    close(a.pivot, [0, 0, 0])
+    const b = advancePivot(a, [10, 0, 0], 0, 12, 1 / 60)
+    expect(b.pivot[0]).toBeGreaterThan(0)
+    expect(b.pivot[0]).toBeLessThan(10) // planea, no salta
+  })
+  it('si cambia el seq salta directo a la meta (no cruza el mapa)', () => {
+    const a = advancePivot(null, [0, 0, 0], 0, 12, 1 / 60)
+    const b = advancePivot(a, [-35, 0, 0], 1, 12, 1 / 60)
+    close(b.pivot, [-35, 0, 0])
+    expect(b.seq).toBe(1)
+  })
+})

@@ -2,24 +2,17 @@ import { useThree } from '@react-three/fiber'
 import { CapsuleCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierRigidBody } from '@react-three/rapier'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import { create } from 'zustand'
 import { clampPitch } from '../camera/followCamera'
 import { exposeGame } from '../dev'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { PLAYER_RADIUS, RESPAWN, needsRespawn, stepMovement, type Vec3 } from './movement'
-
-export const usePlayerStore = create<{ position: Vec3; yaw: number; pitch: number; mode: 'foot' | 'truck' }>(() => ({
-  position: RESPAWN,
-  yaw: 0,
-  pitch: 0.3, // elevación de la cámara de seguimiento
-  mode: 'foot',
-}))
+import { teleportTo, usePlayerStore } from './store'
 
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
 const FOOT = HALF + PLAYER_RADIUS // centro de la cápsula sobre los pies
 const GRAVITY = 9.81
 const FIXED_DT = 1 / 60 // = timeStep por defecto de <Physics>
-const keys = new Set<string>()
+export const keys = new Set<string>()
 let override: { x: number; z: number; run: boolean } | null = null // solo lo usa window.__game (tests)
 // cuerpo del jugador: la cámara de seguimiento lo excluye de su raycast
 export const playerBody: { current: RapierRigidBody | null } = { current: null }
@@ -36,6 +29,7 @@ export function Player() {
   const { world } = useRapier()
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
+  const mesh = useRef<THREE.Mesh>(null)
   const vy = useRef(0)
   const ctl = useRef<ReturnType<typeof world.createCharacterController> | null>(null)
 
@@ -78,7 +72,7 @@ export function Player() {
       teleport: (p: Vec3) => {
         body.current?.setTranslation({ x: p[0], y: p[1] + FOOT, z: p[2] }, true)
         vy.current = 0
-        usePlayerStore.setState({ position: p })
+        teleportTo(p)
       },
     })
     return () => {
@@ -89,12 +83,29 @@ export function Player() {
     }
   }, [gl, scene])
 
+  // Al subir a la camioneta el cuerpo del jugador se desactiva y se oculta; al bajar reaparece donde indica el store.
+  useEffect(
+    () =>
+      usePlayerStore.subscribe((s, prev) => {
+        if (s.mode === prev.mode) return
+        const rb = body.current
+        if (!rb) return
+        if (mesh.current) mesh.current.visible = s.mode === 'foot'
+        if (s.mode === 'truck') return rb.setEnabled(false)
+        rb.setTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] }, true)
+        rb.setNextKinematicTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] })
+        vy.current = 0
+        rb.setEnabled(true)
+      }),
+    [],
+  )
+
   // Movimiento en el paso fijo de Rapier (timeStep 1/60): rb.translation() está al día en cada llamada,
   // así la velocidad no depende de los fps (antes, a >60 fps se movía desde una base vieja).
   useBeforePhysicsStep(() => {
     const rb = body.current
     const c = ctl.current
-    if (!rb || !c) return
+    if (!rb || !c || usePlayerStore.getState().mode === 'truck') return
     const dt = FIXED_DT
     const { yaw } = usePlayerStore.getState()
     const { vx, vz } = stepMovement(readInput(), yaw, dt)
@@ -112,6 +123,9 @@ export function Player() {
       next.y = pos[1] + FOOT
       next.z = pos[2]
       rb.setTranslation(next, true)
+      rb.setNextKinematicTranslation(next)
+      teleportTo(pos)
+      return
     }
     rb.setNextKinematicTranslation(next)
     usePlayerStore.setState({ position: pos })
@@ -129,7 +143,7 @@ export function Player() {
     >
       <CapsuleCollider args={[HALF, PLAYER_RADIUS]} />
       {/* PLACEHOLDER visible en tercera persona; sin modelo de personaje todavía */}
-      <mesh castShadow>
+      <mesh ref={mesh} castShadow>
         <capsuleGeometry args={[PLAYER_RADIUS, 2 * HALF]} />
         <meshStandardMaterial color="#e8832a" />
       </mesh>

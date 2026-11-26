@@ -30,3 +30,9 @@ export function smoothStep(current: Vec3, target: Vec3, k: number, dt: number): 
   const a = 1 - Math.exp(-k * dt)
   return [current[0] + (target[0] - current[0]) * a, current[1] + (target[1] - current[1]) * a, current[2] + (target[2] - current[2]) * a]
 }
+
+// Pivote suavizado con reinicio: si cambió `seq` (teletransporte/reaparición) salta a la meta en vez de planear por el mapa.
+export function advancePivot(prev: { pivot: Vec3; seq: number } | null, goal: Vec3, seq: number, k: number, dt: number) {
+  if (!prev || prev.seq !== seq) return { pivot: goal, seq }
+  return { pivot: smoothStep(prev.pivot, goal, k, dt), seq }
+}

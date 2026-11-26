@@ -1,0 +1,114 @@
+import { expect, test, type Page } from '@playwright/test'
+
+type Box = { min: number[]; max: number[] }
+type Pos = [number, number, number]
+type TruckState = { position: Pos; bodyY: number; heading: number; speed: number; inclination: number }
+const HEADING = { toMinusX: Math.PI / 2, toPlusX: -Math.PI / 2 }
+
+const truck = (page: Page) => page.evaluate(() => (window as any).__game.getTruck() as TruckState)
+const mode = (page: Page) => page.evaluate(() => (window as any).__game.getMode() as string)
+const player = (page: Page) => page.evaluate(() => (window as any).__game.getPosition() as Pos)
+const rendered = (page: Page, id: string) => page.evaluate((i) => (window as any).__game.renderedBounds(i) as Box | null, id)
+const drive = (page: Page, i: { throttle: number; steer: number; brake: boolean } | null) => page.evaluate((v) => (window as any).__game.setTruckInput(v), i)
+
+test.beforeEach(async ({ page }) => {
+  await page.goto('/')
+  await page.waitForFunction(() => {
+    const g = (window as any).__game
+    return g?.getTruck && g.getPosition && g.renderedBounds('sk575_mastil')
+  }, null, { timeout: 90_000 })
+  await page.waitForTimeout(500)
+})
+
+test('E alterna a la camioneta cuando está cerca y no hace nada si está lejos', async ({ page }) => {
+  await page.evaluate(() => {
+    const g = (window as any).__game
+    g.teleportTruck([0, 0, 20], 0)
+    g.teleport([0, 0, 21.5])
+  })
+  await page.waitForTimeout(600)
+  await page.keyboard.press('KeyE')
+  expect(await mode(page)).toBe('truck')
+  await page.keyboard.press('KeyE')
+  expect(await mode(page)).toBe('foot')
+  const p = await player(page)
+  const t = await truck(page)
+  expect(Math.hypot(p[0] - t.position[0], p[2] - t.position[2])).toBeGreaterThan(1.2) // bajó a un costado, no encima
+  // lejos: E no hace nada
+  await page.evaluate(() => (window as any).__game.teleport([-30, 0, -20]))
+  await page.waitForTimeout(300)
+  await page.keyboard.press('KeyE')
+  expect(await mode(page)).toBe('foot')
+})
+
+test('la camioneta acelera y se detiene sin atravesar el mástil', async ({ page }) => {
+  const m = (await rendered(page, 'sk575_mastil'))!
+  const zMid = (m.min[2] + m.max[2]) / 2
+  await page.evaluate(([x, z, h]) => (window as any).__game.teleportTruck([x, 0, z], h), [m.max[0] + 20, zMid, HEADING.toMinusX] as const)
+  await page.evaluate(() => {
+    const g = (window as any).__game
+    g.teleport([0, 0, 25]) // jugador fuera de la trayectoria
+  })
+  await page.waitForTimeout(800)
+  const start = await truck(page)
+  await page.evaluate(() => {
+    const g = (window as any).__game
+    g.teleport(g.getTruck().position) // sube (teleport junto a la camioneta)
+  })
+  await page.keyboard.press('KeyE')
+  expect(await mode(page)).toBe('truck')
+
+  await drive(page, { throttle: 1, steer: 0, brake: false })
+  let top = 0
+  let last = start
+  let still = 0
+  const t0 = Date.now()
+  while (still < 4 && Date.now() - t0 < 25_000) {
+    await page.waitForTimeout(250)
+    last = await truck(page)
+    top = Math.max(top, last.speed)
+    still = top > 5 && last.speed < 0.2 ? still + 1 : 0
+  }
+  await drive(page, null)
+  expect(top).toBeGreaterThan(8) // aceleró
+  expect(top).toBeLessThan(12.8) // y respeta maxSpeed 12
+  // se detuvo contra el mástil: el frente (centro - semilargo 2.3) no pasó de su cara +X, y quedó pegada (no frenó antes)
+  const front = last.position[0] - 2.3
+  expect(front).toBeGreaterThan(m.max[0] - 0.3)
+  expect(front).toBeLessThan(m.max[0] + 1.0)
+  expect(Math.abs(last.speed)).toBeLessThan(0.3)
+})
+
+test('al volcarse >60° por 3 s vuelve al acceso', async ({ page }) => {
+  await page.evaluate(() => (window as any).__game.teleportTruck([0, 0, 20], 0))
+  await page.waitForTimeout(500)
+  // vuelca el cuerpo físicamente (180° en Z) y deja correr el reloj de vuelco
+  await page.evaluate(() => (window as any).__game.flipTruck())
+  await page.waitForTimeout(500)
+  expect((await truck(page)).inclination).toBeGreaterThan(60)
+  await page.waitForFunction(() => Math.hypot((window as any).__game.getTruck().position[0] + 35, (window as any).__game.getTruck().position[2] - 3.5) < 1, null, { timeout: 15_000 })
+  expect((await truck(page)).inclination).toBeLessThan(10)
+})
+
+test('al respawnear, la cámara no planea por el mapa', async ({ page }) => {
+  await page.evaluate(() => (window as any).__game.teleport([30, 0, 20]))
+  await page.waitForTimeout(800)
+  await page.evaluate(() => (window as any).__game.teleport([-35, 0, 0]))
+  await page.waitForTimeout(100) // 6 frames: con pivote suavizado aún estaría a decenas de metros
+  const c = await page.evaluate(() => (window as any).__game.getCamera() as Pos)
+  expect(Math.hypot(c[0] + 35, c[2])).toBeLessThan(10)
+})
+
+test('A gira a la izquierda: el rumbo aumenta al avanzar con steer +1', async ({ page }) => {
+  await page.evaluate(() => (window as any).__game.teleportTruck([-10, 0, 20], 0))
+  await page.evaluate(() => (window as any).__game.teleport([-10, 0, 21.5]))
+  await page.waitForTimeout(600)
+  await page.keyboard.press('KeyE')
+  expect(await mode(page)).toBe('truck')
+  await drive(page, { throttle: 1, steer: 1, brake: false })
+  await page.waitForTimeout(1500)
+  const t = await truck(page)
+  await drive(page, null)
+  expect(t.heading).toBeGreaterThan(0.2)
+  expect(t.position[0]).toBeLessThan(-10.5) // yaw 0 mira a -Z; girar a la izquierda lo lleva hacia -X
+})
