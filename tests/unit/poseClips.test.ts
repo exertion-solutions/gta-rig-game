@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
 import { GRAVITY, JUMP } from '../../src/game/player/jump'
 import { LAND_MS } from '../../src/game/player/characterAnim'
-import { CLIMB_KEYS, JUMP_KEYS, LAND_KEYS, poseClip } from '../../src/game/player/poseClips'
+import { CLIMB_KEYS, CROUCH_KEYS, JUMP_KEYS, LAND_KEYS, poseClip } from '../../src/game/player/poseClips'
 
 // Esqueleto mínimo como el del GLB: armadura en cm (escala 0,01) girada, pelvis > muslo colgando hacia abajo.
 function rig() {
@@ -75,6 +75,8 @@ describe('poseClip', () => {
     expect(LAND_KEYS[0].rx).toEqual(end.rx) // el aterrizaje arranca desde la pose de caída
     expect(Math.max(...LAND_KEYS.map((k) => k.drop ?? 0))).toBeGreaterThan(0.05)
     expect(Math.round(LAND_KEYS.at(-1)!.t * 1000)).toBe(LAND_MS)
+    expect(CROUCH_KEYS[0].drop).toBeGreaterThan(0.2) // la pelvis baja de verdad
+    expect(CROUCH_KEYS.at(-1)!.t).toBeGreaterThan(0)
     expect(CLIMB_KEYS.at(-1)!.rx).toEqual(CLIMB_KEYS[0].rx)
   })
 

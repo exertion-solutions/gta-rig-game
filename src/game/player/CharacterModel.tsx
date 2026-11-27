@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { exposeGame } from '../dev'
 import { assetUrl, DRACO_PATH } from '../world/assetUrl'
 import { nextLandUntil, pickClip, type Clip } from './characterAnim'
-import { CLIMB_KEYS, JUMP_KEYS, LAND_KEYS, poseClip } from './poseClips'
+import { CLIMB_KEYS, CROUCH_KEYS, JUMP_KEYS, LAND_KEYS, poseClip } from './poseClips'
 import { playerAction, playerSpeed } from './telemetry'
 import { usePlayerStore } from './store'
 
@@ -28,7 +28,7 @@ export function CharacterModel({ footY }: { footY: number }) {
   const clips = useMemo(() => {
     const idle = animations.find((c) => c.name === 'idle')
     if (!idle) return animations
-    return [...animations, poseClip('jump', scene, idle, JUMP_KEYS), poseClip('land', scene, idle, LAND_KEYS), poseClip('climb', scene, idle, CLIMB_KEYS)]
+    return [...animations, poseClip('jump', scene, idle, JUMP_KEYS), poseClip('land', scene, idle, LAND_KEYS), poseClip('climb', scene, idle, CLIMB_KEYS), poseClip('crouch', scene, idle, CROUCH_KEYS)]
   }, [animations, scene])
   const { actions } = useAnimations(clips, root)
   const visible = usePlayerStore((s) => s.mode === 'foot')
@@ -49,7 +49,13 @@ export function CharacterModel({ footY }: { footY: number }) {
       for (const a of Object.values(actions)) if (a?.isRunning() && (!best || a.getEffectiveWeight() > best.getEffectiveWeight())) best = a
       return best?.getClip().name ?? null
     }
-    exposeGame({ currentClip: () => clip.current, playingClip })
+    // pose real de dos huesos (ya animados): prueba que el clip mueve el esqueleto y no solo se elige
+    const pose = () => {
+      const p = scene.getObjectByName('Bip01_Pelvis')
+      const t = scene.getObjectByName('Bip01_L_Thigh')
+      return { pelvisY: p?.getWorldPosition(new THREE.Vector3()).y ?? null, thighQ: t?.quaternion.toArray() ?? null }
+    }
+    exposeGame({ currentClip: () => clip.current, playingClip, pose })
   }, [actions])
 
   useFrame((_, delta) => {
@@ -64,6 +70,7 @@ export function CharacterModel({ footY }: { footY: number }) {
       climbing: playerAction.climbing,
       airborne: playerAction.airborne,
       landing: now < air.current.landUntil,
+      crouching: playerAction.crouching,
       operating: now < playerAction.operatingUntil,
     }
     const next = pickClip(speed.current, mode, act)
