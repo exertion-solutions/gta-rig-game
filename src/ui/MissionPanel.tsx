@@ -4,6 +4,7 @@ import type { MarkValue, MissionState, Objective } from '../game/missions/types'
 import { useHudStore } from './hudStore'
 import { AudioSettings } from './AudioControls'
 import { Legend } from './Legend'
+import { cardBlob, downloadBlob, missionLink } from './share'
 
 const btn = 'rounded border border-white/20 bg-white/5 px-3 py-1.5 text-sm hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400'
 const primary = 'rounded bg-amber-400 px-3 py-1.5 text-sm font-semibold text-black hover:bg-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white'
@@ -98,6 +99,7 @@ function resultLine(st: MissionState, o: Objective) {
 export function MissionPanel() {
   const { available, mission, start, restart, exit } = useMissionStore()
   const setPanel = useHudStore((s) => s.setPanel)
+  const [copied, setCopied] = useState(false)
   const def = available.find((d) => d.id === mission.missionId)
   const obj = mission.status === 'active' ? def?.objectives[mission.objectiveIndex] : undefined
 
@@ -188,6 +190,18 @@ export function MissionPanel() {
               ))}
             </ul>
             <div className="flex flex-wrap gap-2">
+              <button className={btn} onClick={() => void cardBlob(def, mission.results).then((b) => downloadBlob(b, `mision-${def.id}.png`))} data-testid="card-download">
+                Descargar tarjeta (PNG)
+              </button>
+              <button
+                className={btn}
+                data-testid="link-copy"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(missionLink(window.location.href, def.id)).then(() => setCopied(true), () => setCopied(false))
+                }}
+              >
+                {copied ? 'Enlace copiado' : 'Copiar enlace a esta misión'}
+              </button>
               <button
                 className={primary}
                 onClick={() => {

@@ -9,6 +9,8 @@ type HudState = {
   mapOpen: boolean
   /** Pantalla de título (inicio en un clic). Con navegador automatizado (e2e) arranca cerrada: no tapa ni bloquea. */
   titleOpen: boolean
+  /** Modo foto (P): oculta el HUD y ofrece descargar el PNG del juego. */
+  photoOpen: boolean
   /** Sector en cuyo radio de llegada está el jugador (o la camioneta que conduce). */
   atSector: string | null
   /** Sectores a los que llegó en esta sesión, en orden. */
@@ -18,6 +20,7 @@ type HudState = {
   setPause: (open: boolean) => void
   setMap: (open: boolean) => void
   setTitle: (open: boolean) => void
+  setPhoto: (open: boolean) => void
   setAt: (id: string | null) => void
 }
 
@@ -27,6 +30,7 @@ export const useHudStore = create<HudState>((set) => ({
   pauseOpen: false,
   mapOpen: false,
   titleOpen: typeof navigator !== 'undefined' && !navigator.webdriver,
+  photoOpen: false,
   atSector: null,
   visited: [],
   setPanel: (panelOpen) => set({ panelOpen }),
@@ -34,6 +38,7 @@ export const useHudStore = create<HudState>((set) => ({
   setPause: (pauseOpen) => set({ pauseOpen }),
   setMap: (mapOpen) => set({ mapOpen }),
   setTitle: (titleOpen) => set({ titleOpen }),
+  setPhoto: (photoOpen) => set({ photoOpen }),
   setAt: (atSector) => set((s) => ({ atSector, visited: atSector && !s.visited.includes(atSector) ? [...s.visited, atSector] : s.visited })),
 }))
 

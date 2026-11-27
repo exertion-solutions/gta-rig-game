@@ -17,7 +17,8 @@ export function InteractPrompt() {
   const atEnd = usePlayerStore((s) => s.climbAtEnd)
   const truckE = usePlayerStore(eBelongsToTruck) // E es de la camioneta (subir o bajar): no se ofrece otra cosa con E
   const panelOpen = useHudStore((s) => s.panelOpen)
-  if (panelOpen) return null
+  const photoOpen = useHudStore((s) => s.photoOpen)
+  if (panelOpen || photoOpen) return null
   if (mode === 'truck')
     return (
       <div className={box} data-testid="interact-prompt">

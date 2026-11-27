@@ -30,6 +30,7 @@ Si faltan assets o cambió un hash: `npm run sync-assets` (usa `gh` con acceso a
 | M | panel de misiones | |
 | F | ficha del sector | |
 | N | silenciar / activar el audio | |
+| P | modo foto: oculta el HUD; Intro descarga un PNG con marca de agua | |
 | Esc | cerrar panel | |
 
 Solo escritorio con teclado y ratón (táctil/móvil fuera de alcance por ahora).

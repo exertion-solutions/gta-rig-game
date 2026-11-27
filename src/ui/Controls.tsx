@@ -11,7 +11,7 @@ export function Controls() {
       <p><K k="Espacio" /> saltar · <K k="E" /> usar · <K k="C" /> agacharse</p>
       <p>Clic en el juego: mirar con el mouse</p>
       <p><K k="M" /> misiones · <K k="Tab" /> mapa · <K k="F" /> ficha</p>
-      <p><K k="N" /> sonido · <K k="Esc" /> pausa</p>
+      <p><K k="N" /> sonido · <K k="P" /> foto · <K k="Esc" /> pausa</p>
     </div>
   )
 }

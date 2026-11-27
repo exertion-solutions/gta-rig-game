@@ -68,7 +68,7 @@ export function PauseMenu() {
         <section className="space-y-1 rounded border border-white/10 bg-white/5 p-3 text-sm" data-testid="pause-controls">
           <p className="font-mono text-xs uppercase tracking-[0.14em] text-slate-300">Controles</p>
           <p>W A S D mover · Shift correr (V fija) · C agacharse · Espacio saltar · E usar</p>
-          <p>M misiones · Tab mapa · F ficha · N sonido · Esc pausa</p>
+          <p>M misiones · Tab mapa · F ficha · N sonido · P foto · Esc pausa</p>
           <p>Mando: stick izquierdo mover, derecho mirar, gatillo derecho correr, A saltar, X usar</p>
         </section>
 
