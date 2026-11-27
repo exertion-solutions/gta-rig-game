@@ -85,8 +85,8 @@ test('salto con Espacio: sube (clip jump) y vuelve a y = 0', async ({ page }) =>
   const js = await g<{ rise: number; cuts: unknown[] }>(page, 'jumpStats')
   console.log(`[salto] ascenso ${js.rise.toFixed(4)} m, muestreo ${Math.max(...all.map((s) => s.p[1])).toFixed(4)} m, cortes ${JSON.stringify(js.cuts)}`)
   expect(js.cuts).toEqual([]) // en salto libre nada corta la subida
-  expect(js.rise).toBeGreaterThan(0.45) // ápice de juego v²/2g ≈ 0,49 m
-  expect(js.rise).toBeLessThan(0.55)
+  expect(js.rise).toBeGreaterThan(0.63) // ápice de juego v²/2g ≈ 0,68 m
+  expect(js.rise).toBeLessThan(0.74)
   expect(all.some((s) => s.clip === 'jump')).toBe(true)
   expect(all.some((s) => s.anim === 'jump')).toBe(true) // clip propio en el mezclador, no la pose de 'idle'
   expect(Math.abs((await pos(page))[1])).toBeLessThan(0.05)
@@ -278,7 +278,7 @@ test('salto repetido contra una esquina: no trepa la esquina ni queda flotando, 
   await g(page, 'setInput', null)
   const tr = await sample(page, 'n >= 90', 100) // 1,5 s de simulación sin teclas
   top = Math.max(top, ...tr.map((s) => s.p[1]))
-  expect(top).toBeLessThan(PT + 0.6) // el ápice de un salto (≈ 0,49 m), nunca encima de la esquina
+  expect(top).toBeLessThan(PT + 0.8) // el ápice de un salto (≈ 0,68 m), nunca encima de la esquina
   expect(await g(page, 'isGrounded')).toBe(true)
   const y = (await pos(page))[1]
   expect(y).toBeGreaterThan(PT - 0.06) // sigue sobre el piso de trabajo

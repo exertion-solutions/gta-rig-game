@@ -89,3 +89,24 @@ describe('atLimit (aviso del vallado, QA D-11)', () => {
     expect(atLimit([0, 0, 0], 0.4, B)).toBe(false)
   })
 })
+
+import { ACCEL, approachVelocity } from '../../src/game/player/movement'
+describe('approachVelocity', () => {
+  it('no llega al objetivo en un paso: acelera de a ACCEL*dt', () => {
+    const r = approachVelocity({ vx: 0, vz: 0 }, { vx: 0, vz: -4.5 }, 1 / 60, true)
+    expect(Math.hypot(r.vx, r.vz)).toBeCloseTo(ACCEL.ground / 60)
+  })
+  it('llega y no se pasa del objetivo', () => {
+    expect(approachVelocity({ vx: 4.4, vz: 0 }, { vx: 4.5, vz: 0 }, 1 / 60, true)).toEqual({ vx: 4.5, vz: 0 })
+  })
+  it('en el aire cambia más lento que en el suelo', () => {
+    const g = approachVelocity({ vx: 0, vz: 0 }, { vx: 4.5, vz: 0 }, 1 / 60, true).vx
+    const a = approachVelocity({ vx: 0, vz: 0 }, { vx: 4.5, vz: 0 }, 1 / 60, false).vx
+    expect(a).toBeLessThan(g)
+  })
+  it('frena hasta 0 sin pasarse', () => {
+    let v = { vx: 4.5, vz: 0 }
+    for (let i = 0; i < 30; i++) v = approachVelocity(v, { vx: 0, vz: 0 }, 1 / 60, true)
+    expect(v).toEqual({ vx: 0, vz: 0 })
+  })
+})

@@ -11,8 +11,8 @@ import { PLAYER_GROUPS } from '../world/groups'
 import { nearestInteractable, useValveStore } from '../world/interactables'
 import { INTERACTABLES, LADDERS, MAX_MEASURED_SLOPE_DEG, type LadderVolume } from '../world/walkable'
 import { WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from './climb'
-import { stepVertical, type VState } from './jump'
-import { PLAYER_RADIUS, RESPAWN, STEP_MAX, atLimit, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
+import { JUMP, stepVertical, type VState } from './jump'
+import { PLAYER_RADIUS, RESPAWN, STEP_MAX, approachVelocity, atLimit, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
 import { CharacterModel } from './CharacterModel'
 import { keys, onKeysCleared } from './keys'
 import { teleportTo, usePlayerStore } from './store'
@@ -49,6 +49,8 @@ export function Player() {
   const scene = useThree((s) => s.scene)
   const vs = useRef<VState>({ vy: 0, airMs: 0 })
   const grounded = useRef(true)
+  const vel = useRef({ vx: 0, vz: 0 }) // velocidad horizontal con rampa de aceleración
+  const jumpBuf = useRef(0) // ms restantes del salto pedido antes de aterrizar
   const safe = useRef<Vec3>(RESPAWN)
   const climb = useRef<{ ladder: LadderVolume; p: number } | null>(null)
   const ctl = useRef<ReturnType<typeof world.createCharacterController> | null>(null)
@@ -100,6 +102,8 @@ export function Player() {
         body.current?.setTranslation({ x: p[0], y: p[1] + FOOT, z: p[2] }, true)
         body.current?.setNextKinematicTranslation({ x: p[0], y: p[1] + FOOT, z: p[2] })
         vs.current = { vy: 0, airMs: 0 }
+        vel.current = { vx: 0, vz: 0 }
+        jumpBuf.current = 0
         climb.current = null
         playerAction.climbing = false
         usePlayerStore.setState({ climbing: false })
@@ -142,6 +146,7 @@ export function Player() {
         rb.setTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] }, true)
         rb.setNextKinematicTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] })
         vs.current = { vy: 0, airMs: 0 }
+        vel.current = { vx: 0, vz: 0 }
         rb.setEnabled(true)
       }),
     [],
@@ -166,7 +171,8 @@ export function Player() {
       rb.setNextKinematicTranslation(t)
     }
     const use = pending.use
-    const jump = pending.jump
+    if (pending.jump) jumpBuf.current = JUMP.bufferMs
+    const jump = jumpBuf.current > 0
     pending.use = pending.jump = false
 
     // Modo escalera: cinemático a lo largo del LadderVolume (sin colisión); se suelta en los extremos.
@@ -176,6 +182,7 @@ export function Player() {
       const p = climbStep(cl.p, dir, dt, ladderLength(cl.ladder))
       const end = (p === 1 && dir > 0) || (use && cl.p === 1) ? 'top' : (p === 0 && dir < 0) || (use && cl.p === 0) ? 'bottom' : null
       playerSpeed.current = 0
+      vel.current = { vx: 0, vz: 0 }
       playerAction.climbMoving = p !== cl.p
       playerAction.climbDir = Math.sign(p - cl.p)
       if (end) {
@@ -222,9 +229,11 @@ export function Player() {
       useMissionStore.getState().report({ type: 'interact', targetId: valve.id, state })
     }
 
-    const { vx, vz } = stepMovement(input, yaw, dt)
+    vel.current = approachVelocity(vel.current, stepMovement(input, yaw, dt), dt, grounded.current)
+    const { vx, vz } = vel.current
     const wasAir = vs.current.airMs === Infinity
     vs.current = stepVertical(vs.current, grounded.current, jump, dt)
+    jumpBuf.current = vs.current.airMs === Infinity && !wasAir ? 0 : Math.max(0, jumpBuf.current - dt * 1000)
     if (!wasAir && vs.current.airMs === Infinity) Object.assign(jumpLog, { y0: position[1], apex: position[1], cuts: [] })
     if (vs.current.airMs === Infinity && vs.current.vy > 0) playerAction.airborne = true
     // QA D-10: en el aire, el autostep del controlador "subía" por la esquina mástil/baranda (salto + escalón = 0,78 m) y

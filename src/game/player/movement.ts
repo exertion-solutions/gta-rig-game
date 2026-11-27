@@ -22,6 +22,17 @@ export function stepMovement(input: { x: number; z: number; run: boolean }, yaw:
   return { vx: speed * (x * c - z * s), vz: speed * (-x * s - z * c) }
 }
 
+// Rampa de velocidad (valores de juego): arranque y frenada en ~0,15 s a pie, poco control en el aire (conserva el impulso).
+export const ACCEL = { ground: 30, air: 9 }
+/** Acerca la velocidad actual a la deseada sin pasarse de `rate * dt` m/s por eje: sin arranques ni frenadas instantáneos. */
+export function approachVelocity(cur: { vx: number; vz: number }, want: { vx: number; vz: number }, dt: number, grounded: boolean) {
+  const dx = want.vx - cur.vx
+  const dz = want.vz - cur.vz
+  const d = Math.hypot(dx, dz)
+  const max = (grounded ? ACCEL.ground : ACCEL.air) * dt
+  return d <= max ? { ...want } : { vx: cur.vx + (dx / d) * max, vz: cur.vz + (dz / d) * max }
+}
+
 // Los límites de la locación no son simétricos (X -45..33.5), por eso reciben min/max y no un semi-ancho.
 export function clampToBounds(p: Vec3, b: Bounds): Vec3 {
   return [Math.min(Math.max(p[0], b.minX), b.maxX), p[1], Math.min(Math.max(p[2], b.minZ), b.maxZ)]

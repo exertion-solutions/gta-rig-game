@@ -1,0 +1,16 @@
+const K = ({ k }: { k: string }) => <kbd className="rounded bg-white/15 px-1 font-mono text-xs">{k}</kbd>
+
+// Ayuda de controles siempre visible (solo en pantallas anchas: en angosto no hay lugar sin tapar el juego).
+export function Controls() {
+  return (
+    <div
+      className="mb-2 hidden rounded border border-white/10 bg-[#12161a]/90 px-2.5 py-1.5 text-xs leading-relaxed text-slate-200 sm:block"
+      data-testid="controls"
+    >
+      <p><K k="W A S D" /> mover · <K k="Shift" /> correr</p>
+      <p><K k="Espacio" /> saltar · <K k="E" /> usar</p>
+      <p>Clic en el juego: mirar con el mouse</p>
+      <p><K k="M" /> misiones · <K k="F" /> ficha · <K k="N" /> sonido</p>
+    </div>
+  )
+}

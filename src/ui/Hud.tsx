@@ -6,6 +6,7 @@ import { useAudioStore } from '../audio/mix'
 import { MuteButton, RadioSubtitle } from './AudioControls'
 import { Ficha } from './Ficha'
 import { useHudStore } from './hudStore'
+import { Controls } from './Controls'
 import { Legend } from './Legend'
 import { MissionPanel } from './MissionPanel'
 import { Radar } from './Radar'
@@ -171,6 +172,7 @@ export function Hud() {
           )}
         </div>
         <div className="max-w-[13rem] shrink-0 sm:max-w-xs">
+          <Controls />
           <Legend />
         </div>
       </div>
