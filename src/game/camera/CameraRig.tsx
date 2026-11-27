@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useRapier } from '@react-three/rapier'
 import { useEffect, useRef } from 'react'
+import * as THREE from 'three'
 import { exposeGame } from '../dev'
 import { playerBody } from '../player/Player'
 import { usePlayerStore } from '../player/store'
@@ -22,7 +23,21 @@ export function FollowCamera() {
   const camera = useThree((s) => s.camera)
   const pivot = useRef<{ pivot: Vec3; seq: number } | null>(null)
 
-  useEffect(() => exposeGame({ getCamera: () => camera.position.toArray() }), [camera])
+  useEffect(() => {
+    const frustum = () => {
+      camera.updateMatrixWorld()
+      return new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse))
+    }
+    exposeGame({
+      getCamera: () => camera.position.toArray(),
+      // DEV: ¿se ven estos puntos / esta caja en el cuadro actual? (e2e del encuadre inicial)
+      inFrustum: (pts: number[][]) => {
+        const f = frustum()
+        return pts.map((p) => f.containsPoint(new THREE.Vector3(...p)))
+      },
+      boxInFrustum: (min: number[], max: number[]) => frustum().intersectsBox(new THREE.Box3(new THREE.Vector3(...min), new THREE.Vector3(...max))),
+    })
+  }, [camera])
 
   useFrame((_, delta) => {
     const { position, yaw, pitch, mode, teleportSeq } = usePlayerStore.getState()

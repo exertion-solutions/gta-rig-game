@@ -1,9 +1,18 @@
 import { create } from 'zustand'
+import { getSectors } from '../data/sectors'
 import { RESPAWN, type Vec3 } from './movement'
 
-// La camioneta aparece en el Acceso, desplazada 3,5 m en +Z para no pisar al jugador.
-export const TRUCK_SPAWN: Vec3 = [RESPAWN[0], RESPAWN[1], RESPAWN[2] + 3.5]
-export const TRUCK_SPAWN_HEADING = -Math.PI / 2 // mira a +X (hacia el mástil)
+// Primer cuadro (QA B P0-2): desde el Acceso, mirando al centro de los sectores con equipo (antes yaw 0 = -Z, hacia el
+// borde del mundo con el equipo a la espalda). yaw: avance = (-sen, -cos). Pitch bajo para que entre más del mástil.
+const RIG = getSectors().filter((s) => s.position && s.objectIds.length)
+const RIG_CENTER = [0, 2].map((i) => RIG.reduce((a, s) => a + s.position![i], 0) / RIG.length)
+export const INITIAL_YAW = Math.atan2(-(RIG_CENTER[0] - RESPAWN[0]), -(RIG_CENTER[1] - RESPAWN[2]))
+export const INITIAL_PITCH = 0.12
+
+// La camioneta aparece en el Acceso, 3,5 m a la derecha del jugador (al costado: no tapa el equipo en el primer cuadro)
+// y mirando al equipo.
+export const TRUCK_SPAWN: Vec3 = [RESPAWN[0] + 3.5 * Math.cos(INITIAL_YAW), RESPAWN[1], RESPAWN[2] - 3.5 * Math.sin(INITIAL_YAW)]
+export const TRUCK_SPAWN_HEADING = INITIAL_YAW
 
 export type PlayerState = {
   position: Vec3
@@ -19,8 +28,8 @@ export type PlayerState = {
 
 export const usePlayerStore = create<PlayerState>(() => ({
   position: RESPAWN,
-  yaw: 0,
-  pitch: 0.3,
+  yaw: INITIAL_YAW,
+  pitch: INITIAL_PITCH,
   mode: 'foot',
   teleportSeq: 0,
   climbing: false,
