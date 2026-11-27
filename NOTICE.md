@@ -20,8 +20,9 @@ Construido con `scripts/build-character.py` (Blender 5.2; reconstruido con Blend
 
 Sin clip de **salto** ni de **trepar**: la biblioteca Rocketbox (474 animaciones revisadas en el árbol del repositorio) no
 trae ninguno, y no se obtuvo otra fuente con licencia verificable y descarga directa compatible con este esqueleto Biped
-(Quaternius Universal Animation Library es CC0 pero se descarga solo desde itch.io y usa otro esqueleto). Límite documentado:
-en el juego, `jump` muestra la pose de `idle` y `climb` la de `walk` (detenida cuando no se mueve); no se inventa procedencia.
+(Quaternius Universal Animation Library es CC0 pero se descarga solo desde itch.io y usa otro esqueleto). Por eso `jump` y
+`climb` son clips propios del proyecto, generados en código en tiempo de carga (`src/game/player/poseClips.ts`: rotaciones de
+huesos sobre el primer cuadro de `idle`); no agregan archivos ni otra procedencia.
 
 Texto de la licencia MIT de Rocketbox (https://github.com/microsoft/Microsoft-Rocketbox/blob/master/LICENSE.md):
 

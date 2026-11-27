@@ -42,7 +42,7 @@ async function sample(page: Page, done: string, maxSteps = 2400) {
     async ([cond, max]) => {
       const w = (window as any).__game
       const f = new Function('w', 'n', `return (${cond})`) as (w: unknown, n: number) => boolean
-      const out: { p: number[]; clip: string | null; at: string | null }[] = []
+      const out: { p: number[]; clip: string | null; anim: string | null; at: string | null }[] = []
       const s0 = w.steps()
       let last = -1
       const t0 = performance.now()
@@ -50,7 +50,7 @@ async function sample(page: Page, done: string, maxSteps = 2400) {
         const n = w.steps() - s0
         if (n !== last) {
           last = n
-          out.push({ p: w.getPosition(), clip: w.currentClip(), at: w.getAtSector() })
+          out.push({ p: w.getPosition(), clip: w.currentClip(), anim: w.playingClip(), at: w.getAtSector() })
           if (f(w, n) || n >= (max as number)) break
         }
         await new Promise((r) => requestAnimationFrame(r))
@@ -88,6 +88,7 @@ test('salto con Espacio: sube (clip jump) y vuelve a y = 0', async ({ page }) =>
   expect(js.rise).toBeGreaterThan(0.45) // ápice de juego v²/2g ≈ 0,49 m
   expect(js.rise).toBeLessThan(0.55)
   expect(all.some((s) => s.clip === 'jump')).toBe(true)
+  expect(all.some((s) => s.anim === 'jump')).toBe(true) // clip propio en el mezclador, no la pose de 'idle'
   expect(Math.abs((await pos(page))[1])).toBeLessThan(0.05)
 })
 
@@ -101,6 +102,7 @@ test('escalera vertical A3: sube al piso de enganche, se queda (sin reubicar), c
   const up = await sample(page, 'w.climbState() === null')
   await g(page, 'setInput', null)
   expect(up.some((s) => s.clip === 'climb')).toBe(true)
+  expect(up.some((s) => s.anim === 'climb')).toBe(true) // clip propio de trepar, no 'walk'
   // a mitad de camino no cuenta ningún piso
   const mid = up.find((s) => s.p[1] > 11 && s.p[1] < 13)
   expect(mid).toBeTruthy()
