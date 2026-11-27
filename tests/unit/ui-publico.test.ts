@@ -13,6 +13,8 @@ const norm = (f: string) => f.replace(/\\/g, '/')
 
 // Datos internos: informe no publicado, número de serie y fabricante, marca comercial.
 const INTERNAL = /informe técnico interno|S\/N|\bCPC\b|Koomey/
+// Audio (mp3): bytes de síntesis propia, sin texto; leído como utf8 puede dar un falso positivo por azar (3 bytes = "S/N").
+const scan = (fs: string[]) => fs.filter((f) => !/\.mp3$/.test(f))
 
 describe('public/ y src/ sin datos internos', () => {
   it('public/ no tiene ningún .meta.json', () => {
@@ -20,7 +22,7 @@ describe('public/ y src/ sin datos internos', () => {
   })
   // GLB y decoders incluidos: se leen como texto para buscar las cadenas en sus bloques JSON.
   it.each(['public', 'src'])('%s/ no contiene informe interno, S/N, fabricante ni marca', (dir) => {
-    const hits = files(dir).filter((f) => INTERNAL.test(readFileSync(f, 'utf8'))).map(norm)
+    const hits = scan(files(dir)).filter((f) => INTERNAL.test(readFileSync(f, 'utf8'))).map(norm)
     expect(hits).toEqual([])
   })
 })
@@ -68,6 +70,6 @@ describe.skipIf(!existsSync('dist'))('dist/ sin datos internos', () => {
     expect(files('dist').map(norm).filter((f) => f.endsWith('.meta.json'))).toEqual([])
   })
   it('no contiene informe interno, S/N, fabricante ni marca', () => {
-    expect(files('dist').filter((f) => INTERNAL.test(readFileSync(f, 'utf8'))).map(norm)).toEqual([])
+    expect(scan(files('dist')).filter((f) => INTERNAL.test(readFileSync(f, 'utf8'))).map(norm)).toEqual([])
   })
 })

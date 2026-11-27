@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { useMissionStore } from '../game/missions/store'
 import { assetUrl } from '../game/world/assetUrl'
 import { busGain, useAudioStore } from './mix'
-import { LINK_LINES, createRadioQueue, missionLines, readMs, splitSubtitles, voiceFile, type Line, type VoiceManifest } from './radio'
+import { LINK_LINES, chunkTimes, createRadioQueue, missionLines, readMs, splitSubtitles, voiceFile, voiceMs, type Line, type VoiceManifest } from './radio'
 
 /** Subtítulo en pantalla (siempre visible mientras suena una línea). */
 export const useRadioStore = create<{ line: Line | null; subtitle: string | null }>(() => ({ line: null, subtitle: null }))
@@ -16,6 +16,7 @@ let timer: ReturnType<typeof setTimeout> | undefined
 let audio: HTMLAudioElement | null = null
 let chunks: string[] = []
 let chunk = 0
+let times: number[] = [] // ms de cada subtítulo: reparto de la duración de la voz, o tiempo de lectura
 let textDone = false
 let hold = false // DEV: congela el subtítulo actual (los e2e lo miden sin depender del reloj)
 
@@ -46,7 +47,7 @@ function show() {
       textDone = true
       maybeDone()
     }
-  }, readMs(chunks[chunk]))
+  }, times[chunk])
 }
 
 function play(line: Line | null) {
@@ -56,8 +57,12 @@ function play(line: Line | null) {
   chunks = splitSubtitles(line.text)
   chunk = 0
   textDone = false
+  times = chunks.map(readMs)
   const file = voiceFile(line, manifest)
-  if (file) {
+  // Silenciado (mute o volumen 0): ni se pide el archivo, quedan los subtítulos con su tiempo de lectura.
+  if (file && busGain(useAudioStore.getState().mix, 'voice') > 0) {
+    const ms = voiceMs(line, manifest)
+    if (ms) times = chunkTimes(chunks, ms) // subtítulos sincronizados con la voz
     const a = (audio = new Audio(assetUrl(`audio/voice/${file}`)))
     a.volume = busGain(useAudioStore.getState().mix, 'voice')
     const end = () => {
@@ -66,7 +71,11 @@ function play(line: Line | null) {
       maybeDone()
     }
     a.onended = a.onerror = end
-    a.play().catch(end) // sin gesto previo o sin códec: quedan los subtítulos
+    a.play().catch(() => {
+      // sin gesto previo o sin códec: quedan los subtítulos, al ritmo de lectura
+      if (audio === a) times = chunks.map(readMs)
+      end()
+    })
   }
   show()
 }

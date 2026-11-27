@@ -55,7 +55,21 @@ export function lineHash(text: string): string {
   return h.toString(16).padStart(8, '0')
 }
 
-export type VoiceManifest = Record<string, { file: string; hash: string }>
+/** Entrada del manifest (scripts/gen-voice.mjs): `duration` en segundos; el resto es informativo (texto, sha256). */
+export type VoiceEntry = { file: string; hash: string; duration?: number; text?: string; sha256?: string }
+export type VoiceManifest = Record<string, VoiceEntry>
+
+/** Duración (ms) de la voz de la línea, si el manifest la trae y es vigente; null = tiempo de lectura. */
+export const voiceMs = (line: Line, manifest: VoiceManifest): number | null => {
+  const d = voiceFile(line, manifest) && manifest[line.id].duration
+  return typeof d === 'number' && d > 0 ? d * 1000 : null
+}
+
+/** Reparte la duración de la voz entre los subtítulos en proporción a su largo (suman exactamente `totalMs`). */
+export function chunkTimes(chunks: string[], totalMs: number): number[] {
+  const len = chunks.reduce((a, c) => a + c.length, 0) || 1
+  return chunks.map((c) => (totalMs * c.length) / len)
+}
 
 /** Archivo de voz de la línea: solo si el manifest la lista y su hash coincide con el texto actual (si no, null: subtítulos). */
 export const voiceFile = (line: Line, manifest: VoiceManifest): string | null => {
