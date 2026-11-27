@@ -1,14 +1,10 @@
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useEffect } from 'react'
-import { FollowCamera } from '../game/camera/CameraRig'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { getSectors } from '../game/data/sectors'
 import { exposeGame } from '../game/dev'
 import { loadMissionDefs } from '../game/missions'
 import { ObjectiveMarker, SectorReporter } from '../game/missions/MissionRuntime'
 import { useMissionStore } from '../game/missions/store'
-import { Player } from '../game/player/Player'
-import { Truck } from '../game/vehicle/Truck'
-import { Ground, PhysicsWorld, RigColliders, WalkableColliders } from '../game/world/Ground'
 import { RigScene } from '../game/world/loadRig'
 import { Valves } from '../game/world/Valve'
 import { INTERACTABLES } from '../game/world/walkable'
@@ -16,9 +12,14 @@ import { InteractPrompt } from '../ui/InteractPrompt'
 import { SceneProbes, ScenarioAdditions } from '../game/world/scenario/Additions'
 import { Hud } from '../ui/Hud'
 import { useHudStore } from '../ui/hudStore'
+import { Loading } from '../ui/Loading'
+
+// Rapier (física) en un chunk aparte: el primer frame no espera a descargar y compilar su WASM.
+const PhysicsScene = lazy(() => import('../game/world/PhysicsScene'))
 
 // Cámara de seguimiento en tercera persona (FollowCamera); sigue al jugador, y a la camioneta cuando se conduce.
 export function App() {
+  const [physicsReady, setPhysicsReady] = useState(false)
   useEffect(() => {
     let live = true
     void loadMissionDefs().then((defs) => {
@@ -39,14 +40,9 @@ export function App() {
       <Canvas camera={{ position: [-40, 30, 50], fov: 50, far: 500 }} style={{ height: '100vh' }}>
         <color attach="background" args={['#9fc3e8']} />
         <Suspense fallback={null}>
-          <PhysicsWorld>
-            <Ground />
-            <RigColliders />
-            <WalkableColliders />
-            <Player />
-            <Truck />
-            <FollowCamera />
-          </PhysicsWorld>
+          <Suspense fallback={null}>
+            <PhysicsScene onReady={() => setPhysicsReady(true)} />
+          </Suspense>
           <RigScene />
           <ScenarioAdditions />
           <Valves />
@@ -57,6 +53,7 @@ export function App() {
       </Canvas>
       <Hud />
       <InteractPrompt />
+      <Loading physicsReady={physicsReady} />
     </>
   )
 }

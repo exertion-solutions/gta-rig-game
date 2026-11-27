@@ -13,6 +13,7 @@ import { WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladd
 import { stepVertical, type VState } from './jump'
 import { PLAYER_RADIUS, RESPAWN, STEP_MAX, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
 import { CharacterModel } from './CharacterModel'
+import { keys } from './keys'
 import { teleportTo, usePlayerStore } from './store'
 
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
@@ -23,7 +24,6 @@ const MAX_SLOPE_DEG = MAX_MEASURED_SLOPE_DEG + 1
 const HAND_Y = 1.0 // altura de las manos sobre los pies (juego) para el alcance de una válvula
 const OPERATE_MS = 1500 // duración del clip de operar tras pulsar E (juego)
 const FACING_COS = 0.7 // W engancha la escalera solo mirando hacia ella
-export const keys = new Set<string>()
 // Pulsaciones pendientes (se consumen en el paso de física). Con un panel abierto el Hud corta las teclas antes.
 const pending = { jump: false, use: false }
 let steps = 0 // pasos de física del jugador (DEV: los e2e esperan pasos reales, no tiempo)

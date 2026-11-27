@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { getSectors } from '../game/data/sectors'
 import { useMissionStore } from '../game/missions/store'
-import { keys } from '../game/player/Player'
+import { keys } from '../game/player/keys'
 import { Ficha } from './Ficha'
 import { useHudStore } from './hudStore'
 import { Legend } from './Legend'

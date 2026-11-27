@@ -3,7 +3,7 @@ import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier, type Rapier
 import { useEffect, useMemo, useRef } from 'react'
 import { exposeGame } from '../dev'
 import { PLAYER_RADIUS, needsRespawn, type Vec3 } from '../player/movement'
-import { keys } from '../player/Player'
+import { keys } from '../player/keys'
 import { TRUCK_SPAWN, TRUCK_SPAWN_HEADING, teleportTo, usePlayerStore } from '../player/store'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { toggleMode } from './enterExit'
