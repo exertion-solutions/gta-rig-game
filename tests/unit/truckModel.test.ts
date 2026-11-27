@@ -1,24 +1,53 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import type * as THREE from 'three'
-import { approach, buildTruckModel, driveCommand, headlightsOn, inclinationDeg, leanTarget, steerLimit, tiltTimer, TRUCK } from '../../src/game/vehicle/truckModel'
+import { NodeIO } from '@gltf-transform/core'
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
+import { MeshoptDecoder } from 'meshoptimizer'
+import * as THREE from 'three'
+import { approach, driveCommand, headlightsOn, inclinationDeg, leanTarget, steerLimit, tiltTimer, truckModelFrom, TRUCK, WHEEL_POINTS } from '../../src/game/vehicle/truckModel'
 
-function countTriangles(root: THREE.Object3D) {
-  let n = 0
-  root.traverse((o) => {
-    const g = (o as THREE.Mesh).geometry as THREE.BufferGeometry | undefined
-    if (g) n += (g.index ? g.index.count : g.attributes.position.count) / 3
-  })
-  return n
-}
+const readPickup = () => new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': MeshoptDecoder }).read('public/models/vehicle/pickup.glb')
 
 const qx = (a: number) => ({ x: Math.sin(a / 2), y: 0, z: 0, w: Math.cos(a / 2) })
 
 describe('truckModel', () => {
-  it('modelo procedural low-poly: <8k triángulos y 4 ruedas', () => {
-    const m = buildTruckModel()
-    expect(countTriangles(m.group)).toBeLessThan(8000)
+  it('pickup.glb: <12k triángulos, sin texturas (ni texto ni logos) y ruedas donde las pone la física', async () => {
+    const root = (await readPickup()).getRoot()
+    let tris = 0
+    for (const m of root.listMeshes()) for (const p of m.listPrimitives()) tris += (p.getIndices() ?? p.getAttribute('POSITION')!).getCount() / 3
+    expect(tris).toBeGreaterThan(1000)
+    expect(tris).toBeLessThan(12000)
+    expect(root.listTextures()).toHaveLength(0)
+    const node = (n: string) => root.listNodes().find((o) => o.getName() === n)!
+    ;['FL', 'FR', 'RL', 'RR'].forEach((k, i) => {
+      const t = node(`wheel_${k}`).getTranslation()
+      const p = WHEEL_POINTS[i]
+      expect(t[0]).toBeCloseTo(p[0], 2)
+      expect(t[1]).toBeCloseTo(p[1] - TRUCK.suspensionRest, 2)
+      expect(t[2]).toBeCloseTo(p[2], 2)
+      expect(node(`tire_${k}`).getParentNode()).toBe(node(`wheel_${k}`))
+    })
+  })
+  it('truckModelFrom: arma el modelo con los nodos y materiales del GLB y falla claro si falta uno', async () => {
+    const root = (await readPickup()).getRoot()
+    // misma jerarquía y nombres que el GLB, sin geometría (el cargador de three necesita navegador)
+    const scene = new THREE.Group()
+    const made = new Map<unknown, THREE.Object3D>()
+    for (const n of root.listNodes()) {
+      const mat = n.getMesh()?.listPrimitives()[0].getMaterial()
+      const o = mat ? new THREE.Mesh(undefined, Object.assign(new THREE.MeshStandardMaterial(), { name: mat.getName() })) : new THREE.Group()
+      o.name = n.getName()
+      made.set(n, o)
+    }
+    for (const n of root.listNodes()) (made.get(n.getParentNode()) ?? scene).add(made.get(n)!)
+    const m = truckModelFrom(scene)
     expect(m.wheels).toHaveLength(4)
+    expect(m.body.children.length).toBeGreaterThan(5)
+    expect(m.headMat.name).toBe('truck_headlight')
+    expect(m.tailMat.name).toBe('truck_taillight')
+    expect(truckModelFrom(scene).beam).toBe(m.beam) // remontaje: no duplica el haz
+    scene.getObjectByName('wheel_RL')!.name = 'otra'
+    expect(() => truckModelFrom(scene)).toThrow(/wheel_RL/)
   })
   it('inclinationDeg: 0 en el plano, 90 de costado, 180 volcada', () => {
     expect(inclinationDeg({ x: 0, y: 0, z: 0, w: 1 })).toBeCloseTo(0, 6)
@@ -76,12 +105,5 @@ describe('truckModel', () => {
     expect(headlightsOn(2)).toBe(true)
     expect(headlightsOn(6.2)).toBe(true)
     expect(headlightsOn(8)).toBe(false)
-  })
-  it('modelo: luces, carrocería y ruedas con llanta expuestos; sin texto ni logos', () => {
-    const m = buildTruckModel()
-    expect(m.body.children.length).toBeGreaterThan(5)
-    expect(m.headlights.length).toBe(2)
-    expect(m.taillights.length).toBe(2)
-    m.group.traverse((o) => expect((o as any).isSprite).toBeFalsy())
   })
 })

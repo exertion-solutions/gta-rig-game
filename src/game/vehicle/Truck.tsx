@@ -1,3 +1,4 @@
+import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierRigidBody } from '@react-three/rapier'
 import { useEffect, useMemo, useRef } from 'react'
@@ -9,10 +10,14 @@ import { uiBlocking } from '../../ui/hudStore'
 import { TRUCK_SPAWN, TRUCK_SPAWN_HEADING, teleportTo, usePlayerStore } from '../player/store'
 import { truckSpeed } from '../player/telemetry'
 import { useTime } from '../world/DayNight'
+import { assetUrl, DRACO_PATH } from '../world/assetUrl'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { PLAYER_GROUPS, TRUCK_GROUPS } from '../world/groups'
 import { toggleMode } from './enterExit'
-import { TRUCK, WHEEL_POINTS, approach, buildTruckModel, driveCommand, headlightsOn, inclinationDeg, leanTarget, tiltTimer } from './truckModel'
+import { TRUCK, WHEEL_POINTS, approach, driveCommand, headlightsOn, inclinationDeg, leanTarget, tiltTimer, truckModelFrom } from './truckModel'
+
+const PICKUP_URL = assetUrl('models/vehicle/pickup.glb')
+useGLTF.preload(PICKUP_URL, DRACO_PATH)
 
 const FIXED_DT = 1 / 60 // = timeStep por defecto de <Physics>
 const DROP = 0.1 // la camioneta nace así de alto sobre su posición de reposo y asienta sobre la suspensión
@@ -65,7 +70,8 @@ export function respawnTruck() {
 export function Truck() {
   const body = useRef<RapierRigidBody>(null)
   const { world, rapier } = useRapier()
-  const model = useMemo(() => buildTruckModel(), [])
+  const { scene } = useGLTF(PICKUP_URL, DRACO_PATH)
+  const model = useMemo(() => truckModelFrom(scene), [scene])
   const ctl = useRef<ReturnType<typeof world.createVehicleController> | null>(null)
   const ctlBody = useRef<RapierRigidBody | null>(null)
   const tilt = useRef(0)

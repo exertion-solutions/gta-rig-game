@@ -31,7 +31,7 @@ agachado ~0,8 m/s, camioneta ~12 m/s tras 2,4 s de acelerador y se detiene al fr
 - Mando: mapeo puro (`mapGamepad`) conectado a jugador y camioneta (mover, mirar, correr, saltar, usar).
 - Pausa (Esc) con ajustes guardados (sensibilidad, invertir Y, volumen, calidad), mapa completo (Tab), pantalla de título con inicio en un clic y carga con progreso real.
 - Realismo: cielo HDRI, suelo PBR, props, sombras de contacto, posproceso (bloom y ACES en calidad alta) y calidad adaptativa enlazada al ajuste.
-- Camioneta: modelo procedural con cabina, caja, vidrios, luces, llantas, suspensión visual, giro según la velocidad y faros de noche.
+- Camioneta: modelo propio en GLB (`public/models/vehicle/pickup.glb`, 11.172 triángulos, 122 KB, generado con `scripts/build-truck.py` en Blender; reemplaza al procedural) con cabina, caja, vidrios, luces, llantas, suspensión visual, giro según la velocidad y faros de noche. Captura: `docs/img/camioneta-glb.png`. Límite: revisada en una sola captura de día; faros de noche y luz de freno sin revisar a ojo con este modelo.
 - Cámara: el personaje se desvanece cuando la cámara queda pegada a un obstáculo y el alejamiento se suaviza (cierra QA-5).
 - Compartible: modo foto (P), clip de hasta 10 s (R), tarjeta de misión completada y enlace `?mision=`.
 - Robustez: la calidad automática arranca según la GPU (integrada o desconocida = Media; RTX, GTX o Radeon RX = Alta), baja de nivel en ~30 cuadros si cae de 30 FPS, y un error en el posproceso o en la escena ya no deja la pantalla en blanco (`ErrorBoundary`: el posproceso se apaga solo; si falla la escena hay aviso y botón para reintentar en calidad baja). Tests: `tests/unit/robustez.test.ts`. Límite: el aviso de la escena no se probó provocando un fallo real de WebGL.

@@ -70,6 +70,8 @@ Tres assets CC0 (dominio público) de Poly Haven (https://polyhaven.com/license)
 
 El resto del realismo (conos, vallado, cartelería, marcas de suelo, sombras de contacto) es procedural y propio.
 
+La camioneta (`public/models/vehicle/pickup.glb`) es un modelo propio, sin marcas ni texto, generado por `scripts/build-truck.py` (Blender) y comprimido con meshopt.
+
 ## Voces y ambiente de audio
 
 - **Voces de la radio** (`public/audio/voice/*.mp3`): síntesis de voz **local**, sin servicios en la nube ni claves. El texto sale de las
