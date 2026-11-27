@@ -3,10 +3,11 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { create } from 'zustand'
 import { exposeGame } from '../dev'
+import { QUALITY_PROFILE, useQualityStore } from '../quality'
 import { LOCACION_BOUNDS as B } from './frame'
 
-// Ciclo día/noche: sol direccional con sombra, cielo de gradiente por shader y luz hemisférica. Sin SSAO ni bloom:
-// de noche solo se encienden (emissive) las luminarias de la torre (material sk575_mastil_luz del GLB).
+// Ciclo día/noche: sol direccional con sombra y luz hemisférica; el cielo, la niebla y los reflejos están en
+// Environment.tsx (usan lightingAt). De noche se encienden (emissive) las luminarias de la torre (sk575_mastil_luz).
 // De noche el sol queda bajo (elevación 0,15) y tenue: hace de luna y sigue proyectando sombra.
 const START_HOUR = 10 // media mañana
 const HOURS_PER_SECOND = 1 / 60 // 1 hora de juego por minuto real: un día dura 24 min
@@ -78,8 +79,20 @@ export type Lighting = {
   skyBottom: THREE.Color
 }
 
-const C = { topNight: new THREE.Color('#0b1426'), topDay: new THREE.Color('#5f9ad6'), botNight: new THREE.Color('#1c2333'), botDay: new THREE.Color('#cfe1f2') }
-export const newLighting = (): Lighting => ({ sunDir: [0, 1, 0], sun: 0, hemi: 0, lamps: 0, skyTop: new THREE.Color(), skyBottom: new THREE.Color() })
+const C = {
+  topNight: new THREE.Color('#0b1426'),
+  topDay: new THREE.Color('#5f9ad6'),
+  botNight: new THREE.Color('#1c2333'),
+  botDay: new THREE.Color('#cfe1f2'),
+}
+export const newLighting = (): Lighting => ({
+  sunDir: [0, 1, 0],
+  sun: 0,
+  hemi: 0,
+  lamps: 0,
+  skyTop: new THREE.Color(),
+  skyBottom: new THREE.Color(),
+})
 
 /** Luz para una hora: el sol sale a las 6 y se pone a las 18; de noche queda luz ambiente para ver el equipo.
  *  Escribe en `out` (sin asignar memoria por cuadro). */
@@ -101,21 +114,6 @@ export function lightingAt(hour: number, out: Lighting = newLighting()): Lightin
   return out
 }
 
-const SKY_VERT = /* glsl */ `
-varying vec3 vDir;
-void main() {
-  vDir = normalize(position);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}`
-const SKY_FRAG = /* glsl */ `
-uniform vec3 top;
-uniform vec3 bottom;
-varying vec3 vDir;
-void main() {
-  gl_FragColor = vec4(mix(bottom, top, smoothstep(-0.05, 0.5, vDir.y)), 1.0);
-  #include <colorspace_fragment>
-}`
-
 export function DayNight() {
   const scene = useThree((s) => s.scene)
   const gl = useThree((s) => s.gl)
@@ -123,18 +121,20 @@ export function DayNight() {
   const hemi = useRef<THREE.HemisphereLight>(null)
   const lamps = useRef<THREE.MeshStandardMaterial[]>([])
   const light = useMemo(newLighting, [])
-  const sky = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        uniforms: { top: { value: light.skyTop }, bottom: { value: light.skyBottom } }, // mismos Color: lightingAt los actualiza
-        vertexShader: SKY_VERT,
-        fragmentShader: SKY_FRAG,
-        side: THREE.BackSide,
-        depthWrite: false,
-      }),
-    [light],
-  )
-  useEffect(() => () => sky.dispose(), [sky])
+  const quality = useQualityStore((s) => s.quality)
+
+  // calidad: sombra del sol (tamaño del mapa o apagada). Alta = SHADOW.mapSize (el e2e la lee del renderer).
+  useEffect(() => {
+    const s = sun.current
+    if (!s) return
+    const p = QUALITY_PROFILE[quality]
+    s.castShadow = p.shadows
+    if (s.shadow.mapSize.x !== p.shadowMap) {
+      s.shadow.mapSize.set(p.shadowMap, p.shadowMap)
+      s.shadow.map?.dispose()
+      s.shadow.map = null // se vuelve a crear con el tamaño nuevo en el próximo cuadro
+    }
+  }, [quality])
 
   useEffect(() => {
     // el blanco no cuelga de la escena: su matriz se fija una vez
@@ -174,7 +174,10 @@ export function DayNight() {
     lightingAt(exact, light)
     if (sun.current) {
       sun.current.intensity = light.sun
-      sun.current.position.set(...light.sunDir).multiplyScalar(SUN_DISTANCE).add(CENTER)
+      sun.current.position
+        .set(...light.sunDir)
+        .multiplyScalar(SUN_DISTANCE)
+        .add(CENTER)
     }
     if (hemi.current) hemi.current.intensity = light.hemi
     for (const m of lamps.current) m.emissiveIntensity = light.lamps
@@ -196,9 +199,6 @@ export function DayNight() {
         shadow-bias={-0.0005}
         shadow-normalBias={0.03}
       />
-      <mesh material={sky} frustumCulled={false} renderOrder={-1} name="cielo">
-        <sphereGeometry args={[400, 32, 16]} />
-      </mesh>
     </>
   )
 }

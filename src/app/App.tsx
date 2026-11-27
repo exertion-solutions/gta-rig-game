@@ -8,7 +8,12 @@ import { exposeGame } from '../game/dev'
 import { loadMissionDefs } from '../game/missions'
 import { ObjectiveMarker, SectorReporter } from '../game/missions/MissionRuntime'
 import { useMissionStore } from '../game/missions/store'
+import { ContactShadows } from '../game/world/ContactShadows'
 import { DayNight } from '../game/world/DayNight'
+import { Environment } from '../game/world/Environment'
+import { Post } from '../game/world/Post'
+import { Props } from '../game/world/Props'
+import { SiteDressing } from '../game/world/SiteDressing'
 import { RigScene } from '../game/world/loadRig'
 import { ValveHighlight, Valves } from '../game/world/Valve'
 import { INTERACTABLES } from '../game/world/walkable'
@@ -53,14 +58,19 @@ export function App() {
             <PhysicsScene onReady={() => setPhysicsReady(true)} />
           </Suspense>
           <DayNight />
+          <Environment />
           <RigScene />
           <ScenarioAdditions />
+          <SiteDressing />
+          <Props />
+          <ContactShadows />
           <Valves />
           <ValveHighlight />
           <SceneProbes />
           <SectorReporter />
           <ObjectiveMarker />
         </Suspense>
+        <Post />
       </Canvas>
       <Hud />
       <InteractPrompt />

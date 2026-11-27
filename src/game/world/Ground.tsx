@@ -4,6 +4,7 @@ import { useMemo, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { DRACO_PATH, rigUrl } from './assetUrl'
 import { buildColliders } from './colliders'
+import { useGroundMaterial } from './GroundMaterial'
 import { LOCACION_BOUNDS as B, LOCACION_M, RIG_PARTS } from './frame'
 import { stripLines } from './stripLines'
 import { STAIR_GROUPS, TRUCK_BLOCK_GROUPS } from './groups'
@@ -18,6 +19,7 @@ export function PhysicsWorld({ children }: { children: ReactNode }) {
 }
 
 export function Ground() {
+  const material = useGroundMaterial(LOCACION_M.x, LOCACION_M.z)
   return (
     <RigidBody type="fixed" colliders={false}>
       {/* suelo liso: tapa en y=0 */}
@@ -26,9 +28,8 @@ export function Ground() {
       <CuboidCollider args={[T, FENCE_HALF_H, LOCACION_M.z / 2]} position={[B.maxX + T, FENCE_HALF_H, 0]} />
       <CuboidCollider args={[LOCACION_M.x / 2, FENCE_HALF_H, T]} position={[mx, FENCE_HALF_H, B.minZ - T]} />
       <CuboidCollider args={[LOCACION_M.x / 2, FENCE_HALF_H, T]} position={[mx, FENCE_HALF_H, B.maxZ + T]} />
-      <mesh rotation-x={-Math.PI / 2} position={[mx, 0, 0]} receiveShadow>
+      <mesh rotation-x={-Math.PI / 2} position={[mx, 0, 0]} receiveShadow material={material}>
         <planeGeometry args={[LOCACION_M.x, LOCACION_M.z]} />
-        <meshStandardMaterial color="#8a7a5a" />
       </mesh>
     </RigidBody>
   )
@@ -37,7 +38,10 @@ export function Ground() {
 // Cajas fijas por componente 'collide', a partir de los límites de cada GLB (sin líneas). Mástil, BOP y piletas no:
 // su bbox completo tapaba el piso de trabajo y las cubiertas; los cubren las cajas medidas de WalkableColliders.
 export function RigColliders() {
-  const parts = RIG_PARTS.filter((p) => p.role === 'collide').map((p) => ({ p, gltf: useGLTF(rigUrl(p.glb), DRACO_PATH) }))
+  const parts = RIG_PARTS.filter((p) => p.role === 'collide').map((p) => ({
+    p,
+    gltf: useGLTF(rigUrl(p.glb), DRACO_PATH),
+  }))
   const descs = useMemo(
     () =>
       buildColliders(
@@ -45,7 +49,11 @@ export function RigColliders() {
           .map(({ p, gltf }) => {
             const c = gltf.scene.clone(true)
             stripLines(c)
-            return { id: p.id, role: p.role, bounds: new THREE.Box3().setFromObject(c) }
+            return {
+              id: p.id,
+              role: p.role,
+              bounds: new THREE.Box3().setFromObject(c),
+            }
           })
           .filter((l) => !l.bounds.isEmpty()), // Box3 vacío => min/max infinitos => collider NaN
         REPLACED_PARTS,
@@ -75,7 +83,11 @@ export function WalkableColliders() {
           position={c.center}
           rotation={c.rot}
           // sin grupo explícito si no hace falta: collisionGroups={undefined} dejaba la caja sin colisión (grupo 0)
-          {...(c.only ? { collisionGroups: c.only === 'stair' ? STAIR_GROUPS : TRUCK_BLOCK_GROUPS } : {})}
+          {...(c.only
+            ? {
+                collisionGroups: c.only === 'stair' ? STAIR_GROUPS : TRUCK_BLOCK_GROUPS,
+              }
+            : {})}
         />
       ))}
     </RigidBody>

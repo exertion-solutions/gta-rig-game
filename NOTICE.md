@@ -58,6 +58,18 @@ piso de enganche. Geometría, materiales y la
 textura de reja (procedimental, generada por el script) son propios; sin assets ni texturas de terceros. Escenario
 ilustrativo añadido por el juego, no as-built (`docs/scenario-additions.md`).
 
+## Realismo visual (cielo, suelo y tambor)
+
+Tres assets CC0 (dominio público) de Poly Haven (https://polyhaven.com/license), sin marcas ni logos:
+
+| Archivo | Asset | Autor | Licencia | Fuente |
+|---|---|---|---|---|
+| `public/hdri/sky_1k.hdr` (idéntico byte a byte al 1k original, sha256 fd94c849...) | Kloofendal 48d Partly Cloudy (Pure Sky) | Greg Zaal; ediciones del cielo: Jarod Guest | CC0 | https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky |
+| `public/textures/ground_{diff,nor,rough}.webp` (conversión a webp) | Gravel Ground 01 | Rob Tuytel | CC0 | https://polyhaven.com/a/gravel_ground_01 |
+| `public/models/props/barrel.glb` (comprimido con meshopt/draco) | Barrel 03 | Serhii Khromov | CC0 | https://polyhaven.com/a/barrel_03 |
+
+El resto del realismo (conos, vallado, cartelería, marcas de suelo, sombras de contacto) es procedural y propio.
+
 ## Publicación
 
 El build queda listo para servirse bajo una sub-ruta (`npm run build:pages`), pero **publicarlo** (GitHub Pages u otro
