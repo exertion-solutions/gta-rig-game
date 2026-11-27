@@ -106,7 +106,8 @@ export const CLIP_MS = 10_000
 export const clipSecondsLeft = (elapsedMs: number) => Math.max(0, Math.ceil((CLIP_MS - elapsedMs) / 1000))
 export const clipDone = (elapsedMs: number) => elapsedMs >= CLIP_MS
 export const clipFileName = () => 'clip-locacion.webm'
-const CLIP_MIMES = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+// vp8 primero: codifica mucho más liviano que vp9 por software, y todos los navegadores con MediaRecorder lo traen
+const CLIP_MIMES = ['video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm']
 export const pickClipMime = (isSupported: (t: string) => boolean) => CLIP_MIMES.find(isSupported) ?? null
 
 export function downloadBlob(blob: Blob, name: string) {

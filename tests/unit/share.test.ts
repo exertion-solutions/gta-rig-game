@@ -4,7 +4,7 @@ import { cardLines, clipDone, clipFileName, clipSecondsLeft, missionLink, parseM
 
 describe('clip grabable', () => {
   it('elige el primer mimeType soportado, o null', () => {
-    expect(pickClipMime((t) => t === 'video/webm;codecs=vp8')).toBe('video/webm;codecs=vp8')
+    expect(pickClipMime((t) => t !== 'video/webm')).toBe('video/webm;codecs=vp8')
     expect(pickClipMime((t) => t === 'video/webm')).toBe('video/webm')
     expect(pickClipMime(() => false)).toBeNull()
   })
