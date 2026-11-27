@@ -1,6 +1,6 @@
 # Aviso
 
-- Los GLB de `public/models/rig10/` y los `.meta.json` y GLB sin uso de `vendor/visor/models/` provienen del visor (commit en `assets.lock.json`). Los `.meta.json` son internos y no se copian al build. El visor es privado y sin licencia: **este repo debe permanecer privado** hasta autorización escrita del dueño.
+- Los GLB de `public/models/rig10/` y los `.meta.json` y GLB sin uso de `vendor/visor/models/` provienen del visor (commit en `assets.lock.json`). Los `.meta.json` son internos y no se copian al build. El visor es de Exertion Solutions; el repo se hizo público el 2026-11-27 con la autorización del dueño del visor (declarada por Jorge, quien ordenó la publicación).
 - Signo lateral (+Y = este) sin verificar contra el layout interno.
 - Geometría de confianza B/C, `as_built: false`: aproximada, no apta para fabricación ni certificada.
 - El juego es ilustrativo. No es simulación, cálculo ni validación de seguridad.
@@ -61,8 +61,7 @@ ilustrativo añadido por el juego, no as-built (`docs/scenario-additions.md`).
 ## Publicación
 
 El build queda listo para servirse bajo una sub-ruta (`npm run build:pages`), pero **publicarlo** (GitHub Pages u otro
-hosting, o hacer público el repo) requiere la autorización escrita del dueño del visor: un sitio de Pages es público
-aunque el repo sea privado y expone los GLB. Sin esa autorización no se publica. El build no incluye los `.meta.json`
+hosting, o hacer público el repo) requiere la autorización del dueño del visor, otorgada el 2026-11-27 (ver arriba). Un sitio de Pages es público y expone los GLB. El build no incluye los `.meta.json`
 internos, el número de serie del fabricante ni la marca comercial del acumulador (lo verifica `tests/unit/ui-publico.test.ts`).
 
 ## Textos en pantalla

@@ -4,7 +4,7 @@ Juego 3D en tercera persona (a pie + camioneta) para recorrer el Equipo 10 (pull
 locación, subir al piso de trabajo y al piso de enganche, operar válvulas (registro propio, ilustrativo) y jugar misiones
 de reconocimiento. Referencia digital, no as-built: es ilustrativo, no es simulación ni validación de seguridad.
 
-Repo **privado**. Consume los GLB del visor `exertion-solutions/visor-equipo-de-torre` (commit fijado en
+Repo **público** (autorizado por el dueño del visor, ver `NOTICE.md`). Consume los GLB del visor `exertion-solutions/visor-equipo-de-torre` (commit fijado en
 `assets.lock.json`). Restricciones de uso y licencias: ver [`NOTICE.md`](NOTICE.md).
 
 ## Cómo correr
