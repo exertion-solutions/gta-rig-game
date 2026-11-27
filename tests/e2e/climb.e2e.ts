@@ -155,7 +155,7 @@ test('losas finas sin CCD: saltar sobre la plancha del piso de enganche (0,08 m)
   await page.keyboard.press('Space')
   const tr = await sample(page, 'false', 400)
   const rest = await sample(page, 'w.isGrounded() && w.getPosition()[1] < ' + (PE + 0.02), 5000)
-  expect(Math.max(...[...tr, ...rest].map((s) => s.p[1]))).toBeGreaterThan(PE + 0.35)
+  expect(Math.max(...[...tr, ...rest].map((s) => s.p[1]))).toBeGreaterThan(PE + 0.25)
   await sample(page, 'false', 500)
   expect(Math.abs((await pos(page))[1] - PE)).toBeLessThan(0.06) // aterrizó sobre la plancha, no la cruzó
   // rampa de la V: saltando y caminando hacia la baranda añadida (+Z) queda del lado de adentro

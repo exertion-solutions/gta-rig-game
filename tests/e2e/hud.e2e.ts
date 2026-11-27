@@ -80,9 +80,14 @@ test('conduciendo la camioneta también cuenta la llegada', async ({ page }) => 
   await page.waitForTimeout(500)
   await g(page, 'teleportTruck', [-10, 0, 20], 0)
   await g(page, 'teleport', [-10, 0, 21.5])
-  await page.waitForTimeout(600)
+  // espera estado: el jugador quedó junto a la camioneta (no un tiempo fijo)
+  await page.waitForFunction(() => {
+    const w = (window as any).__game
+    const p = w.getPosition()
+    return Math.hypot(p[0] + 10, p[2] - 21.5) < 0.2 && w.isGrounded()
+  })
   await page.keyboard.press('KeyE')
-  expect(await g<string>(page, 'getMode')).toBe('truck')
+  await page.waitForFunction(() => (window as any).__game.getMode() === 'truck')
   await g(page, 'teleportTruck', ACUM, 0)
   await expect(page.getByTestId('choose-controls')).toBeVisible({ timeout: 10_000 })
   expect((await g<{ objectiveIndex: number }>(page, 'getMission')).objectiveIndex).toBe(1)

@@ -95,7 +95,9 @@ export function Player() {
         return { min: b.min.toArray(), max: b.max.toArray() }
       },
       teleport: (p: Vec3) => {
+        // también la próxima traslación cinemática: si no, el paso pendiente devolvía el cuerpo al punto anterior
         body.current?.setTranslation({ x: p[0], y: p[1] + FOOT, z: p[2] }, true)
+        body.current?.setNextKinematicTranslation({ x: p[0], y: p[1] + FOOT, z: p[2] })
         vs.current = { vy: 0, airMs: 0 }
         climb.current = null
         playerAction.climbing = false
