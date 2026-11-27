@@ -239,7 +239,7 @@ export function Truck() {
       angularDamping={0.5}
     >
       <CuboidCollider args={[TRUCK.halfWidth, 0.3, TRUCK.halfLength]} position={[0, 0.1, 0]} mass={TRUCK.mass} collisionGroups={TRUCK_GROUPS} />
-      <CuboidCollider args={[0.95, 0.4, 0.75]} position={[0, 0.65, -1.0]} density={0} collisionGroups={TRUCK_GROUPS} />
+      <CuboidCollider args={[0.95, 0.4, 0.95]} position={[0, 0.65, 0]} density={0} collisionGroups={TRUCK_GROUPS} />
       <primitive object={model.group} />
     </RigidBody>
   )

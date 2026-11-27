@@ -1,4 +1,4 @@
-"""Camioneta pickup (original, sin marcas ni texto) -> public/models/vehicle/pickup.glb
+"""Camioneta pickup doble cabina 4x4 (modelo propio, sin marcas ni texto) -> public/models/vehicle/pickup.glb
 
 Reproducible:
   C:\\Tools\\Blender\\blender.exe --background --python scripts/build-truck.py -- <salida.glb>
@@ -52,7 +52,7 @@ def srgb(h):  # '#rrggbb' -> lineal
 
 
 MATS = {
-    'paint': mat('truck_paint', srgb('#2d5f8f'), metal=0.65, rough=0.34, coat=1.0, coat_rough=0.06),
+    'paint': mat('truck_paint', srgb('#1b4fa3'), metal=0.7, rough=0.3, coat=1.0, coat_rough=0.06),
     'glass': mat('truck_glass', srgb('#1a2833'), metal=0.7, rough=0.04),
     'chrome': mat('truck_chrome', srgb('#c9ced4'), metal=1.0, rough=0.16),
     'plastic': mat('truck_plastic', srgb('#1f2227'), metal=0.1, rough=0.72),
@@ -164,59 +164,73 @@ B = body
 # chapa inferior: trompa, capot, bajos de la cabina y piso de la caja (ytop baja a 0,12 en la caja)
 HW = 1.02
 main = loft('paint_main', [
-    (-2.12, 0.80, -0.30, 0.26), (-2.04, 0.92, -0.38, 0.38), (-1.80, 0.99, -0.42, 0.50),
-    (-1.00, HW, -0.44, 0.54), (0.50, HW, -0.44, 0.54), (0.50, 0.96, -0.42, 0.14), (2.28, 0.96, -0.40, 0.14),
+    (-2.14, 0.93, -0.36, 0.40), (-2.08, 0.985, -0.40, 0.46), (-1.80, 1.0, -0.42, 0.50),  # trompa alta y casi vertical
+    (-1.00, HW, -0.44, 0.54), (0.95, HW, -0.44, 0.54), (0.95, 0.96, -0.42, 0.14), (2.28, 0.96, -0.40, 0.14),
 ], 'paint', B, n=5.0, crown=0.05)
 
 # cabina: vidrio (cupula), techo, pilares
 loft('glass_cab', [
     (-0.97, 0.98, 0.50, 0.55), (-0.80, 0.95, 0.50, 0.88), (-0.55, 0.91, 0.50, 1.11), (-0.30, 0.87, 0.50, 1.17),
-    (0.15, 0.87, 0.50, 1.17), (0.35, 0.89, 0.50, 1.06), (0.50, 0.93, 0.50, 0.80),
+    (0.62, 0.87, 0.50, 1.17), (0.82, 0.89, 0.50, 1.06), (0.95, 0.93, 0.50, 0.80),
 ], 'glass', B, n=4.0)
-loft('paint_roof', [(-0.40, 0.84, 1.10, 1.185), (-0.30, 0.875, 1.12, 1.19), (0.15, 0.875, 1.12, 1.19), (0.30, 0.885, 1.10, 1.17)], 'paint', B, n=3.2)
+loft('paint_roof', [(-0.40, 0.84, 1.10, 1.185), (-0.30, 0.875, 1.12, 1.19), (0.62, 0.875, 1.12, 1.19), (0.77, 0.885, 1.10, 1.17)], 'paint', B, n=3.2)
 for s in (-1, 1):
     tube(f'pilar_A_{s}', 'paint', [(s * 0.955, 0.52, -0.99), (s * 0.935, 0.80, -0.82), (s * 0.90, 1.08, -0.52), (s * 0.86, 1.17, -0.34)],
          0.035, 0.035, [(0, 0.4, -0.9)] * 4, B)
-    tube(f'pilar_C_{s}', 'paint', [(s * 0.90, 0.60, 0.50), (s * 0.89, 0.92, 0.38), (s * 0.87, 1.14, 0.22)], 0.05, 0.07, [(0, 0, 1)] * 3, B)
+    tube(f'pilar_C_{s}', 'paint', [(s * 0.90, 0.60, 0.95), (s * 0.89, 0.92, 0.83), (s * 0.87, 1.14, 0.67)], 0.05, 0.07, [(0, 0, 1)] * 3, B)
     box(f'pilar_B_{s}', 'paint', (s * 0.92, 0.84, 0.0), (0.06, 0.68, 0.10), 0.012, B)
-    box(f'umbral_{s}', 'paint', (s * 0.96, 0.52, -0.2), (0.10, 0.07, 1.30), 0.02, B)
+    box(f'umbral_{s}', 'paint', (s * 0.96, 0.52, 0.0), (0.10, 0.07, 1.80), 0.02, B)
     # juntas de puertas, manijas y escalon
-    for z in (-0.88, 0.0, 0.40):
+    for z in (-0.88, 0.0, 0.88):  # cuatro puertas
         box(f'junta_{s}_{z}', 'plastic', (s * 1.025, 0.05, z), (0.012, 0.86, 0.018), 0.004, B)
-    box(f'junta_alta_{s}', 'plastic', (s * 1.025, -0.38, -0.2), (0.012, 0.02, 1.28), 0.004, B)
-    for z in (-0.22, 0.30):
+    box(f'junta_alta_{s}', 'plastic', (s * 1.025, -0.38, 0.0), (0.012, 0.02, 1.76), 0.004, B)
+    for z in (-0.16, 0.72):
         box(f'manija_{s}_{z}', 'chrome', (s * 1.04, 0.36, z), (0.035, 0.045, 0.19), 0.012, B)
-    box(f'escalon_{s}', 'plastic', (s * 1.08, -0.50, -0.2), (0.18, 0.06, 1.32), 0.02, B)
-    box(f'escalon_cromo_{s}', 'chrome', (s * 1.095, -0.46, -0.2), (0.015, 0.012, 1.24), 0.004, B)
+    box(f'escalon_{s}', 'plastic', (s * 1.08, -0.50, -0.06), (0.18, 0.06, 1.60), 0.02, B)
+    box(f'escalon_cromo_{s}', 'chrome', (s * 1.095, -0.46, -0.06), (0.015, 0.012, 1.52), 0, B)
     # espejos
     box(f'espejo_brazo_{s}', 'plastic', (s * 1.10, 0.76, -0.86), (0.16, 0.035, 0.05), 0.01, B)
     box(f'espejo_{s}', 'paint', (s * 1.2, 0.84, -0.86), (0.07, 0.16, 0.20), 0.035, B)
     box(f'espejo_luna_{s}', 'chrome', (s * 1.2, 0.84, -0.763), (0.055, 0.13, 0.008), 0.003, B)
 
 # caja: piso, laterales, frente y compuerta
-box('caja_piso', 'plastic', (0, 0.16, 1.4), (1.78, 0.05, 1.78), 0.01, B)
+box('caja_piso', 'plastic', (0, 0.16, 1.62), (1.78, 0.05, 1.34), 0.01, B)
 for s in (-1, 1):
-    box(f'caja_pared_{s}', 'paint', (s * 0.925, 0.40, 1.4), (0.10, 0.52, 1.82), 0.03, B)
-    box(f'caja_borde_{s}', 'chrome', (s * 0.925, 0.665, 1.4), (0.12, 0.022, 1.84), 0.008, B)
-box('caja_frente', 'paint', (0, 0.40, 0.55), (1.90, 0.52, 0.10), 0.03, B)
+    box(f'caja_pared_{s}', 'paint', (s * 0.925, 0.40, 1.62), (0.10, 0.52, 1.36), 0.03, B)
+    box(f'caja_borde_{s}', 'plastic', (s * 0.925, 0.665, 1.62), (0.12, 0.022, 1.38), 0, B)
+    box(f'barra_parante_{s}', 'plastic', (s * 0.90, 0.92, 1.08), (0.07, 0.50, 0.07), 0.02, B)  # barra antivuelco de la caja
+box('caja_frente', 'paint', (0, 0.40, 0.99), (1.90, 0.52, 0.08), 0.03, B)
+box('barra_travesano', 'plastic', (0, 1.15, 1.08), (1.87, 0.07, 0.07), 0.02, B)
+box('cubrecarter', 'chrome', (0, -0.40, -1.95), (1.0, 0.03, 0.42), 0, B)  # protector bajo la trompa (4x4)
 box('caja_compuerta', 'paint', (0, 0.36, 2.28), (1.90, 0.46, 0.09), 0.035, B)
 box('compuerta_manija', 'plastic', (0, 0.52, 2.335), (0.30, 0.05, 0.02), 0.01, B)
 box('compuerta_borde', 'chrome', (0, 0.60, 2.28), (1.88, 0.02, 0.11), 0.008, B)
 
 # frente: parrilla, faros, paragolpes, luces traseras
-box('parrilla', 'plastic', (0, 0.10, -2.07), (1.06, 0.30, 0.06), 0.025, B)
-for i in range(3):
-    box(f'parrilla_barra_{i}', 'chrome', (0, 0.02 + i * 0.09, -2.105), (0.98, 0.026, 0.03), 0.008, B)
-box('parrilla_marco', 'chrome', (0, 0.275, -2.1), (1.10, 0.025, 0.04), 0.008, B)
-box('paragolpes_del', 'chrome', (0, -0.22, -2.17), (1.98, 0.17, 0.20), 0.07, B)
+# Frente (plano z = -2,14): parrilla ancha al centro con marco cromado, barras horizontales y parantes; a cada lado un
+# faro rectangular en su carcasa oscura, con luz de posición debajo. Las piezas chicas van sin bisel (pocos triángulos).
+FZ = -2.14
+GW, GH, GY = 1.04, 0.40, 0.12  # parrilla: ancho, alto, centro
+box('parrilla_fondo', 'plastic', (0, GY, FZ - 0.005), (GW, GH, 0.04), 0, B)
+for i in range(5):  # barras horizontales
+    box(f'parrilla_barra_{i}', 'chrome', (0, GY - GH / 2 + 0.045 + i * 0.0775, FZ - 0.035), (GW - 0.04, 0.022, 0.03), 0, B)
+for i in range(7):  # parantes finos, por detrás de las barras
+    box(f'parrilla_parante_{i}', 'plastic', ((i - 3) * 0.15, GY, FZ - 0.028), (0.016, GH - 0.03, 0.02), 0, B)
+for sy in (-1, 1):  # marco cromado
+    box(f'parrilla_marco_h_{sy}', 'chrome', (0, GY + sy * GH / 2, FZ - 0.04), (GW + 0.06, 0.035, 0.05), 0.01, B)
+for sx in (-1, 1):
+    box(f'parrilla_marco_v_{sx}', 'chrome', (sx * GW / 2, GY, FZ - 0.04), (0.035, GH + 0.035, 0.05), 0.01, B)
+box('paragolpes_del', 'chrome', (0, -0.25, -2.19), (1.98, 0.16, 0.20), 0.06, B)
 box('faldon_del', 'plastic', (0, -0.38, -2.07), (1.5, 0.14, 0.14), 0.04, B)
 box('paragolpes_tras', 'chrome', (0, -0.20, 2.34), (1.98, 0.17, 0.20), 0.07, B)
 box('escalon_trasero', 'plastic', (0, -0.31, 2.36), (1.2, 0.04, 0.18), 0.01, B)
 box('luz_antiniebla_L', 'headlight', (-0.55, -0.37, -2.15), (0.16, 0.06, 0.04), 0.02, B)
 box('luz_antiniebla_R', 'headlight', (0.55, -0.37, -2.15), (0.16, 0.06, 0.04), 0.02, B)
 for s in (-1, 1):
-    box(f'faro_marco_{s}', 'chrome', (s * 0.70, 0.30, -2.05), (0.40, 0.20, 0.07), 0.06, B)
-    box(f'faro_{s}', 'headlight', (s * 0.70, 0.30, -2.075), (0.34, 0.15, 0.05), 0.05, B)
+    box(f'faro_carcasa_{s}', 'plastic', (s * 0.715, 0.17, FZ - 0.01), (0.31, 0.30, 0.05), 0.02, B)
+    box(f'faro_{s}', 'headlight', (s * 0.715, 0.215, FZ - 0.035), (0.26, 0.15, 0.04), 0.03, B)  # luz principal
+    box(f'faro_posicion_{s}', 'headlight', (s * 0.715, 0.075, FZ - 0.035), (0.26, 0.045, 0.03), 0, B)  # luz de posición
+    box(f'faro_ceja_{s}', 'chrome', (s * 0.715, 0.325, FZ - 0.03), (0.31, 0.018, 0.06), 0, B)
     box(f'luz_trasera_{s}', 'taillight', (s * 0.80, 0.30, 2.335), (0.20, 0.30, 0.05), 0.03, B)
 
 # bajos: chasis y escape
