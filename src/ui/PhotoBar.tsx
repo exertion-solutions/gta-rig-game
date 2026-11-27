@@ -25,7 +25,7 @@ export function PhotoBar() {
       r.done
         .then(
           (b) => (downloadBlob(b, clipFileName()), setMsg('Clip descargado')),
-          () => setMsg('No se pudo grabar el clip'),
+          (e) => (console.warn('[clip]', e), setMsg('No se pudo grabar el clip')),
         )
         .finally(() => ((rec.current = null), setLeft(null)))
     } catch {
