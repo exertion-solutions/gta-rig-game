@@ -177,6 +177,7 @@ export function Player() {
       const end = (p === 1 && dir > 0) || (use && cl.p === 1) ? 'top' : (p === 0 && dir < 0) || (use && cl.p === 0) ? 'bottom' : null
       playerSpeed.current = 0
       playerAction.climbMoving = p !== cl.p
+      playerAction.climbDir = Math.sign(p - cl.p)
       if (end) {
         const q = ladderRelease(cl.ladder, end)
         climb.current = null

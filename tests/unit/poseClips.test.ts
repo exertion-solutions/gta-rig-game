@@ -1,7 +1,9 @@
+import { readFileSync } from 'node:fs'
 import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
 import { GRAVITY, JUMP } from '../../src/game/player/jump'
-import { CLIMB_KEYS, JUMP_KEYS, poseClip } from '../../src/game/player/poseClips'
+import { LAND_MS } from '../../src/game/player/characterAnim'
+import { CLIMB_KEYS, JUMP_KEYS, LAND_KEYS, poseClip } from '../../src/game/player/poseClips'
 
 // Esqueleto mínimo como el del GLB: armadura en cm (escala 0,01) girada, pelvis > muslo colgando hacia abajo.
 function rig() {
@@ -65,10 +67,27 @@ describe('poseClip', () => {
     expect(clip.validate()).toBe(true)
   })
 
-  it('salto ≈ tiempo de vuelo (0,63 s) y trepar cierra el ciclo', () => {
+  it('salto: termina en pose de caída antes de tocar el suelo (sin agachado en el aire); el aterrizaje es otro clip', () => {
     const flight = (2 * JUMP.velocity) / GRAVITY
-    expect(JUMP_KEYS.at(-1)!.t).toBeGreaterThan(flight - 0.05)
-    expect(JUMP_KEYS.at(-1)!.t).toBeLessThan(flight + 0.05)
+    const end = JUMP_KEYS.at(-1)!
+    expect(end.t).toBeLessThan(flight) // queda clavado en `end` si el vuelo dura más (borde, plataforma baja)
+    expect(end.drop ?? 0).toBe(0)
+    expect(LAND_KEYS[0].rx).toEqual(end.rx) // el aterrizaje arranca desde la pose de caída
+    expect(Math.max(...LAND_KEYS.map((k) => k.drop ?? 0))).toBeGreaterThan(0.05)
+    expect(Math.round(LAND_KEYS.at(-1)!.t * 1000)).toBe(LAND_MS)
     expect(CLIMB_KEYS.at(-1)!.rx).toEqual(CLIMB_KEYS[0].rx)
+  })
+
+  it('cada hueso de las claves existe en worker.glb y tiene pista en idle (un nombre mal escrito falla)', () => {
+    const b = readFileSync('public/models/character/worker.glb')
+    const j = JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)).toString('utf8'))
+    const san = (n: string) => n.replace(/\s/g, '_')
+    const idle = j.animations.find((a: { name: string }) => a.name === 'idle')
+    const rotated = new Set(
+      idle.channels.filter((c: { target: { path: string } }) => c.target.path === 'rotation').map((c: { target: { node: number } }) => san(j.nodes[c.target.node].name)),
+    )
+    const used = new Set([...JUMP_KEYS, ...LAND_KEYS, ...CLIMB_KEYS].flatMap((k) => Object.keys(k.rx)))
+    expect(used.size).toBeGreaterThan(10)
+    for (const n of used) expect(rotated, n).toContain(n)
   })
 })
