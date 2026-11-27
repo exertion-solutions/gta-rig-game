@@ -13,7 +13,7 @@ import { WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladd
 import { stepVertical, type VState } from './jump'
 import { PLAYER_RADIUS, RESPAWN, STEP_MAX, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
 import { CharacterModel } from './CharacterModel'
-import { keys } from './keys'
+import { keys, onKeysCleared } from './keys'
 import { teleportTo, usePlayerStore } from './store'
 
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
@@ -81,6 +81,7 @@ export function Player() {
     const lock = () => void gl.domElement.requestPointerLock?.()
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
+    const offClear = onKeysCleared(() => void (pending.jump = pending.use = false))
     document.addEventListener('mousemove', move)
     gl.domElement.addEventListener('click', lock)
     exposeGame({
@@ -119,6 +120,7 @@ export function Player() {
     return () => {
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
+      offClear()
       document.removeEventListener('mousemove', move)
       gl.domElement.removeEventListener('click', lock)
     }

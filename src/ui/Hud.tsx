@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { getSectors } from '../game/data/sectors'
 import { useMissionStore } from '../game/missions/store'
-import { keys } from '../game/player/keys'
+import { clearKeys } from '../game/player/keys'
 import { Ficha } from './Ficha'
 import { useHudStore } from './hudStore'
 import { Legend } from './Legend'
@@ -28,7 +28,7 @@ function useHotkeys() {
     // Al abrir un panel: suelta el puntero (para poder clicar) y detiene al jugador.
     const unsub = useHudStore.subscribe((s, prev) => {
       if (s.panelOpen && !prev.panelOpen) {
-        keys.clear()
+        clearKeys()
         document.exitPointerLock?.()
       }
     })
