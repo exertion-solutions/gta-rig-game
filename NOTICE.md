@@ -81,3 +81,6 @@ internos, el número de serie del fabricante ni la marca comercial del acumulado
 El juego nunca dice "aprobado", "habilitado" ni "certificado". Las fichas citan el texto de las fuentes a través de
 `uiSafe` (`src/game/data/evidence.ts`), que reformula "certificado" como "con certificación": esa raíz citada de la
 fuente se acepta (decisión del dueño en la QA, D-05) y el texto no se cambia.
+
+## Mejoras gráficas (posproceso, materiales, suelo)
+Oclusión ambiental por profundidad (DepthAO.ts), suciedad/desgaste procedural y luz de borde (MaterialUpgrade.tsx) y manchas de gran escala del suelo (GroundMaterial.tsx): código original del proyecto, sin texturas ni assets de terceros nuevos.

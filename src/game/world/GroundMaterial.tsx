@@ -34,8 +34,19 @@ export function patchGroundShader(fragment: string) {
     })
   const out = fragment
     .replace('#include <common>', `#include <common>\n${GROUND_FN}`)
-    .replace('#include <map_fragment>', sub(THREE.ShaderChunk.map_fragment))
-    .replace('#include <roughnessmap_fragment>', sub(THREE.ShaderChunk.roughnessmap_fragment))
+    .replace(
+      '#include <map_fragment>',
+      sub(THREE.ShaderChunk.map_fragment) +
+        // manchas de gran escala (≈ 6–20 m): zonas resecas más claras y zonas húmedas/aceitosas más oscuras; rompen la repetición
+        `
+float gPatch = gNoise(vMapUv * 0.07 + 11.0) * 0.6 + gNoise(vMapUv * 0.23 + 3.0) * 0.4;
+        float gDamp = smoothstep(0.55, 0.78, gNoise(vMapUv * 0.11 + 40.0));
+        diffuseColor.rgb *= (0.8 + 0.4 * gPatch) * mix(1.0, 0.62, gDamp);`,
+    )
+    .replace(
+      '#include <roughnessmap_fragment>',
+      sub(THREE.ShaderChunk.roughnessmap_fragment) + '\nroughnessFactor = clamp(roughnessFactor * mix(1.0, 0.45, gDamp), 0.05, 1.0);',
+    )
     .replace('#include <normal_fragment_maps>', sub(THREE.ShaderChunk.normal_fragment_maps).replace(/vNormalMapUv/g, 'vMapUv'))
   return { fragment: out, count }
 }
@@ -63,10 +74,11 @@ export function useGroundMaterial(sizeX: number, sizeZ: number, tint = '#ffffff'
       metalness: 0,
       roughness: 1,
     })
+    m.normalScale.set(1.5, 1.5) // relieve de la grava más marcado con la luz rasante
     m.onBeforeCompile = (shader) => {
       shader.fragmentShader = patchGroundShader(shader.fragmentShader).fragment
     }
-    m.customProgramCacheKey = () => 'ground-var-v1'
+    m.customProgramCacheKey = () => 'ground-var-v2'
     return m
   }, [diff, nor, rough, sizeX, sizeZ, tint])
 }
