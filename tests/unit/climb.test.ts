@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CLIMB_SPEED, climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from '../../src/game/player/climb'
+import { CLIMB_SPEED, WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from '../../src/game/player/climb'
 import { LADDERS } from '../../src/game/world/walkable'
 
 describe('climbStep', () => {
@@ -35,5 +35,7 @@ describe('escalera A3 (mastil_escalera)', () => {
     const b = ladderRelease(l, 'bottom')
     expect(ladderEndNear([b[0], 0, b[2]], [l])).toBeNull() // en el suelo, debajo del piso
     expect(ladderEndNear([b[0] + 3, b[1], b[2]], [l])).toBeNull()
+    expect(ladderEndNear([b[0] + 0.65, b[1], b[2]], [l])?.end).toBe('bottom') // al alcance de E
+    expect(ladderEndNear([b[0] + 0.65, b[1], b[2]], [l], WALK_ON_REACH)).toBeNull() // pero W no la toma
   })
 })

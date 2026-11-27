@@ -9,7 +9,7 @@ import { canEnter } from '../vehicle/enterExit'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { nearestInteractable, useValveStore } from '../world/interactables'
 import { INTERACTABLES, LADDERS, MAX_MEASURED_SLOPE_DEG, type LadderVolume } from '../world/walkable'
-import { climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from './climb'
+import { WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from './climb'
 import { stepVertical, type VState } from './jump'
 import { PLAYER_RADIUS, RESPAWN, STEP_MAX, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
 import { CharacterModel } from './CharacterModel'
@@ -189,7 +189,8 @@ export function Player() {
       useValveStore.setState({ near: valve?.id ?? null, ladder: near?.end ?? null })
     const eFree = use && !canEnter(position, truck.position)
     const facing = near ? Math.cos(yaw - near.ladder.facing) > FACING_COS : false
-    if (near && (eFree || (near.end === 'bottom' && input.z > 0 && facing))) {
+    const walkOn = near?.end === 'bottom' && input.z > 0 && facing && !!ladderEndNear(position, LADDERS, WALK_ON_REACH)
+    if (near && (eFree || walkOn)) {
       const lc = { ladder: near.ladder, p: near.end === 'top' ? 1 : 0 }
       climb.current = lc
       playerAction.climbing = true

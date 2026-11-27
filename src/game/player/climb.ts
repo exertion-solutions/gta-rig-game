@@ -5,7 +5,8 @@ import type { LadderVolume, Vec3 } from '../world/walkable'
 export const CLIMB_SPEED = 1.2 // m/s a lo largo de la escalera
 const STANDOFF = 0.4
 const TOP_RELEASE = 0.75
-const REACH = 0.8
+const REACH = 0.8 // E engancha
+export const WALK_ON_REACH = 0.5 // W engancha solo pegado a la escalera (si no, caminar junto al mástil la tomaba)
 const REACH_DY = 0.5
 
 /** Progreso 0..1 a lo largo de la escalera; input +1 sube, −1 baja. */
@@ -31,11 +32,11 @@ export function ladderRelease(l: LadderVolume, end: 'bottom' | 'top'): Vec3 {
 }
 
 /** Escalera y extremo al alcance de los pies del jugador (null = ninguna). */
-export function ladderEndNear(feet: Vec3, ladders: readonly LadderVolume[]): { ladder: LadderVolume; end: 'bottom' | 'top' } | null {
+export function ladderEndNear(feet: Vec3, ladders: readonly LadderVolume[], reach = REACH): { ladder: LadderVolume; end: 'bottom' | 'top' } | null {
   for (const ladder of ladders)
     for (const end of ['bottom', 'top'] as const) {
       const q = ladderRelease(ladder, end)
-      if (Math.hypot(feet[0] - q[0], feet[2] - q[2]) <= REACH && Math.abs(feet[1] - q[1]) <= REACH_DY) return { ladder, end }
+      if (Math.hypot(feet[0] - q[0], feet[2] - q[2]) <= reach && Math.abs(feet[1] - q[1]) <= REACH_DY) return { ladder, end }
     }
   return null
 }

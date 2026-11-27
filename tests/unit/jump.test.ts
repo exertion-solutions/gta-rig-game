@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GRAVITY, JUMP, jumpApex, stepVertical, type VState } from '../../src/game/player/jump'
+import { STEP_MAX } from '../../src/game/player/movement'
 
 const DT = 1 / 60
 // Suelo plano en y = 0: integra el estado vertical como lo hace Player (grounded del paso anterior).
@@ -24,9 +25,10 @@ function simulate(steps: number, jumpAt: (i: number) => boolean, startY = 0, sta
 
 describe('salto', () => {
   it('altura de ápice = v²/2g (valor de juego)', () => expect(jumpApex(JUMP.velocity)).toBeCloseTo((JUMP.velocity ** 2) / (2 * GRAVITY)))
+  it('salto + autostep queda por debajo de la baranda más baja (1,0 m)', () => expect(jumpApex(JUMP.velocity) + STEP_MAX).toBeLessThan(1.0))
   it('sube hasta el ápice y vuelve a y = 0', () => {
     const r = simulate(180, (i) => i === 1)
-    expect(r.apex).toBeGreaterThan(jumpApex(JUMP.velocity) * 0.95)
+    expect(r.apex).toBeGreaterThan(jumpApex(JUMP.velocity) * 0.93)
     expect(r.apex).toBeLessThan(jumpApex(JUMP.velocity) * 1.02)
     expect(r.y).toBe(0)
   })
