@@ -1,11 +1,12 @@
 # Construye public/models/character/worker.glb (sin comprimir) a partir de Microsoft Rocketbox (MIT).
-# Uso: blender -b --factory-startup --python scripts/build-character.py -- <avatar.fbx> <texdir> <idle.fbx> <walk.fbx> <run.fbx> <out.glb>
+# Uso: blender -b --factory-startup --python scripts/build-character.py -- <avatar.fbx> <texdir> <idle.fbx> <walk.fbx> <run.fbx> <operate.fbx> <out.glb>
+# operate = m_work_mid.max.fbx (Rocketbox, trabajo con las manos a media altura): se usa al operar una válvula.
 # Retarget: los esqueletos Biped de las animaciones tienen otra pose de reposo que el avatar, así que cada hueso
 # copia la orientación de mundo del esqueleto animado (y la pelvis su posición) y se hornea. Se quita el
 # avance del clip (root motion en X/Y) para que el clip quede en el lugar; el juego mueve al jugador.
 import bpy, sys, os, json
 a = sys.argv[sys.argv.index('--') + 1:]
-AVATAR, TEX, CLIPS, OUT = a[0], a[1], {'idle': a[2], 'walk': a[3], 'run': a[4]}, a[5]
+AVATAR, TEX, CLIPS, OUT = a[0], a[1], {'idle': a[2], 'walk': a[3], 'run': a[4], 'operate': a[5]}, a[6]
 TEX_SIZE = 1024
 
 bpy.ops.wm.read_factory_settings(use_empty=True)

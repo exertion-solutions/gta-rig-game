@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { exposeGame } from '../dev'
 import { pickClip, type Clip } from './characterAnim'
-import { playerSpeed } from './Player'
+import { playerAction, playerSpeed } from './Player'
 import { usePlayerStore } from './store'
 
 // Trabajador Microsoft Rocketbox (MIT), ver NOTICE.md y scripts/build-character.py. Meshopt: decoder que agrega drei.
@@ -17,6 +17,9 @@ const SPEED_K = 10 // 1/s, suavizado de la rapidez (transiciones sin parpadeo de
 // velocidad (m/s) a la que cada clip pisa sin patinar: avance original del clip Rocketbox / su duración
 const NATURAL_SPEED: Partial<Record<Clip, number>> = { walk: 1.01, run: 2.88 }
 const FACING = Math.PI // el modelo mira a +Z; yaw 0 mira a -Z
+// Sin clip de salto ni de trepar con licencia verificable para este esqueleto (NOTICE.md): 'jump' usa la pose de
+// 'idle' y 'climb' la de 'walk' (detenida si no se mueve). 'operate' es un clip propio (Rocketbox m_work_mid).
+const SOURCE: Partial<Record<Clip, Clip>> = { jump: 'idle', climb: 'walk' }
 
 // Visual del jugador: hijo del RigidBody, con los pies en y=0 del jugador (offset `footY` = base de la cápsula).
 export function CharacterModel({ footY }: { footY: number }) {
@@ -40,18 +43,22 @@ export function CharacterModel({ footY }: { footY: number }) {
     speed.current += (playerSpeed.current - speed.current) * (1 - Math.exp(-SPEED_K * Math.min(delta, 0.1)))
     if (root.current) root.current.rotation.y = yaw + FACING
 
-    const next = pickClip(speed.current, mode)
-    const a = actions[next]
+    const act = { climbing: playerAction.climbing, airborne: playerAction.airborne, operating: performance.now() < playerAction.operatingUntil }
+    const next = pickClip(speed.current, mode, act)
+    const a = actions[SOURCE[next] ?? next]
     if (!a) return
-    // !isRunning: drei detiene las acciones al re-montar (StrictMode/Suspense) y el clip quedaría congelado en T-pose
-    if (next !== clip.current || !a.isRunning()) {
-      const prev = clip.current !== next && clip.current && actions[clip.current]
+    // !isScheduled: drei detiene las acciones al re-montar (StrictMode/Suspense) y el clip quedaría congelado en T-pose
+    // (no isRunning: con timeScale 0, el trepar detenido, daría false y reiniciaría el clip en cada frame)
+    if (next !== clip.current || !a.isScheduled()) {
+      const pc = clip.current && (SOURCE[clip.current] ?? clip.current)
+      const prev = pc && pc !== (SOURCE[next] ?? next) && actions[pc]
       a.reset().fadeIn(FADE).play()
       if (prev) prev.fadeOut(FADE)
       clip.current = next
     }
     const natural = NATURAL_SPEED[next]
-    a.timeScale = natural ? THREE.MathUtils.clamp(speed.current / natural, 0.6, 1.8) : 1
+    a.timeScale =
+      next === 'climb' ? (playerAction.climbMoving ? 1 : 0) : natural ? THREE.MathUtils.clamp(speed.current / natural, 0.6, 1.8) : 1
   })
 
   return (

@@ -7,7 +7,7 @@
 
 ## Personaje (`public/models/character/worker.glb`)
 
-Construido con `scripts/build-character.py` (Blender 5.2, retarget + horneado, texturas webp 1024) y comprimido con `@gltf-transform/cli meshopt`. Sin cambios de diseño: sin logos ni marcas.
+Construido con `scripts/build-character.py` (Blender 5.2; reconstruido con Blender 5.3 al sumar `operate`, retarget + horneado, texturas webp 1024) y comprimido con `@gltf-transform/cli meshopt`. Sin cambios de diseño: sin logos ni marcas.
 
 | Pieza | Origen | Autor | Licencia | URL |
 | --- | --- | --- | --- | --- |
@@ -15,6 +15,12 @@ Construido con `scripts/build-character.py` (Blender 5.2, retarget + horneado, t
 | Clip `idle` (`m_idle_neutral_01.max.fbx`) | Microsoft Rocketbox, `Assets/Animations/all_animations_max_motextr_static` | Microsoft (Rocketbox Studios) | MIT | https://github.com/microsoft/Microsoft-Rocketbox/tree/master/Assets/Animations/all_animations_max_motextr_static |
 | Clip `walk` (`m_walk_neutral_01.max.fbx`, sin avance) | Microsoft Rocketbox, `Assets/Animations/all_animations_max_motextr_xy` | Microsoft (Rocketbox Studios) | MIT | https://github.com/microsoft/Microsoft-Rocketbox/tree/master/Assets/Animations/all_animations_max_motextr_xy |
 | Clip `run` (`m_run_neutral_01.max.fbx`, sin avance) | Microsoft Rocketbox, `Assets/Animations/all_animations_max_motextr_xy` | Microsoft (Rocketbox Studios) | MIT | https://github.com/microsoft/Microsoft-Rocketbox/tree/master/Assets/Animations/all_animations_max_motextr_xy |
+| Clip `operate` (`m_work_mid.max.fbx`, trabajo con las manos a media altura; se usa al operar una válvula) | Microsoft Rocketbox, `Assets/Animations/all_animations_max_motextr_static` | Microsoft (Rocketbox Studios) | MIT | https://github.com/microsoft/Microsoft-Rocketbox/blob/master/Assets/Animations/all_animations_max_motextr_static/m_work_mid.max.fbx (sha256 ee757d60b1b63b09d5cea245ba23d8435d2f03a173ca08b270142ec3d57e2e2a) |
+
+Sin clip de **salto** ni de **trepar**: la biblioteca Rocketbox (474 animaciones revisadas en el árbol del repositorio) no
+trae ninguno, y no se obtuvo otra fuente con licencia verificable y descarga directa compatible con este esqueleto Biped
+(Quaternius Universal Animation Library es CC0 pero se descarga solo desde itch.io y usa otro esqueleto). Límite documentado:
+en el juego, `jump` muestra la pose de `idle` y `climb` la de `walk` (detenida cuando no se mueve); no se inventa procedencia.
 
 Texto de la licencia MIT de Rocketbox (https://github.com/microsoft/Microsoft-Rocketbox/blob/master/LICENSE.md):
 

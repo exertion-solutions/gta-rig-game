@@ -14,4 +14,8 @@ describe('pickClip', () => {
   })
   // Sin clip sentado: en la camioneta el personaje se oculta y queda en idle.
   it("modo 'truck' => idle (no hay clip 'seated')", () => expect(pickClip(RUN_SPEED, 'truck')).toBe('idle'))
+  it('trepando => climb (gana a todo a pie)', () => expect(pickClip(0, 'foot', { climbing: true, airborne: true })).toBe('climb'))
+  it('operando una valvula => operate', () => expect(pickClip(WALK_SPEED, 'foot', { operating: true })).toBe('operate'))
+  it('en el aire tras saltar => jump', () => expect(pickClip(RUN_SPEED, 'foot', { airborne: true })).toBe('jump'))
+  it('en la camioneta sigue idle aunque haya accion', () => expect(pickClip(0, 'truck', { climbing: true })).toBe('idle'))
 })
