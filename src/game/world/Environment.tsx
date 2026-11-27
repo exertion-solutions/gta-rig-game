@@ -7,6 +7,7 @@ import { QUALITY_PROFILE, parseQualityParam, reportFrame, useQualityStore } from
 import { useSettings } from '../settings/store'
 import { assetUrl } from './assetUrl'
 import { exactHour, lightingAt, newLighting } from './DayNight'
+import { MaterialUpgrade } from './MaterialUpgrade'
 
 // Cielo, niebla y reflejos. Cielo: HDRI Poly Haven "Kloofendal 48d Partly Cloudy (Pure Sky)" (CC0, Greg Zaal / Jarod Guest),
 // ver NOTICE.md. De día se ve el HDRI; de noche, el gradiente del ciclo día/noche (DayNight.lightingAt). El mismo HDRI,
@@ -161,8 +162,11 @@ export function Environment() {
   })
 
   return (
-    <mesh material={sky} frustumCulled={false} renderOrder={-1} name="cielo">
-      <sphereGeometry args={[400, 32, 16]} />
-    </mesh>
+    <>
+      <MaterialUpgrade />
+      <mesh material={sky} frustumCulled={false} renderOrder={-1} name="cielo">
+        <sphereGeometry args={[400, 32, 16]} />
+      </mesh>
+    </>
   )
 }
