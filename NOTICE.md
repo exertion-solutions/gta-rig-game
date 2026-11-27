@@ -70,6 +70,19 @@ Tres assets CC0 (dominio público) de Poly Haven (https://polyhaven.com/license)
 
 El resto del realismo (conos, vallado, cartelería, marcas de suelo, sombras de contacto) es procedural y propio.
 
+## Voces y ambiente de audio
+
+- **Voces de la radio** (`public/audio/voice/*.mp3`): síntesis de voz **local**, sin servicios en la nube ni claves. El texto sale de las
+  misiones y de las frases de enlace del propio juego (`src/audio/radio.ts`, `src/game/missions/defs/`); `npm run gen-voice`
+  (`scripts/gen-voice.mjs`) lo sintetiza con la voz del sistema **Microsoft Sabina Desktop (es-MX)** vía Windows SAPI (`System.Speech`) y
+  lo procesa con **ffmpeg** (paso de banda 300-3400 Hz, compresión, saturación suave y ruido blanco suave; mono, 48 kbps).
+  `public/audio/voice/manifest.json` (versionado) guarda id, archivo, duración, texto y sha256 de cada línea.
+- **Pendiente de confirmar:** que la licencia de la voz del sistema (componente de Windows) permita redistribuir el audio generado. Hasta
+  confirmarlo, **los .mp3 de voz no están en el repo** (`.gitignore`): se generan en `predev`/`prebuild` si hay una voz española
+  instalada; sin ella (por ejemplo en CI) el juego muestra solo los subtítulos. No publicar un build con voces sin confirmar la licencia.
+- **Ambiente** (`public/audio/ambient/rig-lejano.mp3`, versionado): bucle de 8 s de viento, rumor grave y zumbido lejano, generado con los
+  filtros de ffmpeg (`anoisesrc`, `sine`, pasabajos/pasaaltos) en `scripts/gen-voice.mjs`; síntesis propia, sin muestras ni licencias externas.
+
 ## Publicación
 
 El build queda listo para servirse bajo una sub-ruta (`npm run build:pages`), pero **publicarlo** (GitHub Pages u otro
