@@ -8,8 +8,9 @@ import { ObjectiveMarker, SectorReporter } from '../game/missions/MissionRuntime
 import { useMissionStore } from '../game/missions/store'
 import { Player } from '../game/player/Player'
 import { Truck } from '../game/vehicle/Truck'
-import { Ground, PhysicsWorld, RigColliders } from '../game/world/Ground'
+import { Ground, PhysicsWorld, RigColliders, WalkableColliders } from '../game/world/Ground'
 import { RigScene } from '../game/world/loadRig'
+import { SceneProbes, ScenarioAdditions } from '../game/world/scenario/Additions'
 import { Hud } from '../ui/Hud'
 import { useHudStore } from '../ui/hudStore'
 
@@ -38,11 +39,14 @@ export function App() {
           <PhysicsWorld>
             <Ground />
             <RigColliders />
+            <WalkableColliders />
             <Player />
             <Truck />
             <FollowCamera />
           </PhysicsWorld>
           <RigScene />
+          <ScenarioAdditions />
+          <SceneProbes />
           <SectorReporter />
           <ObjectiveMarker />
         </Suspense>

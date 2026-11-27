@@ -42,10 +42,12 @@ test('E alterna a la camioneta cuando está cerca y no hace nada si está lejos'
   expect(await mode(page)).toBe('foot')
 })
 
-test('la camioneta acelera y se detiene sin atravesar el mástil', async ({ page }) => {
-  const m = (await rendered(page, 'sk575_mastil'))!
-  const zMid = (m.min[2] + m.max[2]) / 2
-  await page.evaluate(([x, z, h]) => (window as any).__game.teleportTruck([x, 0, z], h), [m.max[0] + 20, zMid, HEADING.toMinusX] as const)
+// Task 18A: el mástil ya no es su bbox completo (era una pared invisible a nivel del suelo); la camioneta se frena contra
+// la pasarela de la planchada, que ahora es sólida hasta el suelo (a 1,05 m no se pasa por debajo).
+test('la camioneta acelera y se detiene sin atravesar la pasarela de la planchada', async ({ page }) => {
+  const X = 6 // calle libre entre la rampa de la V y los caballetes: nada entre z 23 y la pasarela
+  const face = (await page.evaluate(([x]) => (window as any).__game.renderedBoundsIn('sk575_planchada', [x - 1, 0.3, 0], [x + 1, 1.2, 3]) as Box | null, [X] as const))!.max[2]
+  await page.evaluate(([x, z]) => (window as any).__game.teleportTruck([x, 0, z], 0), [X, face + 2.3 + 20] as const) // rumbo 0 mira a -Z
   await page.evaluate(() => {
     const g = (window as any).__game
     g.teleport([0, 0, 25]) // jugador fuera de la trayectoria
@@ -73,10 +75,10 @@ test('la camioneta acelera y se detiene sin atravesar el mástil', async ({ page
   await drive(page, null)
   expect(top).toBeGreaterThan(8) // aceleró
   expect(top).toBeLessThan(12.8) // y respeta maxSpeed 12
-  // se detuvo contra el mástil: el frente (centro - semilargo 2.3) no pasó de su cara +X, y quedó pegada (no frenó antes)
-  const front = last.position[0] - 2.3
-  expect(front).toBeGreaterThan(m.max[0] - 0.3)
-  expect(front).toBeLessThan(m.max[0] + 1.0)
+  // se detuvo contra la pasarela: el frente (centro - semilargo 2.3) no pasó de su cara +Z, y quedó pegada (no frenó antes)
+  const front = last.position[2] - 2.3
+  expect(front).toBeGreaterThan(face - 0.3)
+  expect(front).toBeLessThan(face + 1.0)
   expect(Math.abs(last.speed)).toBeLessThan(0.3)
 })
 

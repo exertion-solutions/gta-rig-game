@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { buildColliders } from './colliders'
 import { LOCACION_BOUNDS as B, LOCACION_M, RIG_PARTS } from './frame'
 import { stripLines } from './stripLines'
+import { REPLACED_PARTS, walkableColliders } from './walkable'
 
 const FENCE_HALF_H = 20 // semi-altura del vallado invisible en el borde de la locación (20 => 40 m de alto)
 const mx = (B.minX + B.maxX) / 2
@@ -34,8 +35,8 @@ export function Ground() {
 const url = (glb: string) => `${import.meta.env.BASE_URL}models/rig10/${glb}`
 const DRACO_PATH = `${import.meta.env.BASE_URL}decoders/draco/`
 
-// Cajas fijas por componente 'collide', a partir de los límites de cada GLB (sin líneas).
-// planchada/piso (role 'walkable') no llevan caja: ver nota en Player/e2e y el informe de Task 4.
+// Cajas fijas por componente 'collide', a partir de los límites de cada GLB (sin líneas). Mástil, BOP y piletas no:
+// su bbox completo tapaba el piso de trabajo y las cubiertas; los cubren las cajas medidas de WalkableColliders.
 export function RigColliders() {
   const parts = RIG_PARTS.filter((p) => p.role === 'collide').map((p) => ({ p, gltf: useGLTF(url(p.glb), DRACO_PATH) }))
   const descs = useMemo(
@@ -48,6 +49,7 @@ export function RigColliders() {
             return { id: p.id, role: p.role, bounds: new THREE.Box3().setFromObject(c) }
           })
           .filter((l) => !l.bounds.isEmpty()), // Box3 vacío => min/max infinitos => collider NaN
+        REPLACED_PARTS,
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -56,6 +58,19 @@ export function RigColliders() {
     <RigidBody type="fixed" colliders={false}>
       {descs.map((d) => (
         <CuboidCollider key={d.id} args={d.half} position={d.center} />
+      ))}
+    </RigidBody>
+  )
+}
+
+// Superficies caminables (pisos, cubiertas, escaleras como rampa por la línea de narices), barandas y cajas por banda,
+// medidas de los GLB por scripts/extract-traversal.mjs (traversal.json). Solo cajas: nunca trimesh.
+export function WalkableColliders() {
+  const cs = useMemo(() => walkableColliders(), [])
+  return (
+    <RigidBody type="fixed" colliders={false}>
+      {cs.map((c) => (
+        <CuboidCollider key={c.id} args={c.half} position={c.center} rotation={c.rot} />
       ))}
     </RigidBody>
   )

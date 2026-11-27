@@ -22,9 +22,9 @@ export function boxFromBounds(b: THREE.Box3, margin = 0) {
   return { center: c, half: h }
 }
 
-// shortcut: solo cajas por componente; un convex hull para mástil/BOP/carrier si la caja resulta tosca.
-export function buildColliders(parts: LoadedPart[]): ColliderDesc[] {
+// shortcut: una caja por componente; `replaced` = piezas que ya tienen cajas medidas en traversal.json (walkable.ts).
+export function buildColliders(parts: LoadedPart[], replaced: ReadonlySet<string> = new Set()): ColliderDesc[] {
   return parts
-    .filter((p) => p.role === 'collide' && !NO_COLLIDE.has(p.id))
+    .filter((p) => p.role === 'collide' && !NO_COLLIDE.has(p.id) && !replaced.has(p.id))
     .map((p) => ({ id: p.id, shape: 'cuboid' as const, ...boxFromBounds(p.bounds) }))
 }

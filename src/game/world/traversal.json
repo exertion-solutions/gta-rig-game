@@ -1,0 +1,1565 @@
+{
+ "label": "escenario ilustrativo añadido por el juego, no as-built",
+ "generatedBy": "scripts/extract-traversal.mjs",
+ "sources": {
+  "public/models/rig10/sk575_piso.glb": "d547f6a1c047d7189db4993a798b9c81d66d517d45e8dfcff1bee2493abe8a1d",
+  "public/models/rig10/sk575_bop.glb": "c3dfda656583a671659d2084e59dc783a198954103f40156bc2377888458616e",
+  "public/models/rig10/sk575_mastil.glb": "f5a4d76337e0bcb4dce2eebbb679d3b98ec0cb422e831f049c20a583691ba04c",
+  "public/models/rig10/sk575_planchada.glb": "c1e1de82a22b6a92ff063aee7951aed64384402c7521eac0d2b891cefe9803be",
+  "public/models/rig10/sk575_piletas.glb": "7d756a8d789a7879baffcc953665c6192995a4c23a0b2806f4190bb6b57ed139",
+  "public/models/scenario/additions.glb": "5ba53574a8da2999598851675be0c0e07793489b3d9115d2bff69245b661fc7b",
+  "public/models/rig10/sk575_manifold.glb": "09a1c91697ab8484333ba5f87907af4da3a365a5d62a4d70c0f9c53a3082f03d",
+  "public/models/rig10/sk575_acumulador.glb": "d4e41807987d8b4bf0ef474fb32f49607cf1866eb705852b7663a9015cf6de70"
+ },
+ "replaces": [
+  "sk575_mastil",
+  "sk575_bop",
+  "sk575_piletas"
+ ],
+ "stateNote": "state = estado inicial de juego (ilustrativo, sin fuente); no simula flujo ni presión",
+ "platforms": [
+  {
+   "id": "piso_trabajo",
+   "partId": "sk575_piso",
+   "y": 3.606,
+   "min": [
+    -1.135,
+    -1.652
+   ],
+   "max": [
+    1.465,
+    2.5
+   ],
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-1..PT-4"
+   }
+  },
+  {
+   "id": "piso_enganche",
+   "partId": "sk575_mastil",
+   "y": 20.651,
+   "min": [
+    -0.053,
+    -1.186
+   ],
+   "max": [
+    1.82,
+    1.186
+   ],
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PE-1..PE-13 (existencia); altura aproximada"
+   }
+  },
+  {
+   "id": "planchada_pasarela",
+   "partId": "sk575_planchada",
+   "y": 1.05,
+   "min": [
+    4.966,
+    -0.993
+   ],
+   "max": [
+    16.95,
+    0.993
+   ],
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PLA-1, PLA-2"
+   }
+  },
+  {
+   "id": "pileta0",
+   "partId": "sk575_piletas",
+   "y": 2.051,
+   "min": [
+    11.221,
+    -30.001
+   ],
+   "max": [
+    22.22,
+    -27.801
+   ],
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2 (barandas)"
+   }
+  },
+  {
+   "id": "pileta1",
+   "partId": "sk575_piletas",
+   "y": 2.051,
+   "min": [
+    -10.781,
+    -21.801
+   ],
+   "max": [
+    0.219,
+    -19.601
+   ],
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2 (barandas)"
+   }
+  },
+  {
+   "id": "pileta2",
+   "partId": "sk575_piletas",
+   "y": 2.051,
+   "min": [
+    -7.68,
+    -16.601
+   ],
+   "max": [
+    3.319,
+    -14.401
+   ],
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2 (barandas)"
+   }
+  },
+  {
+   "id": "pileta3",
+   "partId": "sk575_piletas",
+   "y": 2.639,
+   "min": [
+    0.401,
+    -12.9
+   ],
+   "max": [
+    2.501,
+    -10.599
+   ],
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2 (barandas)"
+   }
+  }
+ ],
+ "solids": [
+  {
+   "id": "piso_chapa",
+   "partId": "sk575_piso",
+   "kind": "walkable",
+   "origin": "glb",
+   "center": [
+    0.165,
+    3.476,
+    0.424
+   ],
+   "half": [
+    1.3,
+    0.13,
+    2.076
+   ]
+  },
+  {
+   "id": "piso_portico0",
+   "partId": "sk575_piso",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    0.15,
+    1.673,
+    -1.55
+   ],
+   "half": [
+    1.35,
+    1.673,
+    0.15
+   ]
+  },
+  {
+   "id": "piso_portico1",
+   "partId": "sk575_piso",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    0.15,
+    1.673,
+    1.45
+   ],
+   "half": [
+    1.35,
+    1.673,
+    0.15
+   ]
+  },
+  {
+   "id": "piso_parante2_-12",
+   "partId": "sk575_piso",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.1,
+    1.673,
+    2.45
+   ],
+   "half": [
+    0.1,
+    1.673,
+    0.05
+   ]
+  },
+  {
+   "id": "piso_parante2_14",
+   "partId": "sk575_piso",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    1.5,
+    1.673,
+    2.45
+   ],
+   "half": [
+    0.1,
+    1.673,
+    0.05
+   ]
+  },
+  {
+   "id": "sk575_bop_banda0",
+   "partId": "sk575_bop",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    0.367,
+    1.453,
+    0
+   ],
+   "half": [
+    1.252,
+    2.153,
+    1.38
+   ]
+  },
+  {
+   "id": "sk575_bop_banda1",
+   "partId": "sk575_bop",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    0,
+    3.953,
+    0.093
+   ],
+   "half": [
+    0.319,
+    0.347,
+    0.413
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda0",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.86,
+    1.753,
+    0
+   ],
+   "half": [
+    1.08,
+    1.853,
+    1.029
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda1",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.705,
+    4.606,
+    0
+   ],
+   "half": [
+    1.011,
+    1,
+    1.004
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda2",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.604,
+    6.606,
+    0
+   ],
+   "half": [
+    1,
+    1,
+    0.992
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda3",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.505,
+    8.606,
+    0
+   ],
+   "half": [
+    0.988,
+    1,
+    0.98
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda4",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.36,
+    10.606,
+    0
+   ],
+   "half": [
+    1.019,
+    1,
+    0.968
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda5",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.251,
+    12.606,
+    0
+   ],
+   "half": [
+    0.998,
+    1,
+    0.955
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda6",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.104,
+    14.606,
+    0
+   ],
+   "half": [
+    0.94,
+    1,
+    0.933
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda7",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -1.004,
+    16.606,
+    0
+   ],
+   "half": [
+    0.927,
+    1,
+    0.92
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda8",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -0.844,
+    18.606,
+    0
+   ],
+   "half": [
+    0.805,
+    1,
+    0.798
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda9",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -0.733,
+    20.606,
+    0
+   ],
+   "half": [
+    0.794,
+    1,
+    0.786
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda10",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -0.623,
+    22.606,
+    0
+   ],
+   "half": [
+    0.783,
+    1,
+    0.775
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda11",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -0.512,
+    24.606,
+    0
+   ],
+   "half": [
+    0.772,
+    1,
+    0.765
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda12",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -0.402,
+    26.606,
+    0
+   ],
+   "half": [
+    0.761,
+    1,
+    0.753
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda13",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -0.291,
+    28.606,
+    0
+   ],
+   "half": [
+    0.75,
+    1,
+    0.742
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda14",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -0.035,
+    30.606,
+    0
+   ],
+   "half": [
+    0.884,
+    1,
+    0.896
+   ]
+  },
+  {
+   "id": "sk575_mastil_banda15",
+   "partId": "sk575_mastil",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -0.041,
+    32.5,
+    0
+   ],
+   "half": [
+    0.901,
+    0.894,
+    0.9
+   ]
+  },
+  {
+   "id": "enganche_plancha",
+   "partId": "sk575_mastil",
+   "kind": "walkable",
+   "origin": "glb",
+   "center": [
+    0.883,
+    20.611,
+    0
+   ],
+   "half": [
+    0.937,
+    0.04,
+    1.186
+   ]
+  },
+  {
+   "id": "planchada_pasarela",
+   "partId": "sk575_planchada",
+   "kind": "walkable",
+   "origin": "glb",
+   "center": [
+    10.958,
+    0.525,
+    0
+   ],
+   "half": [
+    5.992,
+    0.525,
+    0.993
+   ]
+  },
+  {
+   "id": "pileta0_tanque",
+   "partId": "sk575_piletas",
+   "kind": "walkable",
+   "origin": "glb",
+   "center": [
+    16.72,
+    1.025,
+    -28.901
+   ],
+   "half": [
+    5.5,
+    1.025,
+    1.1
+   ]
+  },
+  {
+   "id": "pileta0_equipo0",
+   "partId": "sk575_piletas",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    21.7,
+    3,
+    -28.9
+   ],
+   "half": [
+    0.5,
+    0.95,
+    0.5
+   ]
+  },
+  {
+   "id": "pileta0_equipo1",
+   "partId": "sk575_piletas",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    17.2,
+    2.65,
+    -28.85
+   ],
+   "half": [
+    1,
+    0.6,
+    0.65
+   ]
+  },
+  {
+   "id": "pileta1_tanque",
+   "partId": "sk575_piletas",
+   "kind": "walkable",
+   "origin": "glb",
+   "center": [
+    -5.281,
+    1.025,
+    -20.701
+   ],
+   "half": [
+    5.5,
+    1.025,
+    1.1
+   ]
+  },
+  {
+   "id": "pileta1_equipo0",
+   "partId": "sk575_piletas",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -10.05,
+    2.325,
+    -20.7
+   ],
+   "half": [
+    0.45,
+    0.274,
+    0.4
+   ]
+  },
+  {
+   "id": "pileta2_tanque",
+   "partId": "sk575_piletas",
+   "kind": "walkable",
+   "origin": "glb",
+   "center": [
+    -2.181,
+    1.025,
+    -15.501
+   ],
+   "half": [
+    5.5,
+    1.025,
+    1.1
+   ]
+  },
+  {
+   "id": "pileta2_equipo0",
+   "partId": "sk575_piletas",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -6.55,
+    2.476,
+    -15.45
+   ],
+   "half": [
+    1.05,
+    0.425,
+    0.75
+   ]
+  },
+  {
+   "id": "pileta3_tanque",
+   "partId": "sk575_piletas",
+   "kind": "walkable",
+   "origin": "glb",
+   "center": [
+    1.451,
+    1.319,
+    -11.749
+   ],
+   "half": [
+    1.05,
+    1.319,
+    1.15
+   ]
+  },
+  {
+   "id": "pileta3_equipo0",
+   "partId": "sk575_piletas",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    2.2,
+    2.932,
+    -12.35
+   ],
+   "half": [
+    0.2,
+    0.293,
+    0.05
+   ]
+  }
+ ],
+ "rails": [
+  {
+   "id": "piso_baranda0",
+   "partId": "sk575_piso",
+   "origin": "glb",
+   "a": [
+    -1.2,
+    3.606,
+    -1.65
+   ],
+   "b": [
+    1.5,
+    3.606,
+    -1.65
+   ],
+   "height": 1.13,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-3"
+   }
+  },
+  {
+   "id": "piso_baranda1",
+   "partId": "sk575_piso",
+   "origin": "glb",
+   "a": [
+    -1.2,
+    3.606,
+    2.5
+   ],
+   "b": [
+    1.5,
+    3.606,
+    2.5
+   ],
+   "height": 1.13,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-3"
+   }
+  },
+  {
+   "id": "piso_baranda2",
+   "partId": "sk575_piso",
+   "origin": "glb",
+   "a": [
+    -1.15,
+    3.606,
+    -1.7
+   ],
+   "b": [
+    -1.15,
+    3.606,
+    -0.9
+   ],
+   "height": 1.13,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-3"
+   }
+  },
+  {
+   "id": "piso_baranda3",
+   "partId": "sk575_piso",
+   "origin": "glb",
+   "a": [
+    1.45,
+    3.606,
+    -1.7
+   ],
+   "b": [
+    1.45,
+    3.606,
+    -0.55
+   ],
+   "height": 1.13,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-3"
+   }
+  },
+  {
+   "id": "piso_baranda4",
+   "partId": "sk575_piso",
+   "origin": "glb",
+   "a": [
+    1.45,
+    3.606,
+    0.55
+   ],
+   "b": [
+    1.45,
+    3.606,
+    1.7
+   ],
+   "height": 1.13,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-3"
+   }
+  },
+  {
+   "id": "enganche_baranda0",
+   "partId": "sk575_mastil",
+   "origin": "glb",
+   "a": [
+    -0.1,
+    20.651,
+    -1.2
+   ],
+   "b": [
+    1.9,
+    20.651,
+    -1.2
+   ],
+   "height": 1.11,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PE-7 (puerta de ingreso)"
+   }
+  },
+  {
+   "id": "enganche_baranda1",
+   "partId": "sk575_mastil",
+   "origin": "glb",
+   "a": [
+    -0.1,
+    20.651,
+    1.238
+   ],
+   "b": [
+    2.15,
+    20.651,
+    1.238
+   ],
+   "height": 1.11,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PE-7 (puerta de ingreso)"
+   }
+  },
+  {
+   "id": "pileta0_baranda0",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    11.15,
+    2.051,
+    -30.05
+   ],
+   "b": [
+    22.25,
+    2.051,
+    -30.05
+   ],
+   "height": 1.029,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "pileta0_baranda1",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    11.15,
+    2.051,
+    -27.75
+   ],
+   "b": [
+    22.25,
+    2.051,
+    -27.75
+   ],
+   "height": 1.029,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "pileta1_baranda0",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    -10.85,
+    2.051,
+    -21.85
+   ],
+   "b": [
+    0.25,
+    2.051,
+    -21.85
+   ],
+   "height": 1.029,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "pileta1_baranda1",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    -10.85,
+    2.051,
+    -19.55
+   ],
+   "b": [
+    0.25,
+    2.051,
+    -19.55
+   ],
+   "height": 1.029,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "pileta2_baranda0",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    -7.75,
+    2.051,
+    -16.65
+   ],
+   "b": [
+    3.35,
+    2.051,
+    -16.65
+   ],
+   "height": 1.029,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "pileta2_baranda1",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    -7.75,
+    2.051,
+    -14.35
+   ],
+   "b": [
+    3.35,
+    2.051,
+    -14.35
+   ],
+   "height": 1.029,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "pileta3_baranda0",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    0.35,
+    2.639,
+    -12.9
+   ],
+   "b": [
+    2.55,
+    2.639,
+    -12.9
+   ],
+   "height": 0.991,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "pileta3_baranda1",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    0.35,
+    2.639,
+    -10.6
+   ],
+   "b": [
+    2.55,
+    2.639,
+    -10.6
+   ],
+   "height": 0.991,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "pileta3_baranda2",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "a": [
+    2.5,
+    2.639,
+    -12.95
+   ],
+   "b": [
+    2.5,
+    2.639,
+    -10.55
+   ],
+   "height": 0.991,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2"
+   }
+  },
+  {
+   "id": "planchada_escalera_barandaN",
+   "partId": "sk575_planchada",
+   "origin": "adicion",
+   "a": [
+    16.96,
+    1.05,
+    -0.51
+   ],
+   "b": [
+    18.46,
+    0,
+    -0.51
+   ],
+   "height": 0.9,
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "docs/scenario-additions.md (A1)"
+   }
+  },
+  {
+   "id": "planchada_escalera_barandaS",
+   "partId": "sk575_planchada",
+   "origin": "adicion",
+   "a": [
+    16.96,
+    1.05,
+    0.51
+   ],
+   "b": [
+    18.46,
+    0,
+    0.51
+   ],
+   "height": 0.9,
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "docs/scenario-additions.md (A1)"
+   }
+  },
+  {
+   "id": "rampa_v_barandaN",
+   "partId": "sk575_planchada",
+   "origin": "adicion",
+   "a": [
+    1.47,
+    3.62,
+    -0.68
+   ],
+   "b": [
+    6.97,
+    1.09,
+    -0.68
+   ],
+   "height": 1,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-4, PLA-2 (existencia); medidas estimadas"
+   }
+  },
+  {
+   "id": "rampa_v_barandaS",
+   "partId": "sk575_planchada",
+   "origin": "adicion",
+   "a": [
+    1.47,
+    3.62,
+    0.68
+   ],
+   "b": [
+    6.97,
+    1.09,
+    0.68
+   ],
+   "height": 1,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-4, PLA-2 (existencia); medidas estimadas"
+   }
+  }
+ ],
+ "stairs": [
+  {
+   "id": "pileta0_escalera",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "bottom": [
+    9.003,
+    0,
+    -28.9
+   ],
+   "top": [
+    11.221,
+    2.051,
+    -28.9
+   ],
+   "width": 0.702,
+   "treads": 8,
+   "rise": 0.223,
+   "going": 0.222,
+   "slopeDeg": 42.762,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2; visor docs/references/piletas: \"baranda abierta 0,8 m en la escalera\""
+   }
+  },
+  {
+   "id": "pileta1_escalera",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "bottom": [
+    -12.998,
+    0,
+    -20.7
+   ],
+   "top": [
+    -10.781,
+    2.051,
+    -20.7
+   ],
+   "width": 0.701,
+   "treads": 8,
+   "rise": 0.223,
+   "going": 0.222,
+   "slopeDeg": 42.762,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2; visor docs/references/piletas: \"baranda abierta 0,8 m en la escalera\""
+   }
+  },
+  {
+   "id": "pileta2_escalera",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "bottom": [
+    -9.898,
+    0,
+    -15.501
+   ],
+   "top": [
+    -7.68,
+    2.051,
+    -15.501
+   ],
+   "width": 0.699,
+   "treads": 8,
+   "rise": 0.223,
+   "going": 0.222,
+   "slopeDeg": 42.754,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2; visor docs/references/piletas: \"baranda abierta 0,8 m en la escalera\""
+   }
+  },
+  {
+   "id": "pileta3_escalera",
+   "partId": "sk575_piletas",
+   "origin": "glb",
+   "bottom": [
+    -2.388,
+    0,
+    -11.75
+   ],
+   "top": [
+    0.401,
+    2.639,
+    -11.75
+   ],
+   "width": 0.7,
+   "treads": 9,
+   "rise": 0.26,
+   "going": 0.26,
+   "slopeDeg": 43.42,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2; visor docs/references/piletas: \"baranda abierta 0,8 m en la escalera\""
+   }
+  },
+  {
+   "id": "planchada_escalera",
+   "partId": "sk575_planchada",
+   "origin": "adicion",
+   "bottom": [
+    18.46,
+    0,
+    0
+   ],
+   "top": [
+    16.96,
+    1.05,
+    0
+   ],
+   "width": 0.9,
+   "treads": 5,
+   "rise": 0.175,
+   "going": 0.25,
+   "slopeDeg": 34.992,
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "docs/scenario-additions.md (A1)"
+   }
+  }
+ ],
+ "ramps": [
+  {
+   "id": "rampa_v",
+   "partId": "sk575_planchada",
+   "origin": "glb",
+   "bottom": [
+    6.968,
+    1.088,
+    0
+   ],
+   "top": [
+    1.474,
+    3.624,
+    0
+   ],
+   "width": 1.2,
+   "slopeDeg": 24.776,
+   "evidence": {
+    "status": "documentado",
+    "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-4 (baranda de plano inclinado)"
+   }
+  }
+ ],
+ "ladders": [
+  {
+   "id": "mastil_escalera",
+   "partId": "sk575_mastil",
+   "bottom": [
+    -0.558,
+    3.61,
+    -0.55
+   ],
+   "top": [
+    0.272,
+    20.65,
+    -0.55
+   ],
+   "facing": 1.571,
+   "rungs": 56,
+   "origin": "adicion",
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "docs/scenario-additions.md (A3); el GLB no tiene escalera de acceso al piso de enganche"
+   }
+  }
+ ],
+ "interactables": [
+  {
+   "id": "manifold_M6",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    4.524,
+    1.24,
+    -11.3
+   ],
+   "label": "Válvula M6 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M12",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    4.524,
+    1.24,
+    -12.429
+   ],
+   "label": "Válvula M12 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M4",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    5.032,
+    1.24,
+    -10.4
+   ],
+   "label": "Válvula M4 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M2",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    5.591,
+    1.24,
+    -10.4
+   ],
+   "label": "Válvula M2 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M9",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    6.15,
+    1.24,
+    -10
+   ],
+   "label": "Válvula M9 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M7",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    6.15,
+    1.24,
+    -10.95
+   ],
+   "label": "Válvula M7 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M8",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    6.15,
+    1.24,
+    -11.55
+   ],
+   "label": "Válvula M8 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M1",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    6.709,
+    1.24,
+    -10.4
+   ],
+   "label": "Válvula M1 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M3",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    7.268,
+    1.24,
+    -10.4
+   ],
+   "label": "Válvula M3 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M5",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    7.777,
+    1.24,
+    -11.3
+   ],
+   "label": "Válvula M5 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M10",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    7.928,
+    1.24,
+    -11.979
+   ],
+   "label": "Válvula M10 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "manifold_M11",
+   "kind": "valve",
+   "partId": "sk575_manifold",
+   "position": [
+    7.777,
+    1.24,
+    -12.429
+   ],
+   "label": "Válvula M11 del manifold de ahogo",
+   "sourceId": "glb:sk575_manifold",
+   "state": "closed",
+   "evidence": {
+    "status": "documentado",
+    "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
+   }
+  },
+  {
+   "id": "acumulador_valvula_3vias_bypass",
+   "kind": "valve",
+   "partId": "sk575_acumulador",
+   "position": [
+    -22.059,
+    1.316,
+    3.764
+   ],
+   "label": "Acumulador: valvula 3vías bypass",
+   "sourceId": "glb:sk575_acumulador",
+   "state": "closed",
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
+   }
+  },
+  {
+   "id": "acumulador_valvula_4vias_1",
+   "kind": "valve",
+   "partId": "sk575_acumulador",
+   "position": [
+    -21.808,
+    1.139,
+    3.764
+   ],
+   "label": "Acumulador: valvula 4vías 1",
+   "sourceId": "glb:sk575_acumulador",
+   "state": "closed",
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
+   }
+  },
+  {
+   "id": "acumulador_valvula_4vias_2",
+   "kind": "valve",
+   "partId": "sk575_acumulador",
+   "position": [
+    -21.618,
+    1.139,
+    3.764
+   ],
+   "label": "Acumulador: valvula 4vías 2",
+   "sourceId": "glb:sk575_acumulador",
+   "state": "closed",
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
+   }
+  },
+  {
+   "id": "acumulador_valvula_4vias_3",
+   "kind": "valve",
+   "partId": "sk575_acumulador",
+   "position": [
+    -21.428,
+    1.139,
+    3.764
+   ],
+   "label": "Acumulador: valvula 4vías 3",
+   "sourceId": "glb:sk575_acumulador",
+   "state": "closed",
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
+   }
+  },
+  {
+   "id": "acumulador_valvula_4vias_4",
+   "kind": "valve",
+   "partId": "sk575_acumulador",
+   "position": [
+    -21.238,
+    1.139,
+    3.764
+   ],
+   "label": "Acumulador: valvula 4vías 4",
+   "sourceId": "glb:sk575_acumulador",
+   "state": "closed",
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
+   }
+  },
+  {
+   "id": "acumulador_valvula_4vias_5",
+   "kind": "valve",
+   "partId": "sk575_acumulador",
+   "position": [
+    -21.048,
+    1.139,
+    3.764
+   ],
+   "label": "Acumulador: valvula 4vías 5",
+   "sourceId": "glb:sk575_acumulador",
+   "state": "closed",
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
+   }
+  }
+ ]
+}

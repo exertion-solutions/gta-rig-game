@@ -49,40 +49,59 @@ test('window.__game solo existe en dev (este test corre contra vite dev)', async
   expect(await page.evaluate(() => typeof (window as any).__game)).toBe('object')
 })
 
-test('el jugador no atraviesa la caja del mástil', async ({ page }) => {
+// Task 18A: el mástil ya no es su bbox completo (tapaba el piso de trabajo); son cajas por banda de altura medidas del GLB.
+// El freno contra el reticulado sobre el piso se prueba en traversal.e2e.ts.
+test('el bbox completo del mástil ya no tapa el piso de trabajo: se puede estar de pie dentro de él', async ({ page }) => {
   const m = (await rendered(page, 'sk575_mastil'))!
-  const zMid = (m.min[2] + m.max[2]) / 2
-  await place(page, [m.max[0] + 6, 0, zMid], YAW.toMinusX)
-  const end = await walk(page)
-  // no atraviesa: queda fuera del bounding box del mástil renderizado...
-  expect(end[0]).toBeGreaterThan(m.max[0])
-  // ...y no lo frenó espacio vacío: se detiene pegado a la cara (±TOL), no antes.
-  expect(Math.abs(end[0] - (m.max[0] + PLAYER_RADIUS))).toBeLessThan(TOL)
+  const pi = (await rendered(page, 'sk575_piso'))!
+  const floorY = 3.606 // chapa del piso de trabajo (sk575_piso_acero), ver traversal.json
+  const p: Pos = [1.0, floorY, 0.9]
+  expect(p[0] < m.max[0] && p[2] < m.max[2] && p[2] > m.min[2]).toBe(true) // dentro del bbox viejo del mástil
+  expect(p[0] < pi.max[0] && p[2] < pi.max[2]).toBe(true)
+  await place(page, p, YAW.toMinusZ)
+  await page.waitForTimeout(800)
+  const q = await pos(page)
+  expect(Math.hypot(q[0] - p[0], q[2] - p[2])).toBeLessThan(0.05)
+  expect(Math.abs(q[1] - floorY)).toBeLessThan(0.06)
 })
 
-test('espacio libre junto al mástil no bloquea (0,3 m fuera del bbox en -Z; el lado +Z lo cierra el carrier)', async ({ page }) => {
+test('espacio libre junto al mástil y al piso no bloquea (0,3 m fuera de sus bbox en -Z; el lado +Z lo cierra el carrier)', async ({ page }) => {
   const m = (await rendered(page, 'sk575_mastil'))!
-  await place(page, [m.max[0] + 4, 0, m.min[2] - PLAYER_RADIUS - 0.3], YAW.toMinusX)
+  const pi = (await rendered(page, 'sk575_piso'))! // el pórtico -Z de la subestructura ahora tiene colisión
+  await place(page, [m.max[0] + 4, 0, Math.min(m.min[2], pi.min[2]) - PLAYER_RADIUS - 0.3], YAW.toMinusX)
   const end = await walk(page, (p) => p[0] < m.min[0] - 1)
   expect(end[0]).toBeLessThan(m.min[0] - 0.5) // cruzó todo el ancho X del mástil por el costado
 })
 
-// Cada pieza 'collide' se frena a su cara renderizada (alineación collider <-> GLB) desde un lado libre.
+// Cada pieza con colisión se frena en su cara renderizada (alineación collider <-> GLB) desde un lado libre.
+// Oráculo: bbox de los vértices dibujados dentro del volumen que barre la cápsula (y 0..1,8, ±radio del eje de avance).
+// Piletas y BOP (Task 18A): cajas medidas por tanque / por banda en vez del bbox de la pieza entera.
+const slab = (axis: number, at: number): [number[], number[]] => {
+  const lo = [-99, 0.05, -99]
+  const hi = [99, 1.8, 99]
+  lo[2 - axis] = at - PLAYER_RADIUS
+  hi[2 - axis] = at + PLAYER_RADIUS
+  return [lo, hi]
+}
+const boundsIn = (page: Page, id: string, [lo, hi]: [number[], number[]]) =>
+  page.evaluate(([i, a, b]) => (window as any).__game.renderedBoundsIn(i, a, b) as Box | null, [id, lo, hi] as const)
 const CASES = [
   { id: 'sk575_carrier', from: (b: Box): Pos => [b.min[0] - 6, 0, (b.min[2] + b.max[2]) / 2], yaw: YAW.toPlusX, stop: (b: Box) => b.min[0] - PLAYER_RADIUS, axis: 0 },
-  { id: 'sk575_piletas', from: (b: Box): Pos => [b.min[0] - 6, 0, (b.min[2] + b.max[2]) / 2], yaw: YAW.toPlusX, stop: (b: Box) => b.min[0] - PLAYER_RADIUS, axis: 0 },
-  { id: 'sk575_bop', from: (b: Box): Pos => [(b.min[0] + b.max[0]) / 2, 0, b.max[2] + 4], yaw: YAW.toMinusZ, stop: (b: Box) => b.max[2] + PLAYER_RADIUS, axis: 2 },
+  // tanque de la pileta del extremo +X, por su eje z (cara +X del tanque)
+  { id: 'sk575_piletas', from: (): Pos => [28, 0, -28.9], yaw: YAW.toMinusX, stop: (b: Box) => b.max[0] + PLAYER_RADIUS, axis: 0, region: slab(0, -28.9) },
+  // BOP por el lado +X de la subestructura (abierto); el lado ±Z lo cierran los pórticos del piso
+  { id: 'sk575_bop', from: (): Pos => [4.6, 0, 0], yaw: YAW.toMinusX, stop: (b: Box) => b.max[0] + PLAYER_RADIUS, axis: 0, region: slab(0, 0) },
 ]
 for (const c of CASES) {
   test(`${c.id}: se frena en su cara renderizada`, async ({ page }) => {
-    const b = (await rendered(page, c.id))!
+    const b = (c.region ? await boundsIn(page, c.id, c.region) : await rendered(page, c.id))!
     await place(page, c.from(b), c.yaw)
     const end = await walk(page)
     expect(Math.abs(end[c.axis] - c.stop(b))).toBeLessThan(TOL)
   })
 }
 
-test('planchada y piso: sin colisión propia; la planchada está a nivel del suelo (y=0)', async ({ page }) => {
+test('planchada fuera de la pasarela: se cruza a nivel del suelo (y=0)', async ({ page }) => {
   const pl = (await rendered(page, 'sk575_planchada'))!
   const pi = (await rendered(page, 'sk575_piso'))!
   expect(pl.min[1]).toBeLessThan(0.05) // base de la planchada en y≈0 => se camina sobre el suelo liso
@@ -91,7 +110,7 @@ test('planchada y piso: sin colisión propia; la planchada está a nivel del sue
   await place(page, [pl.min[0] - 2, 0, pl.max[2] - 1], YAW.toPlusX)
   const end = await walk(page, (p) => p[0] > pl.max[0] + 1)
   expect(end[0]).toBeGreaterThan(pl.max[0] + 0.5)
-  expect(Math.abs(end[1])).toBeLessThan(0.1) // sin escalones ni rampas inventadas
+  expect(Math.abs(end[1])).toBeLessThan(0.1) // los caballetes no tienen colisión; la pasarela (z ±1) no está en este camino
 })
 
 test('si cae o sale del vallado reaparece en el Acceso (RESPAWN)', async ({ page }) => {
@@ -101,11 +120,10 @@ test('si cae o sale del vallado reaparece en el Acceso (RESPAWN)', async ({ page
   expect(Math.hypot(p[0] - RESPAWN[0], p[2] - RESPAWN[2])).toBeLessThan(0.5)
 })
 
-test('cámara de seguimiento: detrás del jugador y no dentro del mástil con el jugador pegado a él', async ({ page }) => {
-  const m = (await rendered(page, 'sk575_mastil'))!
-  const zMid = (m.min[2] + m.max[2]) / 2
-  // pegado a la cara +X del mástil, mirando hacia +X: "detrás" del jugador queda justo contra/dentro del mástil
-  await place(page, [m.max[0] + PLAYER_RADIUS + 0.05, 0, zMid], YAW.toPlusX)
+test('cámara de seguimiento: detrás del jugador y no dentro del BOP con el jugador pegado a él', async ({ page }) => {
+  const m = (await boundsIn(page, 'sk575_bop', [[-3, -1, -3], [3, 3.6, 3]]))! // BOP debajo del piso (una caja de colisión)
+  // pegado a la cara +X del BOP, mirando hacia +X: "detrás" del jugador queda justo contra/dentro del BOP
+  await place(page, [m.max[0] + PLAYER_RADIUS + 0.05, 0, 0], YAW.toPlusX)
   await page.waitForTimeout(1200)
   const p = await pos(page)
   const c = await page.evaluate(() => (window as any).__game.getCamera() as Pos)
