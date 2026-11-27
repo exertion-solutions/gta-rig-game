@@ -21,3 +21,9 @@ export const useHudStore = create<HudState>((set) => ({
   setFicha: (fichaOpen) => set({ fichaOpen }),
   setAt: (atSector) => set((s) => ({ atSector, visited: atSector && !s.visited.includes(atSector) ? [...s.visited, atSector] : s.visited })),
 }))
+
+/** Hay un panel o menú abierto: el juego (teclado y mando) queda congelado. */
+export const uiBlocking = () => {
+  const s = useHudStore.getState()
+  return s.panelOpen
+}

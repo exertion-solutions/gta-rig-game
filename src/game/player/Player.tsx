@@ -3,6 +3,8 @@ import { CapsuleCollider, RigidBody, useBeforePhysicsStep, useRapier, type Rapie
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { clampPitch } from '../camera/followCamera'
+import { readPad, type PadInput } from '../input/gamepad'
+import { uiBlocking } from '../../ui/hudStore'
 import { exposeGame } from '../dev'
 import { useMissionStore } from '../missions/store'
 import { eBelongsToTruck } from '../vehicle/enterExit'
@@ -35,11 +37,15 @@ let override: { x: number; z: number; run: boolean } | null = null // solo lo us
 // cuerpo del jugador: la cámara de seguimiento lo excluye de su raycast
 export const playerBody: { current: RapierRigidBody | null } = { current: null }
 
-const readInput = () =>
+const LOOK_RATE = 2.6 // rad/s a stick lleno (valor de juego); se multiplica por la sensibilidad
+const padPrev = { jump: false, interact: false } // flancos del mando: un botón sostenido no repite
+
+// Teclado + mando (el mando suma; teclado intacto). Con un panel abierto el mando no mueve.
+const readInput = (pad: PadInput | null) =>
   override ?? {
-    x: (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0),
-    z: (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0),
-    run: keys.has('ShiftLeft') || keys.has('ShiftRight'),
+    x: Math.max(-1, Math.min(1, (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) + (pad?.move.x ?? 0))),
+    z: Math.max(-1, Math.min(1, (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) + (pad?.move.z ?? 0))),
+    run: keys.has('ShiftLeft') || keys.has('ShiftRight') || !!pad?.run,
   }
 
 export function Player() {
@@ -163,7 +169,16 @@ export function Player() {
     }
     steps++
     const dt = FIXED_DT
-    const input = readInput()
+    const pad = uiBlocking() ? null : readPad()
+    if (pad) {
+      if (pad.jump && !padPrev.jump) pending.jump = true
+      if (pad.interact && !padPrev.interact) pending.use = true
+      if (pad.look.x || pad.look.y)
+        usePlayerStore.setState((s) => ({ yaw: s.yaw - pad.look.x * LOOK_RATE * dt, pitch: clampPitch(s.pitch + pad.look.y * LOOK_RATE * dt) }))
+    }
+    padPrev.jump = !!pad?.jump
+    padPrev.interact = !!pad?.interact
+    const input = readInput(pad)
     const { yaw, position } = usePlayerStore.getState()
     const place = (p: Vec3) => {
       const t = { x: p[0], y: p[1] + FOOT, z: p[2] }

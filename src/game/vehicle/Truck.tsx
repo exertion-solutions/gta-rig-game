@@ -3,7 +3,9 @@ import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier, type Rapier
 import { useEffect, useMemo, useRef } from 'react'
 import { exposeGame } from '../dev'
 import { PLAYER_RADIUS, atLimit, needsRespawn, type Vec3 } from '../player/movement'
+import { readPad } from '../input/gamepad'
 import { keys } from '../player/keys'
+import { uiBlocking } from '../../ui/hudStore'
 import { TRUCK_SPAWN, TRUCK_SPAWN_HEADING, teleportTo, usePlayerStore } from '../player/store'
 import { truckSpeed } from '../player/telemetry'
 import { LOCACION_BOUNDS } from '../world/frame'
@@ -23,12 +25,18 @@ let truckSteps = 0 // pasos de física de la camioneta (DEV: los e2e esperan pas
 // cuerpo de la camioneta: la cámara de seguimiento lo excluye de su raycast cuando se conduce
 export const truckBody: { current: RapierRigidBody | null } = { current: null }
 
-const readDrive = (): Drive =>
-  override ?? {
-    throttle: (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0),
-    steer: (keys.has('KeyA') ? 1 : 0) - (keys.has('KeyD') ? 1 : 0),
-    brake: keys.has('Space'),
-  }
+// Teclado + mando (stick izquierdo acelera y gira, A frena). Con un panel abierto el mando no maneja.
+const readDrive = (): Drive => {
+  const pad = uiBlocking() ? null : readPad()
+  const c = (v: number) => Math.max(-1, Math.min(1, v))
+  return (
+    override ?? {
+      throttle: c((keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) + (pad?.move.z ?? 0)),
+      steer: c((keys.has('KeyA') ? 1 : 0) - (keys.has('KeyD') ? 1 : 0) - (pad?.move.x ?? 0)),
+      brake: keys.has('Space') || !!pad?.jump,
+    }
+  )
+}
 
 type Q = { x: number; y: number; z: number; w: number }
 // q * (0, 0, -1): frente de la camioneta en el mundo
@@ -76,6 +84,16 @@ export function Truck() {
       if (e.code === 'KeyE' && !e.repeat) toggleMode(isFree)
     }
     window.addEventListener('keydown', down)
+    // X del mando = tecla E (subir / bajar), por flanco
+    let raf = 0
+    let prevX = false
+    const poll = () => {
+      raf = requestAnimationFrame(poll)
+      const x = !uiBlocking() && !!readPad()?.interact
+      if (x && !prevX) toggleMode(isFree)
+      prevX = x
+    }
+    raf = requestAnimationFrame(poll)
     exposeGame({
       getMode: () => usePlayerStore.getState().mode,
       getTruck: () => {
@@ -98,7 +116,10 @@ export function Truck() {
       flipTruck: () => body.current?.setRotation({ x: 0, y: 0, z: 1, w: 0 }, true), // boca abajo (test del respawn por vuelco)
       setTilt: (seconds: number) => (tilt.current = seconds), // para probar el respawn por vuelco sin esperar
     })
-    return () => window.removeEventListener('keydown', down)
+    return () => {
+      window.removeEventListener('keydown', down)
+      cancelAnimationFrame(raf)
+    }
   }, [world, rapier])
 
   // Todo en el paso fijo de Rapier (igual que el jugador): updateVehicle debe correr justo antes de world.step.
