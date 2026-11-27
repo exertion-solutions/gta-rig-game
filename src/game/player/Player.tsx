@@ -28,6 +28,8 @@ const FACING_COS = 0.7 // W engancha la escalera solo mirando hacia ella
 // Pulsaciones pendientes (se consumen en el paso de física). Con un panel abierto el Hud corta las teclas antes.
 const pending = { jump: false, use: false }
 let steps = 0 // pasos de física del jugador (DEV: los e2e esperan pasos reales, no tiempo)
+// DEV: último salto medido en el paso de física (no por muestreo de cuadros): altura inicial, ápice y cortes de subida
+const jumpLog = { y0: 0, apex: 0, cuts: [] as { vy: number; want: number; got: number }[] }
 let override: { x: number; z: number; run: boolean } | null = null // solo lo usa window.__game (tests)
 // cuerpo del jugador: la cámara de seguimiento lo excluye de su raycast
 export const playerBody: { current: RapierRigidBody | null } = { current: null }
@@ -111,6 +113,7 @@ export function Player() {
       climbState: () => (climb.current ? { ladderId: climb.current.ladder.id, progress: climb.current.p } : null),
       isGrounded: () => grounded.current,
       steps: () => steps,
+      jumpStats: () => ({ rise: jumpLog.apex - jumpLog.y0, cuts: jumpLog.cuts }),
       lastSafe: () => safe.current,
       valveState: (id: string) => useValveStore.getState().states[id] ?? null,
       nearInteractable: () => useValveStore.getState().near,
@@ -188,7 +191,7 @@ export function Player() {
         return void usePlayerStore.setState({ position: q })
       }
       cl.p = p
-      const atEnd = p === 0 || p === 1 // solo en un extremo E suelta la escalera (a mitad no: caería)
+      const atEnd = p <= 1e-6 || p >= 1 - 1e-6 // solo en un extremo E suelta la escalera (a mitad no: caería)
       if (usePlayerStore.getState().climbAtEnd !== atEnd) usePlayerStore.setState({ climbAtEnd: atEnd })
       const q = ladderFeet(cl.ladder, p)
       rb.setNextKinematicTranslation({ x: q[0], y: q[1] + FOOT, z: q[2] })
@@ -222,7 +225,9 @@ export function Player() {
     }
 
     const { vx, vz } = stepMovement(input, yaw, dt)
+    const wasAir = vs.current.airMs === Infinity
     vs.current = stepVertical(vs.current, grounded.current, jump, dt)
+    if (!wasAir && vs.current.airMs === Infinity) Object.assign(jumpLog, { y0: position[1], apex: position[1], cuts: [] })
     if (vs.current.airMs === Infinity && vs.current.vy > 0) playerAction.airborne = true
     // QA D-10: en el aire, el autostep del controlador "subía" por la esquina mástil/baranda (salto + escalón = 0,78 m) y
     // el jugador quedaba parado en el aire o flotando con el clip de salto. Autostep y pegado al suelo solo apoyado.
@@ -244,7 +249,10 @@ export function Player() {
       grounded.current = c.computedGrounded()
     }
     // Subiendo y frenado por algo encima: se corta la subida (sin quedar pegado al techo o a la arista).
-    if (want.y > 0 && m.y < want.y / 2) vs.current = { ...vs.current, vy: 0 }
+    if (want.y > 0 && m.y < want.y / 2) {
+      jumpLog.cuts.push({ vy: vs.current.vy, want: want.y, got: m.y })
+      vs.current = { ...vs.current, vy: 0 }
+    }
     if (grounded.current && vs.current.vy < 0) {
       vs.current = { ...vs.current, vy: 0 }
       playerAction.airborne = false
@@ -263,6 +271,7 @@ export function Player() {
       return
     }
     safe.current = trackSafe(safe.current, pos, grounded.current, LOCACION_BOUNDS)
+    jumpLog.apex = Math.max(jumpLog.apex, pos[1])
     // QA D-11: el vallado no se ve; si se empuja contra él, el HUD lo dice (sin distancias)
     const limit = (input.x !== 0 || input.z !== 0) && atLimit(pos, PLAYER_RADIUS + 0.05, LOCACION_BOUNDS)
     if (usePlayerStore.getState().atLimit !== limit) usePlayerStore.setState({ atLimit: limit })

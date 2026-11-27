@@ -81,9 +81,12 @@ test('salto con Espacio: sube (clip jump) y vuelve a y = 0', async ({ page }) =>
   await page.keyboard.press('Space')
   // un solo muestreo: subida y caída hasta volver a apoyar (antes dos ventanas por reloj; entre ellas se perdía el ápice)
   const all = await sample(page, 'n > 24 && w.isGrounded() && Math.abs(w.getPosition()[1]) < 0.02', 300)
-  const apex = Math.max(...all.map((s) => s.p[1]))
-  expect(apex).toBeGreaterThan(0.35) // ápice de juego ≈ 0,49 m
-  expect(apex).toBeLessThan(0.7)
+  // ápice medido en el paso de física (hook DEV), no por muestreo de cuadros: con pocos FPS el muestreo perdía el ápice
+  const js = await g<{ rise: number; cuts: unknown[] }>(page, 'jumpStats')
+  console.log(`[salto] ascenso ${js.rise.toFixed(4)} m, muestreo ${Math.max(...all.map((s) => s.p[1])).toFixed(4)} m, cortes ${JSON.stringify(js.cuts)}`)
+  expect(js.cuts).toEqual([]) // en salto libre nada corta la subida
+  expect(js.rise).toBeGreaterThan(0.45) // ápice de juego v²/2g ≈ 0,49 m
+  expect(js.rise).toBeLessThan(0.55)
   expect(all.some((s) => s.clip === 'jump')).toBe(true)
   expect(Math.abs((await pos(page))[1])).toBeLessThan(0.05)
 })

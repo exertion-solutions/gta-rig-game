@@ -11,7 +11,7 @@ const VIEWPORTS = [
   [768, 1024],
   [390, 844],
 ] as const
-const IDS = ['radar', 'hud-mission', 'hud-visited', 'legend', 'hud-ficha', 'open-missions', 'hud-sector', 'hud-limit']
+const IDS = ['radar', 'hud-mission', 'hud-visited', 'legend', 'hud-ficha', 'open-missions', 'hud-sector', 'hud-limit', 'interact-prompt']
 const SKY = '#9fc3e8'
 type Rect = { id: string; x: number; y: number; w: number; h: number }
 
@@ -21,7 +21,8 @@ async function rects(page: Page): Promise<Rect[]> {
   return page.evaluate((ids) => {
     const hud = document.querySelector('[data-testid="hud"]')!
     return ids.flatMap((id) => {
-      const el = hud.querySelector(`[data-testid="${id}"]`)
+      // el aviso central (E subir/operar/soltar) vive fuera del contenedor del HUD
+      const el = id === 'interact-prompt' ? document.querySelector('[data-testid="interact-prompt"]') : hud.querySelector(`[data-testid="${id}"]`)
       if (!el) return []
       const r = el.getBoundingClientRect()
       return r.width > 1 && r.height > 1 ? [{ id, x: r.x, y: r.y, w: r.width, h: r.height }] : []
