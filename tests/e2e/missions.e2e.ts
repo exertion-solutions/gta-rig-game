@@ -152,6 +152,7 @@ test('misión 4: llegar al piso de enganche y autorregistrar; el resumen refleja
 })
 
 test('misión 2: 8 preguntas; el resumen cuenta coincidencias sin calificar', async ({ page }) => {
+  test.slow() // 8 preguntas x 3 clics: cada clic espera cuadros y con render por software no entra en 120 s
   await start(page, 'm2-que-hace-cada-sector')
   for (let i = 0; i < 8; i++) {
     const c = page.getByTestId('choose-controls')

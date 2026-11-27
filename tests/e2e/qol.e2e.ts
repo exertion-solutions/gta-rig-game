@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { settle, waitSteps } from './wait'
+import { settle, waitFrames } from './wait'
 
 type Pos = [number, number, number]
 const pos = (page: Page) => page.evaluate(() => (window as any).__game.getPosition() as Pos)
@@ -18,7 +18,7 @@ test('Esc abre y cierra la pausa; con la pausa abierta W no mueve al jugador', a
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('pause-menu')).toBeVisible()
   await page.keyboard.down('KeyW')
-  await waitSteps(page, 30)
+  await waitFrames(page, 30) // cuadros, no pasos de física: con la pausa abierta la física está congelada y no avanzan
   await page.keyboard.up('KeyW')
   expect(await pos(page)).toEqual(p0)
   await page.keyboard.press('Escape')

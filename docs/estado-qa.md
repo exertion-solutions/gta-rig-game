@@ -51,7 +51,6 @@ agachado ~0,8 m/s, camioneta ~12 m/s tras 2,4 s de acelerador y se detiene al fr
 
 ## Lo que falta
 
-- Dos e2e fallan desde antes de estos cambios (fallan igual en `8fa59a9`): `qol.e2e.ts:16` (pausa: espera pasos de física con `waitSteps` y con la pausa abierta la física está congelada, así que nunca llegan) y `missions.e2e.ts:154` (misión 2: el botón Confirmar no llega a estar clicable; causa sin determinar).
 - Probar en un equipo con GPU y con un mando físico; revisar a ojo el personaje agachado y el clip grabado.
 - Voz de la radio: no hay mp3 generados (`manifest.json` vacío); solo subtítulos y sonidos procedurales. La Task 11 del plan queda sin marcar por eso.
 - Misión 8 omitida por falta de dato en las fuentes vendorizadas.
