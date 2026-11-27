@@ -102,7 +102,7 @@ test('no atraviesa la baranda del piso de trabajo ni el reticulado del mástil',
   const mast = (await boundsIn(page, 'sk575_mastil', [-3, floorY, -1.2 - PLAYER_RADIUS], [1, floorY + 1.8, -1.2 + PLAYER_RADIUS]))!
   end = (await walk(page, undefined, false)).pop()!
   expect(end[0]).toBeGreaterThan(mast.max[0]) // no lo atraviesa
-  expect(end[0] - (mast.max[0] + PLAYER_RADIUS)).toBeLessThan(0.75) // la caja por banda abarca toda la cara (±z): queda pegado
+  expect(Math.abs(end[0] - (mast.max[0] + PLAYER_RADIUS))).toBeLessThan(TOL) // frena en la cara dibujada, sin pared invisible
 })
 
 test('sube la escalera real de una pileta y camina su cubierta hasta el equipo de cubierta', async ({ page }) => {
