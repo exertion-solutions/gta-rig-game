@@ -53,6 +53,29 @@ test('P oculta el HUD y descarga un PNG; P o Esc vuelven', async ({ page }) => {
   await expect(page.getByTestId('pause-menu')).toHaveCount(0)
 })
 
+test('R graba un clip de hasta 10 s con indicador y descarga un .webm; sin MediaRecorder el botón dice no disponible', async ({ page }) => {
+  test.setTimeout(150_000)
+  await page.goto('/')
+  await ready(page)
+  await settle(page)
+  await page.keyboard.press('KeyP')
+  const supported = await page.evaluate(() => typeof MediaRecorder !== 'undefined' && 'captureStream' in HTMLCanvasElement.prototype)
+  if (!supported) {
+    await expect(page.getByTestId('photo-clip')).toBeDisabled()
+    await expect(page.getByTestId('photo-clip')).toHaveText('Clip no disponible')
+    return
+  }
+  await waitFrames(page, 3)
+  await page.keyboard.press('KeyR')
+  await expect(page.getByTestId('rec-indicator')).toBeVisible()
+  const dl = await page.waitForEvent('download', { timeout: 90_000 })
+  expect(dl.suggestedFilename()).toMatch(/\.webm$/)
+  const webm = await pngFrom(dl)
+  expect([...webm.subarray(0, 4)]).toEqual([0x1a, 0x45, 0xdf, 0xa3]) // cabecera EBML
+  await expect(page.getByTestId('rec-indicator')).toHaveCount(0)
+  await expect(page.getByTestId('photo-status')).toHaveText('Clip descargado')
+})
+
 test('?mision=m3 deja la misión 3 en curso', async ({ page }) => {
   await page.goto('/?mision=m3')
   await page.waitForFunction(() => (window as any).__game?.getMission?.().missionId?.startsWith('m3-'), null, { timeout: 90_000 })
