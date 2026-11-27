@@ -87,7 +87,7 @@ export function Truck() {
     const apply = (hour: number) => {
       night.current = headlightsOn(hour)
       model.beam.visible = night.current
-      model.beam.intensity = night.current ? 90 : 0
+      model.beam.intensity = night.current ? 400 : 0
       model.headMat.emissiveIntensity = night.current ? 2.5 : 0.1
     }
     apply(useTime.getState().hour)
