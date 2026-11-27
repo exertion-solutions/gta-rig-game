@@ -8,6 +8,7 @@ import { exposeGame } from '../game/dev'
 import { loadMissionDefs } from '../game/missions'
 import { ObjectiveMarker, SectorReporter } from '../game/missions/MissionRuntime'
 import { useMissionStore } from '../game/missions/store'
+import { DayNight } from '../game/world/DayNight'
 import { RigScene } from '../game/world/loadRig'
 import { ValveHighlight, Valves } from '../game/world/Valve'
 import { INTERACTABLES } from '../game/world/walkable'
@@ -45,12 +46,13 @@ export function App() {
   }, [])
   return (
     <>
-      <Canvas camera={{ position: [-40, 30, 50], fov: 50, far: 500 }} style={{ height: '100vh' }}>
+      <Canvas shadows="percentage" camera={{ position: [-40, 30, 50], fov: 50, far: 500 }} style={{ height: '100vh' }}>
         <color attach="background" args={['#9fc3e8']} />
         <Suspense fallback={null}>
           <Suspense fallback={null}>
             <PhysicsScene onReady={() => setPhysicsReady(true)} />
           </Suspense>
+          <DayNight />
           <RigScene />
           <ScenarioAdditions />
           <Valves />

@@ -2,26 +2,36 @@ import { useGLTF } from '@react-three/drei'
 import { useMemo } from 'react'
 import { DRACO_PATH, rigUrl } from './assetUrl'
 import { RIG_PARTS } from './frame'
+import { mergeByMaterial } from './mergeByMaterial'
 import { stripLines } from './stripLines'
 
 // Decoders Draco locales (public/decoders/draco), sin CDN. Meshopt lo agrega drei por defecto.
 
 RIG_PARTS.forEach((p) => useGLTF.preload(rigUrl(p.glb), DRACO_PATH))
 
+// Proyectan sombra solo las piezas grandes (≈ 230 k triángulos): con todas, el pase de sombras duplicaba los ≈ 690 k del
+// equipo y el cuadro pasaba de 1 M (docs/perf.md). El resto (acumulador, llave, manifold, bomba, BOP…) solo la recibe.
+const SHADOW_CASTERS = new Set(['sk575_mastil.glb', 'sk575_carrier.glb', 'sk575_piletas.glb', 'sk575_piso.glb', 'sk575_planchada.glb'])
+
 function Part({ glb }: { glb: string }) {
   const { scene } = useGLTF(rigUrl(glb), DRACO_PATH)
   const clone = useMemo(() => {
     const c = scene.clone(true)
     stripLines(c)
+    mergeByMaterial(c) // piezas estáticas: un draw call por material (el acumulador traía 63 nodos), docs/perf.md
+    const cast = SHADOW_CASTERS.has(glb)
+    c.traverse((o) => {
+      o.castShadow = cast
+      o.receiveShadow = true
+    })
     return c
-  }, [scene])
+  }, [scene, glb])
   return <primitive object={clone} name={glb.replace(/\.glb$/, '')} /> // nombre = id de la pieza (lo usan los tests)
 }
 
 export function RigScene() {
   return (
     <group>
-      <hemisphereLight args={['#ffffff', '#6b5b3a', 1.2]} />
       {RIG_PARTS.map((p) => (
         <Part key={p.id} glb={p.glb} />
       ))}

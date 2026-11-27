@@ -26,7 +26,7 @@ export function Ground() {
       <CuboidCollider args={[T, FENCE_HALF_H, LOCACION_M.z / 2]} position={[B.maxX + T, FENCE_HALF_H, 0]} />
       <CuboidCollider args={[LOCACION_M.x / 2, FENCE_HALF_H, T]} position={[mx, FENCE_HALF_H, B.minZ - T]} />
       <CuboidCollider args={[LOCACION_M.x / 2, FENCE_HALF_H, T]} position={[mx, FENCE_HALF_H, B.maxZ + T]} />
-      <mesh rotation-x={-Math.PI / 2} position={[mx, 0, 0]}>
+      <mesh rotation-x={-Math.PI / 2} position={[mx, 0, 0]} receiveShadow>
         <planeGeometry args={[LOCACION_M.x, LOCACION_M.z]} />
         <meshStandardMaterial color="#8a7a5a" />
       </mesh>
