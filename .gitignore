@@ -6,3 +6,6 @@ dist/
 test-results/
 playwright-report/
 .claude-flow/
+
+# worktrees de agentes
+.claude/
