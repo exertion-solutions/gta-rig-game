@@ -12,6 +12,7 @@ export type PlayerState = {
   mode: 'foot' | 'truck'
   teleportSeq: number // sube en cada teletransporte/reaparición: la cámara reinicia su pivote
   climbing: boolean // colgado de una escalera vertical: E no es de la camioneta
+  climbAtEnd: boolean // colgado en un extremo de la escalera: E la suelta (aviso)
   truck: { position: Vec3; heading: number } // posición a nivel de suelo y rumbo (yaw) de la camioneta
 }
 
@@ -22,6 +23,7 @@ export const usePlayerStore = create<PlayerState>(() => ({
   mode: 'foot',
   teleportSeq: 0,
   climbing: false,
+  climbAtEnd: false,
   truck: { position: TRUCK_SPAWN, heading: TRUCK_SPAWN_HEADING },
 }))
 

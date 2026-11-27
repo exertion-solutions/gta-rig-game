@@ -210,6 +210,7 @@ test('E con la camioneta abajo en planta: desde el piso de enganche baja por la 
   expect(await g(page, 'getMode')).toBe('foot')
   // colgado: el aviso pasa a W/S y E sigue sin ser de la camioneta
   await expect(page.getByTestId('interact-prompt')).toContainText('W/S subir o bajar')
+  await expect(page.getByTestId('interact-prompt')).toContainText('E soltar la escalera') // en el extremo, E la suelta
   await page.keyboard.press('KeyE') // en el extremo de arriba E lo vuelve a soltar sobre la plancha
   await page.waitForFunction(() => (window as any).__game.climbState() === null)
   expect(await g(page, 'getMode')).toBe('foot')
@@ -225,6 +226,8 @@ test('bajar de la camioneta nunca vuelve a colgar al jugador de la escalera (cam
   await g(page, 'setInput', { x: 0, z: 1, run: false })
   await page.waitForFunction(() => (window as any).__game.getPosition()[1] > 6)
   await g(page, 'setInput', null)
+  await expect(page.getByTestId('interact-prompt')).toContainText('W/S subir o bajar')
+  await expect(page.getByTestId('interact-prompt')).not.toContainText('soltar') // a mitad de la escalera E no suelta
   await g(page, 'forceMode', 'truck')
   await page.waitForFunction(() => (window as any).__game.getMode() === 'truck')
   await g(page, 'forceMode', 'foot')
@@ -240,8 +243,11 @@ test('válvula con la camioneta al alcance: no se ofrece "E: operar" y E sube a 
   await parkTruck(page, [v.position[0], 0, -8.0], -Math.PI / 2)
   await place(page, [v.position[0], 0, v.position[2] + 0.2], 0)
   await page.waitForFunction(() => (window as any).__game.nearInteractable() === 'manifold_M1')
-  await expect(page.getByTestId('interact-prompt')).toHaveCount(0)
+  const prompt = page.getByTestId('interact-prompt')
+  await expect(prompt).toContainText('E subir a la camioneta') // E es de la camioneta y el aviso lo dice
+  await expect(prompt).not.toContainText('operar')
   await page.keyboard.press('KeyE')
   await page.waitForFunction(() => (window as any).__game.getMode() === 'truck')
+  await expect(prompt).toContainText('E bajar de la camioneta')
   expect(await g(page, 'valveState', 'manifold_M1')).toBeNull()
 })

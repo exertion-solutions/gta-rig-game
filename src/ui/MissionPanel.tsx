@@ -108,10 +108,10 @@ export function MissionPanel() {
       <div className="max-h-full w-full max-w-lg space-y-4 overflow-y-auto rounded-lg border border-white/15 bg-[#14181c] p-5 text-slate-100 shadow-2xl">
         <header className="flex items-start justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-amber-400">{title}</p>
+            <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-400">{title}</p>
             {def && <h2 className="text-xl font-bold">{def.title}</h2>}
           </div>
-          <button className={btn} onClick={close} aria-label="Cerrar panel">
+          <button className={btn} onClick={close} aria-label="Cerrar (Esc)">
             Cerrar (Esc)
           </button>
         </header>
@@ -142,7 +142,7 @@ export function MissionPanel() {
             <p className="text-sm text-slate-300">{def.briefing}</p>
             <ol className="space-y-1 text-sm" data-testid="panel-objectives">
               {def.objectives.map((o, i) => (
-                <li key={o.id} className={i < mission.objectiveIndex ? 'text-slate-500 line-through' : i === mission.objectiveIndex ? 'font-semibold text-amber-300' : 'text-slate-300'}>
+                <li key={o.id} className={i < mission.objectiveIndex ? 'text-slate-400 line-through' : i === mission.objectiveIndex ? 'font-semibold text-amber-300' : 'text-slate-300'}>
                   {i + 1}. {o.text}
                 </li>
               ))}

@@ -12,7 +12,7 @@ export function EvidenceBadge({ evidence, sourceId }: { evidence: Evidence; sour
     <span
       data-evidence={evidence}
       title={`${canBePresentedAsRequirement(evidence) ? 'Puede presentarse como requisito' : 'No es requisito'}${sourceId ? ` · fuente: ${sourceId}` : ''}`}
-      className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold ${TONE[evidence]}`}
+      className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${TONE[evidence]}`}
     >
       {EVIDENCE_LABEL[evidence]}
       {sourceId ? ` · ${sourceId}` : ''}

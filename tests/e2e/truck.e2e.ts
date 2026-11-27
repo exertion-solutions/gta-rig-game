@@ -30,6 +30,7 @@ test('E alterna a la camioneta cuando está cerca y no hace nada si está lejos'
   })
   await truckParked(page, 0, 20)
   await settle(page)
+  await expect(page.getByTestId('interact-prompt')).toHaveText('E subir a la camioneta') // sin cifras de distancia
   await page.keyboard.press('KeyE')
   expect(await mode(page)).toBe('truck')
   await page.keyboard.press('KeyE')
@@ -40,6 +41,7 @@ test('E alterna a la camioneta cuando está cerca y no hace nada si está lejos'
   // lejos: E no hace nada
   await page.evaluate(() => (window as any).__game.teleport([-30, 0, -20]))
   await settle(page)
+  await expect(page.getByTestId('interact-prompt')).toHaveCount(0) // lejos: no se ofrece subir
   await page.keyboard.press('KeyE')
   expect(await mode(page)).toBe('foot')
 })

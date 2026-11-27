@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+/* Columnas del HUD (Hud.tsx): anchos que no se cruzan en ningún viewport (tests/e2e/hud-layout.e2e.ts). */
+.hud-left {
+  width: min(22rem, calc(100vw - 9.5rem));
+}
+.hud-ficha {
+  width: calc(100vw - 1.5rem);
+}
+@media (min-width: 40rem) {
+  .hud-ficha {
+    width: min(34rem, calc(100vw - min(22rem, calc(100vw - 9.5rem)) - 2.25rem));
+  }
+}

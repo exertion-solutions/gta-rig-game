@@ -187,6 +187,8 @@ export function Player() {
         return void usePlayerStore.setState({ position: q })
       }
       cl.p = p
+      const atEnd = p === 0 || p === 1 // solo en un extremo E suelta la escalera (a mitad no: caería)
+      if (usePlayerStore.getState().climbAtEnd !== atEnd) usePlayerStore.setState({ climbAtEnd: atEnd })
       const q = ladderFeet(cl.ladder, p)
       rb.setNextKinematicTranslation({ x: q[0], y: q[1] + FOOT, z: q[2] })
       return void usePlayerStore.setState({ position: q })
@@ -207,7 +209,7 @@ export function Player() {
       const lc = { ladder: near.ladder, p: near.end === 'top' ? 1 : 0 }
       climb.current = lc
       playerAction.climbing = true
-      usePlayerStore.setState({ yaw: near.ladder.facing, climbing: true })
+      usePlayerStore.setState({ yaw: near.ladder.facing, climbing: true, climbAtEnd: true })
       const q = ladderFeet(lc.ladder, lc.p)
       place(q)
       return void usePlayerStore.setState({ position: q })

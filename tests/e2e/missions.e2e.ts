@@ -180,13 +180,22 @@ test('misión 3: en boca de pozo se ve la Fuente en conflicto A2 Medio vs RCCO A
   expect((await g<{ objectiveIndex: number }>(page, 'getMission')).objectiveIndex).toBe(1)
   await go(page, ENGANCHE, 'piso-enganche')
   await index(page, 2)
+  // el objetivo de la boca de pozo trae el conflicto completo (recortado a 3 líneas con "ver más", texto entero en el DOM)
+  const obj = page.getByTestId('hud-objective')
+  const text = (await obj.textContent())!
+  expect(text).toContain('Fuente en conflicto')
+  expect(text).toContain('Layout A2 Medio')
+  expect(text).toContain('RCCO Alto')
+  expect(text).not.toMatch(FORBIDDEN)
+  const more = page.getByTestId('hud-objective-more')
+  await expect(more).toHaveText('ver más')
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
+  await more.click()
+  await expect(more).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByTestId('hud-announce')).toContainText('Objetivo 3 de 5') // aria-live polite
   await go(page, AWAY, null)
   await go(page, BOP, 'bop')
   await index(page, 3)
   await expect(page.getByTestId('hud-objective')).toContainText('Carrier')
-  const list = await page.getByTestId('hud-objectives').innerText() // la lista muestra el texto de la boca de pozo
-  expect(list).toContain('Fuente en conflicto')
-  expect(list).toContain('Layout A2 Medio')
-  expect(list).toContain('RCCO Alto')
-  expect(list).not.toMatch(FORBIDDEN)
+  await expect(page.getByTestId('hud-objective-more')).toHaveAttribute('aria-expanded', 'false') // objetivo nuevo: recortado
 })
