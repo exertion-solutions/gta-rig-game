@@ -1,15 +1,16 @@
-import { useProgress } from '@react-three/drei'
+import { useLoadStore } from '../app/loadStore'
 import { useHudStore } from './hudStore'
 
 /**
  * Pantalla de título y carga: progreso real de los GLB (LoadingManager de three) y, al terminar, "Jugar" con un clic
  * (el clic también captura el mouse para mirar). Con navegador automatizado (e2e) no hay pantalla: solo el indicador chico.
  */
-export function Loading({ physicsReady }: { physicsReady: boolean }) {
-  const { active, progress } = useProgress()
+export function Loading() {
+  const progress = useLoadStore((s) => s.progress)
+  const settled = useLoadStore((s) => s.settled)
   const titleOpen = useHudStore((s) => s.titleOpen)
   const setTitle = useHudStore((s) => s.setTitle)
-  const ready = physicsReady && !active && progress === 100
+  const ready = settled
   if (ready && !titleOpen) return null
   const pct = Math.round(progress)
   if (!titleOpen)
