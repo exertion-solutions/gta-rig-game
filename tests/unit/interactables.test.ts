@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { INTERACT_REACH, nearestInteractable, nextValveState } from '../../src/game/world/interactables'
-import type { Interactable } from '../../src/game/world/walkable'
+import { INTERACTABLES, type Interactable } from '../../src/game/world/walkable'
 
 const v = (id: string, x: number, y = 1, z = 0): Interactable => ({ id, kind: 'valve', partId: 'p', position: [x, y, z], label: id, sourceId: 'glb:x' })
 
@@ -23,5 +23,13 @@ describe('nextValveState: alterna; sin registro previo la primera operación reg
   it('open -> closed -> open', () => {
     expect(nextValveState('open')).toBe('closed')
     expect(nextValveState('closed')).toBe('open')
+  })
+})
+
+// D-14: mismo formato y ortografía en todos los rótulos (antes "Acumulador: valvula 4vías 3", sin tilde)
+describe('rótulos de válvulas', () => {
+  it('todas: "Válvula … del manifold de ahogo" o "Válvula … del acumulador"', () => {
+    for (const it of INTERACTABLES) expect(it.label).toMatch(/^Válvula .+ del (manifold de ahogo|acumulador)$/)
+    expect(INTERACTABLES.map((x) => x.label).join(' ')).not.toMatch(/valvula|\dvías/)
   })
 })

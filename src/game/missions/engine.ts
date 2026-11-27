@@ -18,13 +18,13 @@ const textsOf = (def: MissionDef): string[] => [
 ]
 
 /**
- * Sectores cuyo radio contiene (x,z) y cuyo piso contiene la altura del jugador (FLOOR_BANDS, derivadas de las alturas
- * medidas), del más cercano al más lejano; ignora sectores sin posición documentada. Sin piso = nivel del suelo.
+ * Sectores cuyo radio contiene (x,z) y cuyo piso contiene la altura del jugador (onFloor: bandas y cubiertas derivadas
+ * de las alturas medidas), del más cercano al más lejano; ignora sectores sin posición documentada. Sin piso = nivel del suelo.
  */
 export function sectorsAt(pos: Vec3, sectors: Sector[], radius = ARRIVAL_RADIUS): string[] {
   return sectors
     .flatMap((s) =>
-      s.position && onFloor(pos[1], s.floor ?? 'terreno') ? [{ id: s.id, d: Math.hypot(pos[0] - s.position[0], pos[2] - s.position[2]) }] : [],
+      s.position && onFloor(pos, s.floor ?? 'terreno') ? [{ id: s.id, d: Math.hypot(pos[0] - s.position[0], pos[2] - s.position[2]) }] : [],
     )
     .filter((x) => x.d <= radius)
     .sort((a, b) => a.d - b.d)

@@ -441,6 +441,11 @@ export async function generate() {
       expect(ring > 40, `manifold: no se encontró el volante de ${label} (${ring} puntos en el aro)`)
       interactables.push({ id: `manifold_${label}`, kind: 'valve', partId: 'sk575_manifold', position: v3(w), label: `Válvula ${label} del manifold de ahogo`, sourceId: 'glb:sk575_manifold', evidence: ev('documentado', 'meta del GLB: "Manifold de ahogo M1–M12"; visor docs/references/well-control: "válvulas con volante", volantes Ø≈0,40 m (aproximado)') })
     }
+    // Mismo formato que el manifold ("Válvula M6 del manifold de ahogo"): antes "Acumulador: valvula 4vías 3" (sin tilde).
+    const accLabel = (k) => {
+      const m = /^valvula_(\d)vias_(.+)$/.exec(k) ?? fail(`acumulador: nombre de válvula inesperado ${k}`)
+      return `Válvula de ${m[1]} vías ${m[2]} del acumulador`
+    }
     const acu = await load(RIG + 'sk575_acumulador.glb')
     const groups = new Map()
     for (const n of acu.nodes) {
@@ -450,7 +455,7 @@ export async function generate() {
     expect(groups.size === 6, `acumulador: se esperaban 6 válvulas con nombre, hay ${groups.size}`)
     for (const [k, names] of [...groups].sort()) {
       const b = aabb(acu.tris, (t) => names.includes(t.node), -9, 99)
-      interactables.push({ id: `acumulador_${k}`, kind: 'valve', partId: 'sk575_acumulador', position: v3([(b.min[0] + b.max[0]) / 2, b.max[1], (b.min[2] + b.max[2]) / 2]), label: `Acumulador: ${k.replace(/_/g, ' ').replace('vias', 'vías')}`, sourceId: 'glb:sk575_acumulador', evidence: ev('ilustrativo', 'meta del GLB: unidad de referencia genérica del fabricante (no es el equipo instalado)') })
+      interactables.push({ id: `acumulador_${k}`, kind: 'valve', partId: 'sk575_acumulador', position: v3([(b.min[0] + b.max[0]) / 2, b.max[1], (b.min[2] + b.max[2]) / 2]), label: accLabel(k), sourceId: 'glb:sk575_acumulador', evidence: ev('ilustrativo', 'meta del GLB: unidad de referencia genérica del fabricante (no es el equipo instalado)') })
     }
   }
 

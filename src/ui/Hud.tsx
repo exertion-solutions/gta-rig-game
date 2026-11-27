@@ -9,6 +9,7 @@ import { MissionPanel } from './MissionPanel'
 import { Radar } from './Radar'
 import { sectorLabel } from './sectorLabel'
 import { buildFicha } from '../game/data/ficha'
+import { visitedView } from './visitedView'
 
 // Teclas que mueven al jugador o suben/bajan de la camioneta: con un panel abierto no deben llegar al juego.
 const GAME_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'Space', 'ShiftLeft', 'ShiftRight'])
@@ -56,6 +57,7 @@ export function Hud() {
     if (needsPanel || mission.status === 'completed') setPanel(true)
   }, [needsPanel, mission.status, idx, setPanel])
   const ficha = useMemo(() => (atSector ? buildFicha(atSector) : null), [atSector])
+  const view = visitedView(def, mission, visited, placed)
 
   return (
     <div className="pointer-events-none fixed inset-0 z-10 select-none overflow-hidden font-sans text-slate-100" data-testid="hud">
@@ -70,9 +72,9 @@ export function Hud() {
               <p className="mt-1 text-base font-semibold leading-snug text-amber-300" data-testid="hud-objective">
                 {obj.text}
               </p>
-              {obj.kind === 'visitAll' && (
-                <p className="mt-0.5 text-xs text-slate-300">
-                  {mission.visited.length}/{obj.sectorIds.length} sectores
+              {view.mission && (
+                <p className="mt-0.5 text-xs text-slate-300" data-testid="hud-progress">
+                  {view.ids.length}/{view.total} sectores
                 </p>
               )}
               <ol className="mt-2 hidden space-y-0.5 text-xs sm:block" data-testid="hud-objectives">
@@ -90,10 +92,10 @@ export function Hud() {
           )}
         </div>
         <div className={`${card} hidden px-3 py-2 sm:block`} data-testid="hud-visited">
-          <p className={label}>
-            Sectores visitados · {visited.length}/{placed}
+          <p className={label} data-testid="hud-visited-count">
+            {view.label} · {view.ids.length}/{view.total}
           </p>
-          <p className="mt-1 text-xs text-slate-300">{visited.length ? visited.map(sectorLabel).join(' · ') : 'ninguno todavía'}</p>
+          <p className="mt-1 text-xs text-slate-300">{view.ids.length ? view.ids.map(sectorLabel).join(' · ') : 'ninguno todavía'}</p>
         </div>
       </div>
 

@@ -18,7 +18,7 @@ export type Interactable = {
   // Sin fuente que documente estados: no hay estado hasta que el jugador opera (registro propio, ver interactables.ts).
   state?: 'open' | 'closed'
 }
-type Incline = { id: string; bottom: number[]; top: number[]; width: number; slopeDeg: number }
+type Incline = { id: string; bottom: number[]; top: number[]; width: number; slopeDeg: number; rise?: number }
 type Rail = { id: string; a: number[]; b: number[]; height: number }
 type Solid = { id: string; center: number[]; half: number[] }
 export type TraversalData = {
@@ -79,16 +79,25 @@ export const MAX_MEASURED_SLOPE_DEG = Math.max(...[...TRAVERSAL.stairs, ...TRAVE
 
 // Bandas verticales de cada piso para contar una llegada (sectorsAt). Derivadas solo de alturas medidas:
 // media banda = la mitad del menor salto entre niveles caminables = (piso de trabajo − cubierta más alta del nivel del
-// suelo) / 2 = (3,606 − 2,639) / 2. Nivel del suelo = todo lo que queda por debajo de la banda del piso de trabajo
-// (suelo, pasarela 1,05, cubiertas de piletas 2,05/2,64). Entre bandas (p. ej. a mitad de la escalera vertical) no cuenta.
+// suelo) / 2 = (3,606 − 2,639) / 2. Entre bandas (p. ej. a mitad de la escalera vertical) no cuenta.
 const platformY = (id: string) => TRAVERSAL.platforms.find((p) => p.id === id)!.y
 const PT_Y = platformY('piso_trabajo')
 const PE_Y = platformY('piso_enganche')
-const GROUND_TOP = Math.max(...TRAVERSAL.platforms.map((p) => p.y).filter((y) => y < PT_Y))
+const GROUND_DECKS = TRAVERSAL.platforms.filter((p) => p.y < PT_Y)
+const GROUND_TOP = Math.max(...GROUND_DECKS.map((p) => p.y))
 export const LEVEL_HALF_BAND = (PT_Y - GROUND_TOP) / 2
 export const FLOOR_BANDS = {
-  terreno: [-Infinity, PT_Y - LEVEL_HALF_BAND],
   pisoTrabajo: [PT_Y - LEVEL_HALF_BAND, PT_Y + LEVEL_HALF_BAND],
   pisoEnganche: [PE_Y - LEVEL_HALF_BAND, PE_Y + LEVEL_HALF_BAND],
 } as const satisfies Record<string, readonly [number, number]>
-export const onFloor = (y: number, floor: keyof typeof FLOOR_BANDS) => y >= FLOOR_BANDS[floor][0] && y < FLOOR_BANDS[floor][1]
+// Nivel del suelo: de pie sobre el suelo (y 0) o sobre una cubierta medida del nivel del suelo (pasarela 1,05, piletas
+// 2,05, trip tank 2,64), solo DENTRO de su huella. Antes era una banda única hasta 3,12 m y la rampa de la V (que sube de
+// 1,09 a 3,62) contaba como suelo para BOP y mástil. Holgura = la contrahuella mayor medida (escaleras de traversal.json).
+export const GROUND_TOL = Math.max(...TRAVERSAL.stairs.map((s) => s.rise ?? 0))
+export const groundLevelAt = (x: number, z: number) =>
+  Math.max(0, ...GROUND_DECKS.filter((p) => x >= p.min[0] && x <= p.max[0] && z >= p.min[1] && z <= p.max[1]).map((p) => p.y))
+export type Floor = 'terreno' | keyof typeof FLOOR_BANDS
+export const onFloor = (pos: readonly number[], floor: Floor) =>
+  floor === 'terreno'
+    ? pos[1] < groundLevelAt(pos[0], pos[2]) + GROUND_TOL
+    : pos[1] >= FLOOR_BANDS[floor][0] && pos[1] < FLOOR_BANDS[floor][1]

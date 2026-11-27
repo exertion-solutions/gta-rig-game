@@ -68,21 +68,24 @@ test('lista: las misiones 1 a 7 están, la 8 se omite y su motivo nunca se muest
   expect(await page.getByTestId('hud').innerText()).not.toMatch(/no están en los datos vendorizados|25 ± 3/)
 })
 
-test('misión 1 de punta a punta: Acceso (salir y volver) y los 14 sectores', async ({ page }) => {
+test('misión 1 de punta a punta: Acceso (salir y volver) y los otros 13 sectores, un solo contador', async ({ page }) => {
   await start(page, 'm1-reconocimiento')
-  await expect(page.getByTestId('hud-objective')).toHaveText('Conducí hasta el Acceso a la locación')
+  await expect(page.getByTestId('hud-objective')).toContainText('a pie o en la camioneta')
+  await expect(page.getByTestId('hud-objective')).not.toContainText('Conducí')
   await go(page, ACCESO, 'acceso') // ya estaba en el Acceso al empezar: no cuenta
   expect((await g<{ objectiveIndex: number }>(page, 'getMission')).objectiveIndex).toBe(0)
   await go(page, AWAY, null)
   await go(page, ACCESO, 'acceso')
   await index(page, 1)
-  await expect(page.getByTestId('hud-objective')).toHaveText('Visitá los 14 sectores')
-  await go(page, AWAY, null) // para que el Acceso cuente también como sector del recorrido
-  const tour: [Vec, string][] = [[ACCESO, 'acceso'], ...TOUR]
-  for (const [i, [p, at]] of tour.entries()) {
+  await expect(page.getByTestId('hud-objective')).toHaveText('Visitá los otros 13 sectores')
+  // D-03: el Acceso ya cumplido no pide otra salida; las dos tarjetas muestran la misma cuenta
+  for (const [i, [p, at]] of TOUR.entries()) {
     await go(page, p, at)
-    if (i < tour.length - 1)
+    if (i < TOUR.length - 1) {
       await page.waitForFunction((n) => (window as any).__game.getMission().visited.length === n, i + 1, { timeout: 15_000 })
+      await expect(page.getByTestId('hud-progress')).toHaveText(`${i + 1}/13 sectores`)
+      await expect(page.getByTestId('hud-visited-count')).toContainText(`${i + 1}/13`)
+    }
   }
   await page.waitForFunction(() => (window as any).__game.getMission().status === 'completed')
   await expect(page.getByTestId('mission-completed')).toBeVisible()
@@ -153,7 +156,10 @@ test('misión 2: 8 preguntas; el resumen cuenta coincidencias sin calificar', as
   for (let i = 0; i < 8; i++) {
     const c = page.getByTestId('choose-controls')
     await expect(c).toBeVisible()
-    await c.locator('input[type="checkbox"]').first().check()
+    await expect(c.locator('input[type="checkbox"]')).toHaveCount(0) // una sola respuesta de referencia: radio
+    await c.locator('input[type="radio"]').nth(1).check()
+    await c.locator('input[type="radio"]').first().check() // marcar otra desmarca la anterior
+    await expect(c.locator('input[type="radio"]:checked')).toHaveCount(1)
     await c.getByRole('button', { name: 'Confirmar' }).click() // una respuesta distinta de la referencia también avanza
   }
   const summary = page.getByTestId('mission-summary')

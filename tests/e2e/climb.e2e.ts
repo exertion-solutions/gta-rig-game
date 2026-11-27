@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import type { TraversalData } from '../../src/game/world/walkable'
+import { waitFrames } from './wait'
 
 // Task 18B: salto, escalera vertical, válvulas y objetivo `interact`. Espera estados (no tiempos fijos) con los ganchos DEV.
 type Pos = [number, number, number]
@@ -139,6 +140,11 @@ test('válvula M1 del manifold: aviso sin distancias, E alterna el registro, cli
   await expect(prompt).toContainText('ilustrativo: no es un procedimiento')
   await expect(prompt.getByTestId('valve-state')).toHaveText('Registro propio: sin operar')
   expect(await prompt.innerText()).not.toMatch(DISTANCE)
+  // D-14: válvulas juntas; el aro ámbar marca en la escena la que opera E (centrado en su volante)
+  await waitFrames(page, 2)
+  const hl = (await g<{ min: number[]; max: number[] }>(page, 'renderedBounds', 'valvula_al_alcance'))!
+  expect(Math.abs((hl.min[0] + hl.max[0]) / 2 - v.position[0])).toBeLessThan(0.05)
+  expect(Math.abs((hl.min[2] + hl.max[2]) / 2 - v.position[2])).toBeLessThan(0.05)
   // con el panel abierto E no opera
   await page.keyboard.press('KeyM')
   await page.keyboard.press('KeyE')

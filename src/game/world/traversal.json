@@ -1456,7 +1456,7 @@
     1.316,
     3.764
    ],
-   "label": "Acumulador: valvula 3vías bypass",
+   "label": "Válvula de 3 vías bypass del acumulador",
    "sourceId": "glb:sk575_acumulador",
    "evidence": {
     "status": "ilustrativo",
@@ -1472,7 +1472,7 @@
     1.139,
     3.764
    ],
-   "label": "Acumulador: valvula 4vías 1",
+   "label": "Válvula de 4 vías 1 del acumulador",
    "sourceId": "glb:sk575_acumulador",
    "evidence": {
     "status": "ilustrativo",
@@ -1488,7 +1488,7 @@
     1.139,
     3.764
    ],
-   "label": "Acumulador: valvula 4vías 2",
+   "label": "Válvula de 4 vías 2 del acumulador",
    "sourceId": "glb:sk575_acumulador",
    "evidence": {
     "status": "ilustrativo",
@@ -1504,7 +1504,7 @@
     1.139,
     3.764
    ],
-   "label": "Acumulador: valvula 4vías 3",
+   "label": "Válvula de 4 vías 3 del acumulador",
    "sourceId": "glb:sk575_acumulador",
    "evidence": {
     "status": "ilustrativo",
@@ -1520,7 +1520,7 @@
     1.139,
     3.764
    ],
-   "label": "Acumulador: valvula 4vías 4",
+   "label": "Válvula de 4 vías 4 del acumulador",
    "sourceId": "glb:sk575_acumulador",
    "evidence": {
     "status": "ilustrativo",
@@ -1536,7 +1536,7 @@
     1.139,
     3.764
    ],
-   "label": "Acumulador: valvula 4vías 5",
+   "label": "Válvula de 4 vías 5 del acumulador",
    "sourceId": "glb:sk575_acumulador",
    "evidence": {
     "status": "ilustrativo",

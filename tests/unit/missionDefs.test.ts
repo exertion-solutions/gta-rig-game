@@ -92,12 +92,13 @@ describe('las 8 misiones con los datos vendorizados', () => {
 })
 
 describe('m1 Reconocimiento', () => {
-  it('llegar al Acceso y luego visitar los 14 sectores; el spawn en el Acceso no cuenta', () => {
+  it('llegar al Acceso y luego visitar los otros 13 sectores; el spawn en el Acceso no cuenta', () => {
     const m = byId(1)
     expect(m.objectives.map((o) => o.kind)).toEqual(['reach', 'visitAll'])
     const v = m.objectives[1] as Extract<Objective, { kind: 'visitAll' }>
-    expect(v.sectorIds).toHaveLength(14)
-    expect(new Set(v.sectorIds).size).toBe(14)
+    expect(v.sectorIds).toHaveLength(13)
+    expect(v.sectorIds).not.toContain('acceso')
+    expect(new Set(['acceso', ...v.sectorIds]).size).toBe(14)
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     const e = createEngine([m], data)
     e.start(m.id)
@@ -107,6 +108,26 @@ describe('m1 Reconocimiento', () => {
     e.report({ type: 'at', sectorId: 'acceso', inside: ['acceso'] })
     expect(e.state().objectiveIndex).toBe(1)
     vi.restoreAllMocks()
+  })
+
+  // D-03: el Acceso recién cumplido no exige una segunda salida; con los otros 13 la misión termina.
+  it('tras el Acceso, recorrer los otros 13 completa la misión sin volver a salir del Acceso', () => {
+    const m = byId(1)
+    const v = m.objectives[1] as Extract<Objective, { kind: 'visitAll' }>
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const e = createEngine([m], data)
+    e.start(m.id)
+    e.report({ type: 'at', sectorId: null, inside: [] })
+    e.report({ type: 'at', sectorId: 'acceso', inside: ['acceso'] })
+    for (const id of v.sectorIds) e.report({ type: 'at', sectorId: id, inside: [id] })
+    expect(e.state().status).toBe('completed')
+    vi.restoreAllMocks()
+  })
+
+  it('el texto no pide conducir: a pie o en la camioneta', () => {
+    const t = byId(1).objectives[0].text
+    expect(t).not.toMatch(/^Conduc/)
+    expect(t).toMatch(/a pie o en la camioneta/)
   })
 })
 

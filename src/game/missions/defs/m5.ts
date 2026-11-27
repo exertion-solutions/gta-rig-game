@@ -14,11 +14,17 @@ export const m5: MissionDef = {
   title: '¿Secundaria requerida?',
   briefing: 'Compará cuatro puntos del Libro DROPS y fijate en cuáles el dato indica secundaria requerida. Es lectura de la tabla, no un juicio.',
   objectives: [
-    { id: 'm5-recorrido', kind: 'visitAll', text: `Visitá ${sectorName('bop')}, ${sectorName('mastil')} y ${sectorName('piso-enganche')}`, sectorIds: ['bop', 'mastil', 'piso-enganche'] },
+    // Mismo verbo que m3/m4: el piso de enganche exige trepar la escalera vertical (antes "Visitá…", ambiguo con "Mástil y vientos").
+    {
+      id: 'm5-recorrido',
+      kind: 'visitAll',
+      text: `Recorré, en cualquier orden: ${sectorName('bop')}; el pie de ${sectorName('mastil')}; y, subiendo por la escalera vertical, ${sectorName('piso-enganche')}`,
+      sectorIds: ['bop', 'mastil', 'piso-enganche'],
+    },
     {
       id: 'm5-comparar',
       kind: 'choose',
-      text: `Leé: ${IDS.map(line).join(' | ')}. ¿En cuáles el dato marca secundaria requerida?`,
+      text: `Leé: ${IDS.map(line).join(' | ')}. ¿En cuáles el dato marca secundaria requerida? Marcá todas las que correspondan.`,
       options: IDS.map((id) => ({ id, text: id })),
       correct: required,
     },

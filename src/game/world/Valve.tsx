@@ -64,3 +64,25 @@ export function Valves() {
     </instancedMesh>
   )
 }
+
+// Válvulas juntas (M1, M9 y M7 a pocos centímetros): E opera la más cercana a la mano; este aro ámbar marca cuál es, para
+// que no dependa solo del texto del aviso. Ilustrativo, sin cifras. Un draw call, oculto si no hay válvula al alcance.
+const BY_ID = new Map(INTERACTABLES.map((v) => [v.id, v]))
+export function ValveHighlight() {
+  const ref = useRef<THREE.Mesh>(null)
+  useFrame(({ clock }) => {
+    const m = ref.current
+    if (!m) return
+    const v = BY_ID.get(useValveStore.getState().near ?? '')
+    m.visible = !!v
+    if (!v) return
+    m.position.set(v.position[0], v.position[1] + 0.03, v.position[2])
+    m.scale.setScalar(1 + 0.08 * Math.sin(clock.elapsedTime * 5))
+  })
+  return (
+    <mesh ref={ref} name="valvula_al_alcance" rotation-x={-Math.PI / 2} visible={false}>
+      <torusGeometry args={[RING_R + 0.05, 0.012, 6, 32]} />
+      <meshBasicMaterial color="#f2a900" toneMapped={false} />
+    </mesh>
+  )
+}

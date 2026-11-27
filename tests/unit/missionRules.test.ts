@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEngine, sectorsAt } from '../../src/game/missions/engine'
 import { objectiveTargets } from '../../src/game/missions/targets'
-import { FLOOR_BANDS } from '../../src/game/world/walkable'
+import { FLOOR_BANDS, GROUND_TOL, TRAVERSAL, onFloor } from '../../src/game/world/walkable'
 import { STORAGE_KEY, loadLog, useMissionStore } from '../../src/game/missions/store'
 import type { Sector } from '../../src/game/data/sectors'
 import type { GameData, MissionDef, Objective } from '../../src/game/missions/types'
@@ -116,7 +116,20 @@ describe('sectorsAt con altura: un piso elevado cuenta solo en su banda vertical
     expect(FLOOR_BANDS.pisoEnganche[1]).toBeGreaterThan(20.651)
   })
   it('de pie en el suelo debajo de los pisos solo cuenta el sector del suelo', () => expect(sectorsAt([0, 0, 0], s)).toEqual(['suelo']))
-  it('sobre una cubierta de pileta (2,64) sigue siendo nivel del suelo', () => expect(sectorsAt([0, 2.639, 0], s)).toEqual(['suelo']))
+  it('sobre una cubierta de pileta (dentro de su huella) sigue siendo nivel del suelo', () => {
+    const tt = TRAVERSAL.platforms.find((p) => p.id === 'pileta3')! // trip tank, la cubierta más alta del nivel del suelo
+    const x = (tt.min[0] + tt.max[0]) / 2
+    const z = (tt.min[1] + tt.max[1]) / 2
+    expect(sectorsAt([x, tt.y, z], [{ ...at('pil', x, 0, 'terreno'), position: [x, 0, z] }])).toEqual(['pil'])
+  })
+  // D-08: la rampa de la V sube de 1,09 a 3,62 m; a mitad de la rampa no se está "en el suelo" junto al BOP ni al mástil
+  it('a mitad de la rampa de la V (fuera de toda cubierta) no cuenta el suelo', () => {
+    expect(sectorsAt([4.1, 2.45, 0], s)).toEqual([])
+    expect(sectorsAt([3.0, 2.0, 0], s)).toEqual([])
+    expect(onFloor([4.1, 2.45, 0], 'terreno')).toBe(false)
+    expect(onFloor([10, 1.05, 0], 'terreno')).toBe(true) // sobre la pasarela de la planchada (cubierta del nivel del suelo)
+    expect(onFloor([4.1, GROUND_TOL - 0.01, 0], 'terreno')).toBe(true)
+  })
   it('en el piso de trabajo cuenta el piso de trabajo, no el suelo', () => expect(sectorsAt([0, 3.606, 0], s)).toEqual(['pt']))
   it('en el piso de enganche cuenta solo el piso de enganche', () => expect(sectorsAt([0, 20.651, 0], s)).toEqual(['pe']))
   it('a mitad de la escalera vertical no cuenta ninguno', () => expect(sectorsAt([0, 12, 0], s)).toEqual([]))

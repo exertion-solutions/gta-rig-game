@@ -29,15 +29,20 @@ function ObjectiveControls({ obj }: { obj: Objective }) {
         ))}
       </div>
     )
-  if (obj.kind === 'choose')
+  if (obj.kind === 'choose') {
+    // Una sola respuesta de referencia: radio (antes checkbox: se podían marcar varias y contaba mal sin avisar).
+    const single = obj.correct.length === 1
     return (
-      <div className="space-y-2" data-testid="choose-controls">
+      <fieldset className="space-y-2" data-testid="choose-controls">
+        <legend className="sr-only">Opciones</legend>
+        {!single && <p className="text-sm text-slate-300">Podés marcar más de una.</p>}
         {obj.options.map((o) => (
           <label key={o.id} className="flex cursor-pointer items-center gap-2 text-sm">
             <input
-              type="checkbox"
+              type={single ? 'radio' : 'checkbox'}
+              name={obj.id}
               checked={picked.includes(o.id)}
-              onChange={(e) => setPicked((p) => (e.target.checked ? [...p, o.id] : p.filter((x) => x !== o.id)))}
+              onChange={(e) => setPicked((p) => (single ? [o.id] : e.target.checked ? [...p, o.id] : p.filter((x) => x !== o.id)))}
             />
             {o.text}
           </label>
@@ -46,8 +51,9 @@ function ObjectiveControls({ obj }: { obj: Objective }) {
         <button className={primary} disabled={picked.length === 0} onClick={() => report({ type: 'choose', objectiveId: obj.id, picked })}>
           Confirmar
         </button>
-      </div>
+      </fieldset>
     )
+  }
   if (obj.kind === 'order') {
     const move = (i: number, d: number) =>
       setOrder((o) => {
@@ -83,7 +89,7 @@ function ObjectiveControls({ obj }: { obj: Objective }) {
 function resultLine(st: MissionState, o: Objective) {
   const r = st.results[o.id]
   if (r?.kind === 'mark') return `Autorregistro: ${r.value}`
-  if (r?.kind === 'choose') return r.correct ? 'Coincide con la referencia' : 'Para repasar con el procedimiento'
+  if (r?.kind === 'choose') return r.correct ? 'Coincide con la referencia' : 'Distinta de la referencia'
   if (r?.kind === 'interact') return `Registro propio: ${r.state === 'open' ? 'abierta' : 'cerrada'} (ilustrativo)`
   return 'Cumplido'
 }
@@ -164,7 +170,7 @@ export function MissionPanel() {
 
         {def && mission.status === 'completed' && (
           <section className="space-y-3" data-testid="mission-completed">
-            <p className="text-sm text-slate-300">Terminaste el recorrido. Lo que marcaste queda en este navegador como registro propio.</p>
+            <p className="text-sm text-slate-300">Terminaste la misión. Lo que marcaste queda en este navegador como registro propio.</p>
             {def.summary && (
               <ul className="space-y-1 rounded border border-white/10 bg-white/5 p-3 text-sm" data-testid="mission-summary">
                 {def.summary(mission.results).map((l) => (

@@ -6,7 +6,7 @@ import { loadMissionDefs } from '../game/missions'
 import { ObjectiveMarker, SectorReporter } from '../game/missions/MissionRuntime'
 import { useMissionStore } from '../game/missions/store'
 import { RigScene } from '../game/world/loadRig'
-import { Valves } from '../game/world/Valve'
+import { ValveHighlight, Valves } from '../game/world/Valve'
 import { INTERACTABLES } from '../game/world/walkable'
 import { InteractPrompt } from '../ui/InteractPrompt'
 import { SceneProbes, ScenarioAdditions } from '../game/world/scenario/Additions'
@@ -46,6 +46,7 @@ export function App() {
           <RigScene />
           <ScenarioAdditions />
           <Valves />
+          <ValveHighlight />
           <SceneProbes />
           <SectorReporter />
           <ObjectiveMarker />
