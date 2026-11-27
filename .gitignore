@@ -12,3 +12,7 @@ playwright-report/
 
 # voces de la radio: síntesis local, se generan en predev/prebuild (licencia de la voz pendiente, ver NOTICE.md); el manifest sí se versiona
 public/audio/voice/*.mp3
+
+# estado local de plugins (ruflo, serena)
+.swarm/
+.serena/
