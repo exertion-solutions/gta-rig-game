@@ -16,6 +16,7 @@ import { PLAYER_RADIUS, RESPAWN, STEP_MAX, atLimit, respawnPoint, stepMovement, 
 import { CharacterModel } from './CharacterModel'
 import { keys, onKeysCleared } from './keys'
 import { teleportTo, usePlayerStore } from './store'
+import { playerAction, playerSpeed } from './telemetry'
 
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
 const FOOT = HALF + PLAYER_RADIUS // centro de la cápsula sobre los pies
@@ -33,10 +34,6 @@ const jumpLog = { y0: 0, apex: 0, cuts: [] as { vy: number; want: number; got: n
 let override: { x: number; z: number; run: boolean } | null = null // solo lo usa window.__game (tests)
 // cuerpo del jugador: la cámara de seguimiento lo excluye de su raycast
 export const playerBody: { current: RapierRigidBody | null } = { current: null }
-// rapidez horizontal real (m/s) del último paso de física; la usa CharacterModel para elegir clip
-export const playerSpeed = { current: 0 }
-// acción en curso, para el clip: trepando (y si se mueve), en el aire tras saltar, operando hasta `operatingUntil` (ms)
-export const playerAction = { climbing: false, climbMoving: false, airborne: false, operatingUntil: 0 }
 
 const readInput = () =>
   override ?? {

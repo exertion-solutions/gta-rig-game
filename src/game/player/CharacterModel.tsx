@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { exposeGame } from '../dev'
 import { assetUrl, DRACO_PATH } from '../world/assetUrl'
 import { pickClip, type Clip } from './characterAnim'
-import { playerAction, playerSpeed } from './Player'
+import { playerAction, playerSpeed } from './telemetry'
 import { usePlayerStore } from './store'
 
 // Trabajador Microsoft Rocketbox (MIT), ver NOTICE.md y scripts/build-character.py. Meshopt: decoder que agrega drei.

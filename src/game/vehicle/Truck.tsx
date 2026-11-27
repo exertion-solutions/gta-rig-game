@@ -5,6 +5,7 @@ import { exposeGame } from '../dev'
 import { PLAYER_RADIUS, atLimit, needsRespawn, type Vec3 } from '../player/movement'
 import { keys } from '../player/keys'
 import { TRUCK_SPAWN, TRUCK_SPAWN_HEADING, teleportTo, usePlayerStore } from '../player/store'
+import { truckSpeed } from '../player/telemetry'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { PLAYER_GROUPS, TRUCK_GROUPS } from '../world/groups'
 import { toggleMode } from './enterExit'
@@ -124,6 +125,7 @@ export function Truck() {
     const f = forwardOf(q)
     const v = rb.linvel()
     const speed = v.x * f[0] + v.y * f[1] + v.z * f[2]
+    truckSpeed.current = speed
     // a pie: estacionada (freno puesto)
     const drive = mode === 'truck' ? readDrive() : { throttle: 0, steer: 0, brake: true }
     const cmd = driveCommand(drive, speed)
