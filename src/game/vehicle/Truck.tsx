@@ -8,16 +8,18 @@ import { keys } from '../player/keys'
 import { uiBlocking } from '../../ui/hudStore'
 import { TRUCK_SPAWN, TRUCK_SPAWN_HEADING, teleportTo, usePlayerStore } from '../player/store'
 import { truckSpeed } from '../player/telemetry'
+import { useTime } from '../world/DayNight'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { PLAYER_GROUPS, TRUCK_GROUPS } from '../world/groups'
 import { toggleMode } from './enterExit'
-import { TRUCK, WHEEL_POINTS, buildTruckModel, driveCommand, inclinationDeg, tiltTimer } from './truckModel'
+import { TRUCK, WHEEL_POINTS, approach, buildTruckModel, driveCommand, headlightsOn, inclinationDeg, leanTarget, tiltTimer } from './truckModel'
 
 const FIXED_DT = 1 / 60 // = timeStep por defecto de <Physics>
 const DROP = 0.1 // la camioneta nace así de alto sobre su posición de reposo y asienta sobre la suspensión
 // Signos del controlador de Rapier respecto de nuestra convención (frente = -Z local; steer > 0 = izquierda).
 const ENGINE_SIGN = -1
 const STEER_SIGN = 1
+const STEER_RATE = 2.5 // rad/s: la dirección no salta, se gira con el volante
 
 type Drive = { throttle: number; steer: number; brake: boolean }
 let override: Drive | null = null // solo lo usa window.__game (tests)
@@ -67,6 +69,10 @@ export function Truck() {
   const ctl = useRef<ReturnType<typeof world.createVehicleController> | null>(null)
   const ctlBody = useRef<RapierRigidBody | null>(null)
   const tilt = useRef(0)
+  const steerNow = useRef(0) // dirección suavizada (rad)
+  const braking = useRef(false)
+  const lean = useRef({ pitch: 0, roll: 0, acc: 0, speed: 0 })
+  const night = useRef(false)
 
   useEffect(
     () => () => {
@@ -75,6 +81,18 @@ export function Truck() {
     },
     [world],
   )
+
+  // faros: de noche según la hora del juego (useTime de DayNight, sin re-renderizar la camioneta)
+  useEffect(() => {
+    const apply = (hour: number) => {
+      night.current = headlightsOn(hour)
+      model.beam.visible = night.current
+      model.beam.intensity = night.current ? 90 : 0
+      model.headMat.emissiveIntensity = night.current ? 2.5 : 0.1
+    }
+    apply(useTime.getState().hour)
+    return useTime.subscribe((st) => apply(st.hour))
+  }, [model])
 
   useEffect(() => {
     const isFree = (p: Vec3) =>
@@ -136,6 +154,7 @@ export function Truck() {
         c.setWheelMaxSuspensionForce(i, 100000)
         c.setWheelMaxSuspensionTravel(i, 0.3)
         c.setWheelFrictionSlip(i, 4)
+        c.setWheelSideFrictionStiffness(i, 1.4) // agarre lateral algo mayor: menos deriva y menos vuelco en curva
       }
       ctl.current = c
       ctlBody.current = rb
@@ -150,10 +169,12 @@ export function Truck() {
     // a pie: estacionada (freno puesto)
     const drive = mode === 'truck' ? readDrive() : { throttle: 0, steer: 0, brake: true }
     const cmd = driveCommand(drive, speed)
+    steerNow.current = approach(steerNow.current, cmd.steer, STEER_RATE * FIXED_DT)
+    braking.current = mode === 'truck' && cmd.brake > TRUCK.idleBrake
     for (let i = 0; i < WHEEL_POINTS.length; i++) {
       c.setWheelEngineForce(i, ENGINE_SIGN * cmd.engine)
       c.setWheelBrake(i, cmd.brake)
-      if (i < 2) c.setWheelSteering(i, STEER_SIGN * cmd.steer)
+      if (i < 2) c.setWheelSteering(i, STEER_SIGN * steerNow.current)
     }
     c.updateVehicle(FIXED_DT, rapier.QueryFilterFlags.EXCLUDE_SENSORS, TRUCK_GROUPS)
 
@@ -172,10 +193,23 @@ export function Truck() {
     }
   })
 
-  // Ruedas: altura de suspensión, giro y dirección (cosmético).
-  useFrame(() => {
+  // Ruedas: altura de suspensión, giro y dirección; y cabeceo/balanceo del modelo (todo cosmético, no toca la física).
+  useFrame((_, dt) => {
     const c = ctl.current
-    if (!c) return
+    const rb = body.current
+    if (!c || !rb) return
+    if (dt > 0) {
+      const l = lean.current
+      const speed = truckSpeed.current
+      const k = 1 - Math.exp(-6 * Math.min(dt, 0.1))
+      l.acc += ((speed - l.speed) / dt - l.acc) * k // aceleración longitudinal filtrada
+      l.speed = speed
+      const t = leanTarget(l.acc, rb.angvel().y * speed)
+      l.pitch += (t.pitch - l.pitch) * k
+      l.roll += (t.roll - l.roll) * k
+      model.body.rotation.set(l.pitch, 0, l.roll)
+      model.tailMat.emissiveIntensity = braking.current ? 2.2 : night.current ? 0.8 : 0.25
+    }
     model.wheels.forEach((w, i) => {
       w.pivot.position.y = WHEEL_POINTS[i][1] - (c.wheelSuspensionLength(i) ?? TRUCK.suspensionRest)
       w.pivot.rotation.y = i < 2 ? STEER_SIGN * (c.wheelSteering(i) ?? 0) : 0
