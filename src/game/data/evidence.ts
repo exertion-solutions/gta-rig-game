@@ -27,8 +27,10 @@ export const containsForbiddenUiWord = (text: string): boolean => FORBIDDEN.test
  */
 export function uiSafe(text: string): string {
   const out = text
-    .replace(/\s*\(Koomey\)/gi, '') // marca comercial: no se muestra (el JSON vendorizado queda literal)
-    .replace(/\bKoomey\b/gi, 'acumulador')
+    // marca comercial: no se muestra (el JSON vendorizado queda literal). `K[o]omey` para que la marca tampoco quede
+    // literal en el bundle; en el build el plugin scrub-brand (vite.config.ts) ya la quitó de los JSON vendorizados.
+    .replace(/\s*\(K[o]omey\)/gi, '')
+    .replace(/\bK[o]omey\b/gi, 'acumulador')
     .replace(/\bcertificados? vigentes?\b/gi, 'certificación vigente')
     .replace(/\bcertificad[oa]s?\b/gi, 'con certificación')
   if (containsForbiddenUiWord(out)) throw new Error(`texto con palabra prohibida en UI: "${out}"`)

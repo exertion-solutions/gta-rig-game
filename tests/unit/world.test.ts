@@ -31,11 +31,13 @@ describe('stripLines', () => {
 })
 
 describe('RIG_PARTS', () => {
-  it('tiene 16 entradas con glb y meta existentes en disco', () => {
+  it('tiene 16 entradas con glb en public/ y su meta fuera de public/ (vendor/visor/models)', () => {
     expect(RIG_PARTS).toHaveLength(16)
     for (const p of RIG_PARTS) {
       expect(existsSync(resolve(rig, p.glb)), p.glb).toBe(true)
-      expect(existsSync(resolve(rig, p.meta)), p.meta).toBe(true)
+      const meta = `${p.id}.meta.json`
+      expect(existsSync(resolve('vendor/visor/models', meta)), meta).toBe(true)
+      expect(existsSync(resolve(rig, meta)), meta).toBe(false)
     }
   })
 })

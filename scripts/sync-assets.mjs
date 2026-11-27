@@ -47,6 +47,8 @@ function pull(entries, destRoot, srcOf, hashes, convert = {}) {
 }
 
 pull(Object.keys(lock.files), resolve('public/models/rig10'), (n) => `public/models/rig10/${n}`, lock.files)
+// metadatos internos (*.meta.json) y GLB sin uso: mismo origen, pero fuera de public/ para que no lleguen al build
+pull(Object.keys(lock.vendorModels), resolve('vendor/visor/models'), (n) => `public/models/rig10/${n}`, lock.vendorModels)
 // vendor: los hashes del lock se exigen; fijarlos es una acción explícita (--pin-vendor).
 const pin = process.argv.includes('--pin-vendor')
 if (!lock.vendor && !pin) throw new Error('assets.lock.json sin "vendor": corré con --pin-vendor para fijarlo a propósito')

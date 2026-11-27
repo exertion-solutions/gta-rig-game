@@ -24,7 +24,8 @@ export function checkAssets(lockPath, root, key = 'files') {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const lock = resolve('assets.lock.json')
   let bad = false
-  for (const [key, root] of [['files', 'public/models/rig10'], ['vendor', 'vendor/visor']]) {
+  // files = GLB que carga el juego (public/); vendorModels = metadatos internos y GLB sin uso, fuera de public/ (no van al build)
+  for (const [key, root] of [['files', 'public/models/rig10'], ['vendorModels', 'vendor/visor/models'], ['vendor', 'vendor/visor']]) {
     const r = checkAssets(lock, resolve(root), key)
     if (r.ok) continue
     bad = true

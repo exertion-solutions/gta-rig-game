@@ -1,5 +1,4 @@
 // @vitest-environment node
-import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import * as THREE from 'three'
@@ -74,11 +73,12 @@ describe('traversal.json', () => {
     for (const [f, h] of Object.entries((TRAVERSAL as unknown as { sources: Record<string, string> }).sources))
       expect(createHash('sha256').update(readFileSync(f)).digest('hex'), f).toBe(h)
   })
-  it('es reproducible: el extractor regenera exactamente el JSON del repo', () => {
-    const r = spawnSync(process.execPath, ['scripts/extract-traversal.mjs', '--check'], { encoding: 'utf8' })
-    expect(r.stderr).toBe('')
-    expect(r.stdout).toContain('traversal.json OK')
-  }, 60_000)
+  // En proceso (antes subproceso: con la máquina cargada una vez no llegó a los 60 s). Lee y decodifica 6 GLB (~6 s en
+  // frío); el margen de 120 s es solo para cargas altas, la comparación es exacta.
+  it('es reproducible: el extractor regenera exactamente el JSON del repo', async () => {
+    const { generate } = await import('../../scripts/extract-traversal.mjs')
+    expect(await generate()).toBe(readFileSync('src/game/world/traversal.json', 'utf8').replace(/\r\n/g, '\n'))
+  }, 120_000)
   it('forma: LadderVolume, Interactable y anclajes con evidencia', () => {
     for (const l of LADDERS) {
       expect(l.top[1]).toBeGreaterThan(l.bottom[1])

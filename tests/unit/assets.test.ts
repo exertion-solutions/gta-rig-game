@@ -16,10 +16,16 @@ const copy = () => {
 afterEach(() => tmps.splice(0).forEach((d) => rmSync(d, { recursive: true, force: true })))
 
 describe('checkAssets', () => {
-  it('reporta ok con los 36 archivos de rig10', () => {
+  it('reporta ok con los 16 GLB de rig10 que carga el juego', () => {
     const r = checkAssets(lock, rig)
-    expect(Object.keys(JSON.parse(readFileSync(lock, 'utf8')).files)).toHaveLength(36)
+    expect(Object.keys(JSON.parse(readFileSync(lock, 'utf8')).files)).toHaveLength(16)
     expect(r).toEqual({ ok: true, missing: [], mismatched: [] })
+  })
+  it('vendorModels: los 16 .meta.json y los 4 GLB sin uso, fuera de public/', () => {
+    const names = Object.keys(JSON.parse(readFileSync(lock, 'utf8')).vendorModels)
+    expect(names).toHaveLength(20)
+    expect(names.filter((n) => n.endsWith('.meta.json'))).toHaveLength(16)
+    expect(checkAssets(lock, resolve('vendor/visor/models'), 'vendorModels')).toEqual({ ok: true, missing: [], mismatched: [] })
   })
   it('reporta mismatched si se altera un byte', () => {
     const d = copy()
@@ -33,10 +39,10 @@ describe('checkAssets', () => {
   })
   it('reporta missing si falta un archivo', () => {
     const d = copy()
-    rmSync(join(d, 'mastil.glb'))
+    rmSync(join(d, 'sk575_mastil.glb'))
     const r = checkAssets(lock, d)
     expect(r.ok).toBe(false)
-    expect(r.missing).toEqual(['mastil.glb'])
+    expect(r.missing).toEqual(['sk575_mastil.glb'])
   })
   it('lanza si falta `files` en el lock', () => {
     const d = copy()

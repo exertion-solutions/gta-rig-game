@@ -12,11 +12,10 @@ export type RigRole = 'collide' | 'scenery' | 'walkable'
 const part = (name: string, role: RigRole) => ({
   id: `sk575_${name}`,
   glb: `sk575_${name}.glb`,
-  meta: `sk575_${name}.meta.json`,
   role,
 })
 
-export const RIG_PARTS: readonly { id: string; glb: string; meta: string; role: RigRole }[] = [
+export const RIG_PARTS: readonly { id: string; glb: string; role: RigRole }[] = [
   part('mastil', 'collide'),
   part('piletas', 'collide'),
   part('bop', 'collide'),
