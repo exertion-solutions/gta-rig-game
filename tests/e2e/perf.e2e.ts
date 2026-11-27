@@ -40,13 +40,18 @@ test('en escritorio, draw calls < 250 y triángulos visibles < 1 M', async ({ pa
 test('la hora 0 y la hora 12 producen intensidades de luz distintas', async ({ page }) => {
   type L = { sun: number; hemi: number; lamps: number }
   await g(page, 'setHour', 12)
-  await waitFrames(page, 2)
+  await waitFrames(page, 3)
   const noon = await g<L>(page, 'lights')
   await g(page, 'setHour', 0)
-  await waitFrames(page, 2)
+  await waitFrames(page, 3)
   const night = await g<L>(page, 'lights')
   expect(noon.sun).toBeGreaterThan(night.sun)
   expect(noon.hemi).toBeGreaterThan(night.hemi)
   expect(night.lamps).toBeGreaterThan(noon.lamps) // luces de la torre: solo emissive, encendidas de noche
   expect(night.hemi).toBeGreaterThan(0) // de noche se sigue viendo el equipo
+})
+
+test('sombra del sol como se pidió: activa, PCFShadowMap, 2048 y frustum ±40 m', async ({ page }) => {
+  const { shadow } = await g<{ shadow: { enabled: boolean; pcf: boolean; castShadow: boolean; mapSize: number[]; frustum: number[] } }>(page, 'lights')
+  expect(shadow).toEqual({ enabled: true, pcf: true, castShadow: true, mapSize: [2048, 2048], frustum: [-40, 40, -40, 40] })
 })
