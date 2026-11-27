@@ -22,7 +22,6 @@ import { SceneProbes, ScenarioAdditions } from '../game/world/scenario/Additions
 import { Hud } from '../ui/Hud'
 import { useHudStore } from '../ui/hudStore'
 import { Loading } from '../ui/Loading'
-import { PhotoCapture } from '../ui/PhotoCapture'
 import { parseMissionParam, resolveMissionId } from '../ui/share'
 
 // Rapier (física) en un chunk aparte: el primer frame no espera a descargar y compilar su WASM.
@@ -87,7 +86,6 @@ export function App() {
           <ObjectiveMarker />
         </Suspense>
         <Post />
-        <PhotoCapture />
       </Canvas>
       <Hud />
       <InteractPrompt />

@@ -28,6 +28,21 @@ test('P oculta el HUD y descarga un PNG; P o Esc vuelven', async ({ page }) => {
   const png = await pngFrom(dl)
   expect(png.subarray(0, 8).equals(PNG)).toBe(true)
   expect(png.length).toBeGreaterThan(5_000)
+  // regresión QA: la captura salió en blanco (un useFrame con prioridad cambió el orden de render); debe haber escena
+  const colors = await page.evaluate(async (b64) => {
+    const img = new Image()
+    img.src = `data:image/png;base64,${b64}`
+    await img.decode()
+    const c = document.createElement('canvas')
+    c.width = img.width
+    c.height = img.height
+    const ctx = c.getContext('2d')!
+    ctx.drawImage(img, 0, 0)
+    const set = new Set<string>()
+    for (let x = 0; x < c.width; x += 40) for (let y = 0; y < c.height * 0.9; y += 40) set.add(ctx.getImageData(x, y, 1, 1).data.slice(0, 3).join())
+    return set.size
+  }, png.toString('base64'))
+  expect(colors).toBeGreaterThan(30)
   await expect(page.getByTestId('photo-status')).toHaveText('Foto descargada')
   await page.keyboard.press('KeyP')
   await expect(page.getByTestId('photo-bar')).toHaveCount(0)
