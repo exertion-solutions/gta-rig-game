@@ -22,6 +22,7 @@ import { SceneProbes, ScenarioAdditions } from '../game/world/scenario/Additions
 import { Hud } from '../ui/Hud'
 import { useHudStore } from '../ui/hudStore'
 import { Loading } from '../ui/Loading'
+import { parseMissionParam, resolveMissionId } from '../ui/share'
 
 // Rapier (física) en un chunk aparte: el primer frame no espera a descargar y compilar su WASM.
 const PhysicsScene = lazy(() => import('../game/world/PhysicsScene'))
@@ -31,10 +32,23 @@ export function App() {
   const [physicsReady, setPhysicsReady] = useState(false)
   useEffect(() => {
     let live = true
+    let stopLink: (() => void) | undefined
     startAudio()
     void loadMissionDefs().then((defs) => {
       if (!live) return
       useMissionStore.getState().init(defs, { sectors: getSectors(), interactables: INTERACTABLES })
+      // Enlace ?mision=m3: la misión queda en curso en cuanto se cierra la pantalla de título (o ya, si no hay).
+      const q = parseMissionParam(window.location.search)
+      const id = q && resolveMissionId(useMissionStore.getState().available.map((d) => d.id), q)
+      if (!id) return
+      const go = () => useMissionStore.getState().start(id)
+      if (!useHudStore.getState().titleOpen) return go()
+      const off = useHudStore.subscribe((s) => {
+        if (s.titleOpen) return
+        off()
+        go()
+      })
+      stopLink = off
     })
     exposeGame({
       startMission: (id: string) => useMissionStore.getState().start(id),
@@ -47,6 +61,7 @@ export function App() {
     })
     return () => {
       live = false
+      stopLink?.()
     }
   }, [])
   return (

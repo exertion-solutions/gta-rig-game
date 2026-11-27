@@ -192,6 +192,7 @@ export function Player() {
     // (una cápsula más baja arriesga clavarse al pararse bajo un caño o plataforma; se documenta como límite).
     const crouch = (keys.has('KeyC') || keys.has('ControlLeft')) && grounded.current && canCrouch({ mode: 'foot', climbing: !!climb.current })
     if (usePlayerStore.getState().crouching !== crouch) usePlayerStore.setState({ crouching: crouch })
+    playerAction.crouching = crouch
     const input = { ...readInput(pad), crouch }
     const { yaw, position } = usePlayerStore.getState()
     const place = (p: Vec3) => {

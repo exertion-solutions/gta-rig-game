@@ -9,6 +9,7 @@ import { escapeAction, isBlocking, useHudStore } from './hudStore'
 import { Controls } from './Controls'
 import { FullMap } from './FullMap'
 import { PauseMenu } from './PauseMenu'
+import { PhotoBar } from './PhotoBar'
 import { Legend } from './Legend'
 import { MissionPanel } from './MissionPanel'
 import { Radar } from './Radar'
@@ -33,12 +34,14 @@ function useHotkeys() {
         if (!hud.pauseOpen && !hud.mapOpen) hud.setPanel(!hud.panelOpen)
       } else if (e.code === 'KeyN' && !e.repeat) useAudioStore.getState().toggleMute()
       else if (e.code === 'KeyF' && !e.repeat && !blocking) hud.setFicha(!hud.fichaOpen)
+      else if (e.code === 'KeyP' && !e.repeat && !blocking) hud.setPhoto(!hud.photoOpen)
       else if (e.code === 'Tab') {
         e.preventDefault() // sin esto Tab mueve el foco del navegador
         if (!e.repeat && !hud.pauseOpen && !hud.panelOpen) hud.setMap(!hud.mapOpen)
       } else if (e.code === 'Escape') {
         // En algunos navegadores Esc con el puntero capturado llega además del pointerlockchange: no abrir y cerrar la pausa de una.
         if (e.repeat || performance.now() - lostAt < 250) return
+        if (hud.photoOpen) return void hud.setPhoto(false)
         const a = escapeAction(hud)
         if (a === 'close-pause') hud.setPause(false)
         else if (a === 'close-map') hud.setMap(false)
@@ -54,7 +57,9 @@ function useHotkeys() {
       if (!locked) return
       locked = false
       lostAt = performance.now()
-      if (!isBlocking(useHudStore.getState())) useHudStore.getState().setPause(true)
+      const h = useHudStore.getState()
+      if (h.photoOpen) h.setPhoto(false)
+      else if (!isBlocking(h)) h.setPause(true)
     }
     document.addEventListener('pointerlockchange', onLock)
     // Al abrir un panel, la pausa o el mapa: suelta el puntero (para poder clicar) y detiene al jugador.
@@ -109,7 +114,7 @@ function ObjectiveText({ text }: { text: string }) {
 export function Hud() {
   useHotkeys()
   const { mission, available } = useMissionStore()
-  const { panelOpen, fichaOpen, pauseOpen, mapOpen, atSector, visited, setPanel } = useHudStore()
+  const { panelOpen, fichaOpen, pauseOpen, mapOpen, photoOpen, atSector, visited, setPanel } = useHudStore()
   const placed = useMemo(() => getSectors().filter((s) => s.position).length, [])
   const def = available.find((d) => d.id === mission.missionId)
   const idx = mission.objectiveIndex
@@ -129,6 +134,7 @@ export function Hud() {
   // Dos columnas en flujo (no posiciones absolutas sueltas): izquierda misión → visitados → sector → radar; derecha
   // botón → ficha → leyenda. Dentro de una columna nada se superpone; las columnas tienen anchos que no se cruzan.
   // En angosto (< sm) la ficha ocupa todo el ancho y la columna izquierda se oculta mientras está abierta.
+  if (photoOpen) return <PhotoBar />
   return (
     <div className="pointer-events-none fixed inset-0 z-10 select-none overflow-hidden font-sans text-slate-100" data-testid="hud">
       <p className="sr-only" role="status" aria-live="polite" data-testid="hud-announce">

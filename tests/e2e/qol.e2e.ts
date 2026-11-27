@@ -61,6 +61,9 @@ test('pantalla de título: sin automatización aparece, bloquea el juego y "Juga
 test('C agacha: baja la velocidad a ~0,6x y se suelta al levantar la tecla', async ({ page }) => {
   await page.keyboard.down('KeyC')
   await expect.poll(() => page.evaluate(() => (window as any).__game.isCrouching?.())).toBe(true)
+  await expect.poll(() => page.evaluate(() => (window as any).__game.currentClip?.())).toBe('crouch') // se ve agachado, no solo más lento
+  // el esqueleto baja de verdad (pelvis ~0,9 m de pie -> ~0,6 m): no solo se elige el clip
+  await expect.poll(() => page.evaluate(() => (window as any).__game.pose().pelvisY as number)).toBeLessThan(0.75)
   await page.keyboard.up('KeyC')
   await expect.poll(() => page.evaluate(() => (window as any).__game.isCrouching?.())).toBe(false)
 })

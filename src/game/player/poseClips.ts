@@ -43,6 +43,10 @@ export const LAND_KEYS: PoseKey[] = [
   { t: 0.3, ...crouch(4, { Bip01_Spine1: 3, ...arms(-5, -10) }) },
 ]
 
+// Agachado sostenido (tecla C): pose fija, tronco levemente inclinado; dos cuadros iguales para tener duración.
+const CROUCH_POSE = crouch(50, { Bip01_Spine1: 12, ...arms(-15, -20) })
+export const CROUCH_KEYS: PoseKey[] = [{ t: 0, ...CROUCH_POSE }, { t: 0.5, ...CROUCH_POSE }]
+
 // Trepar mano sobre mano: brazo alto y pierna opuesta alta, alternando. Ciclo 0,6 s ≈ 0,7 m a CLIMB_SPEED 1,2 m/s.
 const reach = (h: 'L' | 'R') => {
   const o = h === 'L' ? 'R' : 'L'

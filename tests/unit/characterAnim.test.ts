@@ -3,6 +3,13 @@ import { LAND_MS, nextLandUntil, pickClip } from '../../src/game/player/characte
 import { RUN_SPEED, WALK_SPEED } from '../../src/game/player/movement'
 
 describe('pickClip', () => {
+  it('agachado => crouch, también en movimiento; el salto, trepar y operar mandan', () => {
+    expect(pickClip(0, 'foot', { crouching: true })).toBe('crouch')
+    expect(pickClip(WALK_SPEED, 'foot', { crouching: true })).toBe('crouch')
+    expect(pickClip(0, 'foot', { crouching: true, airborne: true })).toBe('jump')
+    expect(pickClip(0, 'foot', { crouching: true, climbing: true })).toBe('climb')
+    expect(pickClip(0, 'truck', { crouching: true })).toBe('idle')
+  })
   it('quieto => idle', () => expect(pickClip(0, 'foot')).toBe('idle'))
   it('casi quieto (ruido del controlador) => idle', () => expect(pickClip(0.1, 'foot')).toBe('idle'))
   it('WALK_SPEED => walk', () => expect(pickClip(WALK_SPEED, 'foot')).toBe('walk'))
