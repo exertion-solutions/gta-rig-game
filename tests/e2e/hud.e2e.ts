@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { settle, waitFrames, waitSteps } from './wait'
 
 const FORBIDDEN = /aprobad|habilitad|certificad/i
 const ACUM: [number, number, number] = [-20.5, 0, 4.6]
@@ -11,7 +12,7 @@ test.beforeEach(async ({ page }) => {
     return w?.getTruck && w.getPosition && w.getMission && w.renderedBounds('sk575_mastil')
   }, null, { timeout: 90_000 })
   await page.waitForFunction(() => document.querySelector('[data-testid="hud"]'))
-  await page.waitForTimeout(500)
+  await settle(page)
 })
 
 test('HUD: leyenda fija, radar, sin zonas ni distancias', async ({ page }) => {
@@ -23,7 +24,8 @@ test('HUD: leyenda fija, radar, sin zonas ni distancias', async ({ page }) => {
   expect(hud).not.toMatch(/\b(alto|medio|bajo)\b|\d\s?m\b|exclusi|área segura/i)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await page.setViewportSize({ width: 390, height: 800 })
-  await page.waitForTimeout(200)
+  await page.waitForFunction(() => window.innerWidth === 390)
+  await waitFrames(page, 2)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
 
@@ -36,7 +38,7 @@ test('misión de prueba de punta a punta (a pie): M, iniciar, llegar, elegir, ma
   // con el panel abierto, W no mueve al jugador
   const p0 = await g<number[]>(page, 'getPosition')
   await page.keyboard.down('KeyW')
-  await page.waitForTimeout(500)
+  await waitSteps(page, 30) // medio segundo de simulación con W apretada
   await page.keyboard.up('KeyW')
   const p1 = await g<number[]>(page, 'getPosition')
   expect(Math.hypot(p1[0] - p0[0], p1[2] - p0[2])).toBeLessThan(0.05)
@@ -44,7 +46,9 @@ test('misión de prueba de punta a punta (a pie): M, iniciar, llegar, elegir, ma
   await panel.locator('[data-mission="dev-fixture"]').getByRole('button', { name: 'Iniciar' }).click()
   await expect(panel).toHaveCount(0)
   await expect(page.getByTestId('hud-objective')).toHaveText('Andá hasta el acumulador')
-  await page.waitForTimeout(500) // el reporter informa "estás en el Acceso" antes de que cuente la llegada
+  // el reporter informa "estás en el Acceso" (en el cuadro siguiente al inicio) antes de que cuente la llegada
+  await page.waitForFunction(() => (window as any).__game.getAtSector() === 'acceso')
+  await waitFrames(page, 2)
 
   await g(page, 'teleport', ACUM)
   await expect(page.getByTestId('hud-sector')).toContainText('Acumulador')
@@ -77,7 +81,8 @@ test('F muestra la ficha saneada del sector donde estás', async ({ page }) => {
 
 test('conduciendo la camioneta también cuenta la llegada', async ({ page }) => {
   await g(page, 'startMission', 'dev-fixture')
-  await page.waitForTimeout(500)
+  await page.waitForFunction(() => (window as any).__game.getMission()?.missionId === 'dev-fixture')
+  await waitFrames(page, 2) // el reporter informa el sector en el cuadro siguiente al inicio
   await g(page, 'teleportTruck', [-10, 0, 20], 0)
   await g(page, 'teleport', [-10, 0, 21.5])
   // espera estado: el jugador quedó junto a la camioneta (no un tiempo fijo)

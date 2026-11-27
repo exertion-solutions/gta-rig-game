@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
+import { settle } from './wait'
 
 type Vec = [number, number, number]
 const FORBIDDEN = /aprob|habilit|certific/i
@@ -39,7 +40,7 @@ test.beforeEach(async ({ page }) => {
     return w?.getMission && w.getPosition && w.teleport && w.renderedBounds('sk575_mastil')
   }, null, { timeout: 90_000 })
   await page.waitForFunction(() => document.querySelector('[data-testid="hud"]'))
-  await page.waitForTimeout(500)
+  await settle(page)
 })
 
 // Teletransporta y espera ESTADO (no tiempo): el HUD muestra `at` (el reporter ya informó al motor en ese frame).

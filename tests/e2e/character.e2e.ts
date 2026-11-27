@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { RESPAWN } from '../../src/game/player/movement'
+import { settle } from './wait'
 
 type Box = { min: number[]; max: number[] }
 type Pos = [number, number, number]
@@ -24,23 +25,20 @@ test.beforeEach(async ({ page }) => {
     g.setYaw(-Math.PI / 2) // hacia +X, calle libre desde el Acceso
     g.teleport(p)
   }, RESPAWN)
-  await page.waitForTimeout(1500)
+  await settle(page)
 })
 
 test("el personaje camina con clip 'walk' al mover y vuelve a 'idle' al soltar", async ({ page }) => {
   expect(await clip(page)).toBe('idle')
   await shot(page, 'idle')
   await input(page, { x: 0, z: 1, run: false })
-  await page.waitForTimeout(1000)
-  expect(await clip(page)).toBe('walk')
+  await expect.poll(() => clip(page)).toBe('walk')
   await shot(page, 'walk')
   await input(page, { x: 0, z: 1, run: true })
-  await page.waitForTimeout(800)
-  expect(await clip(page)).toBe('run')
+  await expect.poll(() => clip(page)).toBe('run')
   await shot(page, 'run')
   await input(page, null)
-  await page.waitForTimeout(1000)
-  expect(await clip(page)).toBe('idle')
+  await expect.poll(() => clip(page)).toBe('idle')
   await shot(page, 'idle-after')
 })
 

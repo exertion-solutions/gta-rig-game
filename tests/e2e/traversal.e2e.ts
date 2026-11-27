@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { PLAYER_RADIUS } from '../../src/game/player/movement'
 import { readFileSync } from 'node:fs'
 import type { TraversalData } from '../../src/game/world/walkable'
+import { settle, waitFrames, waitSteps } from './wait'
 
 // Recorrido vertical (Task 18A): superficies caminables y barandas medidas de los GLB. Los oráculos miden lo que se
 // dibuja (vértices y raycast sobre las mallas), no los colliders: si la colisión no coincide con lo visible, falla.
@@ -26,17 +27,17 @@ async function place(page: Page, p: Pos, yaw: number) {
     w.setYaw(y)
     w.teleport(q)
   }, [p, yaw] as const)
-  await page.waitForTimeout(500)
+  await settle(page)
 }
 
 // Avanza hasta quedar quieto (o `until`); devuelve la traza de posiciones.
-async function walk(page: Page, until?: (p: Pos) => boolean, run = true, maxMs = 20_000) {
+async function walk(page: Page, until?: (p: Pos) => boolean, run = true, maxSimS = 20) {
   await page.evaluate((r) => (window as any).__game.setInput({ x: 0, z: 1, run: r }), run)
   const trace: Pos[] = [await pos(page)]
   let still = 0
-  const t0 = Date.now()
-  while (still < 4 && Date.now() - t0 < maxMs) {
-    await page.waitForTimeout(150)
+  // tope en tiempo de SIMULACIÓN (muestras de 0,15 s), no de reloj: con la máquina lenta no corta antes
+  for (let i = 0; still < 4 && i * 0.15 < maxSimS; i++) {
+    await waitSteps(page, 9) // muestra cada 0,15 s de simulación
     const p = await pos(page)
     const q = trace[trace.length - 1]
     still = Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]) < 0.004 ? still + 1 : 0
@@ -57,7 +58,7 @@ test.beforeEach(async ({ page }) => {
     null,
     { timeout: 90_000 },
   )
-  await page.waitForTimeout(800)
+  await settle(page)
 })
 
 test('sube la escalera añadida a la pasarela, la rampa de la V y queda de pie en el piso de trabajo', async ({ page }) => {
@@ -83,7 +84,7 @@ test('sube la escalera añadida a la pasarela, la rampa de la V y queda de pie e
   // terminó de pie en el piso de trabajo, frenado por lo que se ve
   expect(Math.abs(end[1] - floorY)).toBeLessThan(0.06)
   expect(Math.abs(end[0] - (nipple.max[0] + PLAYER_RADIUS))).toBeLessThan(TOL)
-  await page.waitForTimeout(1500)
+  await waitSteps(page, 90) // 1,5 s de simulación
   const later = await pos(page)
   expect(Math.abs(later[1] - floorY)).toBeLessThan(0.06) // se queda
 })
@@ -118,7 +119,7 @@ test('sube la escalera real de una pileta y camina su cubierta hasta el equipo d
   expect(Math.abs(end[0] - (equipo[0] - PLAYER_RADIUS))).toBeLessThan(TOL) // frenado por el equipo que se ve
   // subió por la escalera: pasó por alturas intermedias sobre la huella
   expect(trace.some((p) => p[1] > 0.6 && p[1] < 1.6)).toBe(true)
-  await page.waitForTimeout(1500)
+  await waitSteps(page, 90) // 1,5 s de simulación
   expect(Math.abs((await pos(page))[1] - deckY)).toBeLessThan(0.06)
 })
 
@@ -135,7 +136,7 @@ test('escalera vertical: anclaje frente a la cara del mástil y entre el piso de
 
 test('rendimiento con las adiciones: menos de 250 draw calls y 1 M triángulos', async ({ page }) => {
   await place(page, [8, 0, 8], YAW.toMinusX)
-  await page.waitForTimeout(500)
+  await waitFrames(page, 5) // renderInfo es del último cuadro dibujado
   const info = await g<{ calls: number; triangles: number }>(page, 'renderInfo')
   expect(info.calls).toBeGreaterThan(0)
   expect(info.calls).toBeLessThan(250)

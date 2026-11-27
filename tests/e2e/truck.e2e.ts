@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { TRUCK_SPAWN } from '../../src/game/player/store'
+import { settle, truckParked, waitFrames, waitSteps } from './wait'
 
 type Box = { min: number[]; max: number[] }
 type Pos = [number, number, number]
@@ -18,7 +19,7 @@ test.beforeEach(async ({ page }) => {
     const g = (window as any).__game
     return g?.getTruck && g.getPosition && g.renderedBounds('sk575_mastil')
   }, null, { timeout: 90_000 })
-  await page.waitForTimeout(500)
+  await settle(page)
 })
 
 test('E alterna a la camioneta cuando está cerca y no hace nada si está lejos', async ({ page }) => {
@@ -27,7 +28,8 @@ test('E alterna a la camioneta cuando está cerca y no hace nada si está lejos'
     g.teleportTruck([0, 0, 20], 0)
     g.teleport([0, 0, 21.5])
   })
-  await page.waitForTimeout(600)
+  await truckParked(page, 0, 20)
+  await settle(page)
   await page.keyboard.press('KeyE')
   expect(await mode(page)).toBe('truck')
   await page.keyboard.press('KeyE')
@@ -37,7 +39,7 @@ test('E alterna a la camioneta cuando está cerca y no hace nada si está lejos'
   expect(Math.hypot(p[0] - t.position[0], p[2] - t.position[2])).toBeGreaterThan(1.2) // bajó a un costado, no encima
   // lejos: E no hace nada
   await page.evaluate(() => (window as any).__game.teleport([-30, 0, -20]))
-  await page.waitForTimeout(300)
+  await settle(page)
   await page.keyboard.press('KeyE')
   expect(await mode(page)).toBe('foot')
 })
@@ -52,7 +54,8 @@ test('la camioneta acelera y se detiene sin atravesar la pasarela de la planchad
     const g = (window as any).__game
     g.teleport([0, 0, 25]) // jugador fuera de la trayectoria
   })
-  await page.waitForTimeout(800)
+  await truckParked(page, X, face + 2.3 + 20)
+  await settle(page)
   const start = await truck(page)
   await page.evaluate(() => {
     const g = (window as any).__game
@@ -65,9 +68,9 @@ test('la camioneta acelera y se detiene sin atravesar la pasarela de la planchad
   let top = 0
   let last = start
   let still = 0
-  const t0 = Date.now()
-  while (still < 4 && Date.now() - t0 < 25_000) {
-    await page.waitForTimeout(250)
+  // muestra cada 0,25 s de simulación de la camioneta; tope de 25 s de simulación (no de reloj)
+  for (let i = 0; still < 4 && i < 100; i++) {
+    await waitSteps(page, 15, 'truckSteps')
     last = await truck(page)
     top = Math.max(top, last.speed)
     still = top > 5 && last.speed < 0.2 ? still + 1 : 0
@@ -84,18 +87,19 @@ test('la camioneta acelera y se detiene sin atravesar la pasarela de la planchad
 
 test('al volcarse >60° por 3 s vuelve al acceso', async ({ page }) => {
   await page.evaluate(() => (window as any).__game.teleportTruck([0, 0, 20], 0))
-  await page.waitForTimeout(500)
+  await truckParked(page, 0, 20)
   // vuelca el cuerpo físicamente (180° en Z) y deja correr el reloj de vuelco
   await page.evaluate(() => (window as any).__game.flipTruck())
-  await page.waitForTimeout(500)
+  await waitSteps(page, 30, 'truckSteps') // medio segundo de simulación: sigue volcada (el reloj pide 3 s)
   expect((await truck(page)).inclination).toBeGreaterThan(60)
-  await page.waitForFunction(([sx, sz]) => Math.hypot((window as any).__game.getTruck().position[0] - sx, (window as any).__game.getTruck().position[2] - sz) < 1, [TRUCK_SPAWN[0], TRUCK_SPAWN[2]], { timeout: 15_000 })
+  await page.waitForFunction(([sx, sz]) => Math.hypot((window as any).__game.getTruck().position[0] - sx, (window as any).__game.getTruck().position[2] - sz) < 1, [TRUCK_SPAWN[0], TRUCK_SPAWN[2]], { timeout: 60_000 }) // el reloj de vuelco pide 3 s de simulación
   expect((await truck(page)).inclination).toBeLessThan(10)
 })
 
 test('al respawnear, la cámara no planea por el mapa', async ({ page }) => {
   await page.evaluate(() => (window as any).__game.teleport([30, 0, 20]))
-  await page.waitForTimeout(800)
+  await settle(page)
+  await waitFrames(page, 30) // la cámara ya alcanzó al jugador (se suaviza por cuadro)
   // 6 frames dibujados (no 100 ms: con la máquina cargada pasaban menos): con pivote suavizado aún estaría a decenas de metros
   await page.evaluate(async () => {
     ;(window as any).__game.teleport([-35, 0, 0])
@@ -116,7 +120,7 @@ test('A gira a la izquierda: el rumbo aumenta al avanzar con steer +1', async ({
   await page.keyboard.press('KeyE')
   await page.waitForFunction(() => (window as any).__game.getMode() === 'truck')
   await drive(page, { throttle: 1, steer: 1, brake: false })
-  await page.waitForTimeout(1500)
+  await waitSteps(page, 90, 'truckSteps') // 1,5 s de simulación
   const t = await truck(page)
   await drive(page, null)
   expect(t.heading).toBeGreaterThan(0.2)

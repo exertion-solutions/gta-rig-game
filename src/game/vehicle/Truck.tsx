@@ -17,6 +17,7 @@ const STEER_SIGN = 1
 
 type Drive = { throttle: number; steer: number; brake: boolean }
 let override: Drive | null = null // solo lo usa window.__game (tests)
+let truckSteps = 0 // pasos de física de la camioneta (DEV: los e2e esperan pasos, no tiempo)
 // cuerpo de la camioneta: la cámara de seguimiento lo excluye de su raycast cuando se conduce
 export const truckBody: { current: RapierRigidBody | null } = { current: null }
 
@@ -89,6 +90,7 @@ export function Truck() {
         }
       },
       setTruckInput: (i: Drive | null) => (override = i),
+      truckSteps: () => truckSteps,
       teleportTruck: (p: Vec3, heading = 0) => body.current && placeTruck(body.current, p, heading),
       respawnTruck,
       flipTruck: () => body.current?.setRotation({ x: 0, y: 0, z: 1, w: 0 }, true), // boca abajo (test del respawn por vuelco)
@@ -101,6 +103,7 @@ export function Truck() {
   useBeforePhysicsStep(() => {
     const rb = body.current
     if (!rb) return
+    truckSteps++
     if (!ctl.current || ctlBody.current !== rb) {
       if (ctl.current) world.removeVehicleController(ctl.current)
       const c = world.createVehicleController(rb)

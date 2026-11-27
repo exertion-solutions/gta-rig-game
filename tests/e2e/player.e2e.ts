@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { PLAYER_RADIUS, RESPAWN } from '../../src/game/player/movement'
+import { settle, waitFrames, waitSteps } from './wait'
 
 type Box = { min: number[]; max: number[] }
 type Pos = [number, number, number]
@@ -16,7 +17,7 @@ async function place(page: Page, p: Pos, yaw: number) {
     g.setYaw(y)
     g.teleport(q)
   }, [p, yaw] as const)
-  await page.waitForTimeout(400) // que caiga/asiente sobre el suelo
+  await settle(page) // que caiga/asiente sobre el suelo
 }
 
 // Avanza (run) hasta que la posición deja de cambiar (o `until` se cumple) y devuelve la posición final.
@@ -24,9 +25,9 @@ async function walk(page: Page, until?: (p: Pos) => boolean) {
   await page.evaluate(() => (window as any).__game.setInput({ x: 0, z: 1, run: true }))
   let last = await pos(page)
   let still = 0
-  const t0 = Date.now()
-  while (still < 3 && Date.now() - t0 < 12_000) {
-    await page.waitForTimeout(250)
+  // tope en tiempo de SIMULACIÓN (48 muestras x 0,25 s = 12 s), no de reloj: con la máquina lenta no corta antes
+  for (let i = 0; still < 3 && i < 48; i++) {
+    await waitSteps(page, 15) // muestra cada 0,25 s de simulación
     const p = await pos(page)
     still = Math.hypot(p[0] - last[0], p[2] - last[2]) < 0.005 ? still + 1 : 0
     last = p
@@ -42,7 +43,7 @@ test.beforeEach(async ({ page }) => {
     const g = (window as any).__game
     return g?.getPosition && g.renderedBounds('sk575_mastil') && g.renderedBounds('sk575_piso')
   }, null, { timeout: 90_000 })
-  await page.waitForTimeout(500)
+  await settle(page)
 })
 
 test('window.__game solo existe en dev (este test corre contra vite dev)', async ({ page }) => {
@@ -59,7 +60,7 @@ test('el bbox completo del mástil ya no tapa el piso de trabajo: se puede estar
   expect(p[0] < m.max[0] && p[2] < m.max[2] && p[2] > m.min[2]).toBe(true) // dentro del bbox viejo del mástil
   expect(p[0] < pi.max[0] && p[2] < pi.max[2]).toBe(true)
   await place(page, p, YAW.toMinusZ)
-  await page.waitForTimeout(800)
+  await waitSteps(page, 48) // 0,8 s de simulación: sigue en el mismo lugar
   const q = await pos(page)
   expect(Math.hypot(q[0] - p[0], q[2] - p[2])).toBeLessThan(0.05)
   expect(Math.abs(q[1] - floorY)).toBeLessThan(0.06)
@@ -115,7 +116,7 @@ test('planchada fuera de la pasarela: se cruza a nivel del suelo (y=0)', async (
 
 test('si cae o sale del vallado reaparece en el Acceso (RESPAWN)', async ({ page }) => {
   await page.evaluate(() => (window as any).__game.teleport([200, 0, 0]))
-  await page.waitForTimeout(500)
+  await waitSteps(page, 30) // medio segundo de simulación
   const p = await pos(page)
   expect(Math.hypot(p[0] - RESPAWN[0], p[2] - RESPAWN[2])).toBeLessThan(0.5)
 })
@@ -124,7 +125,7 @@ test('cámara de seguimiento: detrás del jugador y no dentro del BOP con el jug
   const m = (await boundsIn(page, 'sk575_bop', [[-3, -1, -3], [3, 3.6, 3]]))! // BOP debajo del piso (una caja de colisión)
   // pegado a la cara +X del BOP, mirando hacia +X: "detrás" del jugador queda justo contra/dentro del BOP
   await place(page, [m.max[0] + PLAYER_RADIUS + 0.05, 0, 0], YAW.toPlusX)
-  await page.waitForTimeout(1200)
+  await waitFrames(page, 60) // la cámara se suaviza por cuadro (useFrame), no por paso de física
   const p = await pos(page)
   const c = await page.evaluate(() => (window as any).__game.getCamera() as Pos)
   const inside = c.every((v, i) => v > m.min[i] && v < m.max[i])

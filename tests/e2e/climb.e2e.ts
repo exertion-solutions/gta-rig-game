@@ -26,22 +26,30 @@ async function place(page: Page, p: Pos, yaw: number) {
   await page.waitForFunction((k) => (window as any).__game.steps() > k + 10 && (window as any).__game.isGrounded(), n, { timeout: 60_000 })
 }
 
-// Muestrea posición y clip hasta que `done` se cumpla en el navegador (sin esperas fijas).
-async function sample(page: Page, done: string, maxMs = 40_000) {
+// Muestrea posición y clip en cada cuadro con pasos nuevos hasta que `done` se cumpla o pasen `maxSteps` pasos de física
+// (tiempo de SIMULACIÓN, no de reloj: con la máquina cargada una ventana de 400 ms cubría menos pasos que el salto).
+// En `done`, `n` = pasos desde el inicio del muestreo. Tope de reloj solo de seguridad (simulación trabada).
+async function sample(page: Page, done: string, maxSteps = 2400) {
   return page.evaluate(
     async ([cond, max]) => {
       const w = (window as any).__game
-      const f = new Function('w', `return (${cond})`) as (w: unknown) => boolean
+      const f = new Function('w', 'n', `return (${cond})`) as (w: unknown, n: number) => boolean
       const out: { p: number[]; clip: string | null; at: string | null }[] = []
+      const s0 = w.steps()
+      let last = -1
       const t0 = performance.now()
-      while (performance.now() - t0 < (max as number)) {
-        out.push({ p: w.getPosition(), clip: w.currentClip(), at: w.getAtSector() })
-        if (f(w)) break
-        await new Promise((r) => setTimeout(r, 50))
+      while (performance.now() - t0 < 90_000) {
+        const n = w.steps() - s0
+        if (n !== last) {
+          last = n
+          out.push({ p: w.getPosition(), clip: w.currentClip(), at: w.getAtSector() })
+          if (f(w, n) || n >= (max as number)) break
+        }
+        await new Promise((r) => requestAnimationFrame(r))
       }
       return out
     },
-    [done, maxMs] as const,
+    [done, maxSteps] as const,
   )
 }
 
@@ -63,9 +71,8 @@ test('salto con Espacio: sube (clip jump) y vuelve a y = 0', async ({ page }) =>
   const y0 = (await pos(page))[1]
   expect(Math.abs(y0)).toBeLessThan(0.05)
   await page.keyboard.press('Space')
-  const tr = await sample(page, 'false', 400) // 0,4 s de ascenso
-  const rest = await sample(page, 'w.isGrounded() && Math.abs(w.getPosition()[1]) < 0.02', 5000)
-  const all = [...tr, ...rest]
+  // un solo muestreo: subida y caída hasta volver a apoyar (antes dos ventanas por reloj; entre ellas se perdía el ápice)
+  const all = await sample(page, 'n > 24 && w.isGrounded() && Math.abs(w.getPosition()[1]) < 0.02', 300)
   const apex = Math.max(...all.map((s) => s.p[1]))
   expect(apex).toBeGreaterThan(0.35) // ápice de juego ≈ 0,49 m
   expect(apex).toBeLessThan(0.7)
@@ -91,7 +98,7 @@ test('escalera vertical A3: sube al piso de enganche, se queda (sin reubicar), c
   expect(Math.abs(top[1] - PE)).toBeLessThan(0.06)
   await page.waitForFunction(() => (window as any).__game.getAtSector() === 'piso-enganche')
   // se queda: ni cae ni lo reubica el respawn (último punto firme = el piso de enganche)
-  await sample(page, 'false', 2000)
+  await sample(page, 'false', 120) // 2 s de simulación
   const later = await pos(page)
   expect(Math.abs(later[1] - PE)).toBeLessThan(0.06)
   expect(Math.abs((await g<Pos>(page, 'lastSafe'))[1] - PE)).toBeLessThan(0.06)
@@ -109,7 +116,7 @@ test('escalera vertical A3: sube al piso de enganche, se queda (sin reubicar), c
 
 test('de pie en el suelo debajo del piso de enganche y del piso de trabajo no cuenta haberlos visitado', async ({ page }) => {
   await place(page, [1.2, 0, 3.4], 0) // suelo, dentro del radio horizontal de ambos pisos elevados
-  await sample(page, 'false', 600)
+  await sample(page, 'false', 36) // 0,6 s de simulación
   const at = await g<string | null>(page, 'getAtSector')
   expect(at).not.toBe('piso-enganche')
   expect(at).not.toBe('piso-trabajo')
@@ -139,7 +146,7 @@ test('válvula M1 del manifold: aviso sin distancias, E alterna el registro, cli
   expect(await g(page, 'valveState', 'manifold_M1')).toBeNull()
   await page.keyboard.press('KeyE')
   await page.waitForFunction(() => (window as any).__game.valveState('manifold_M1') === 'open')
-  const tr = await sample(page, "w.currentClip() === 'operate'", 3000)
+  const tr = await sample(page, "w.currentClip() === 'operate'", 180)
   expect(tr[tr.length - 1].clip).toBe('operate')
   await page.waitForFunction(() => (window as any).__game.getMission().status === 'completed')
   await expect(page.getByTestId('mission-panel')).toContainText('Registro propio: abierta')
@@ -153,10 +160,9 @@ test('válvula M1 del manifold: aviso sin distancias, E alterna el registro, cli
 test('losas finas sin CCD: saltar sobre la plancha del piso de enganche (0,08 m) y contra la baranda de la rampa (0,05 m) no las atraviesa', async ({ page }) => {
   await place(page, [1.0, PE, 0], 0)
   await page.keyboard.press('Space')
-  const tr = await sample(page, 'false', 400)
-  const rest = await sample(page, 'w.isGrounded() && w.getPosition()[1] < ' + (PE + 0.02), 5000)
-  expect(Math.max(...[...tr, ...rest].map((s) => s.p[1]))).toBeGreaterThan(PE + 0.25)
-  await sample(page, 'false', 500)
+  const tr = await sample(page, 'n > 24 && w.isGrounded() && w.getPosition()[1] < ' + (PE + 0.02), 300)
+  expect(Math.max(...tr.map((s) => s.p[1]))).toBeGreaterThan(PE + 0.25)
+  await sample(page, 'false', 30) // 0,5 s de simulación
   expect(Math.abs((await pos(page))[1] - PE)).toBeLessThan(0.06) // aterrizó sobre la plancha, no la cruzó
   // rampa de la V: saltando y caminando hacia la baranda añadida (+Z) queda del lado de adentro
   const rail = TRAVERSAL.rails.find((r) => r.id.includes('rampa') && r.a[2] > 0)!
@@ -168,7 +174,7 @@ test('losas finas sin CCD: saltar sobre la plancha del piso de enganche (0,08 m)
   const tr2: { p: number[] }[] = []
   for (let i = 0; i < 3; i++) {
     await page.keyboard.press('Space')
-    tr2.push(...(await sample(page, 'false', 700)))
+    tr2.push(...(await sample(page, 'false', 42))) // 0,7 s de simulación
   }
   expect(Math.max(...tr2.map((s) => s.p[2]))).toBeLessThan(rail.a[2]) // en ningún momento cruzó
   await g(page, 'setInput', null)
