@@ -289,7 +289,7 @@ Cadena de modelado para las adiciones al escenario: (1) dimensionar y modelar pi
 
 ## Orden y paralelismo
 
-Orden real de ejecución: 1, 2, 3, 4, 5, 6, 7, 15, 8, 9, 10, 18, 11, 12, 16, 17, 13, (14 opcional). Plan original: 1 → 2 → {3, 5, 7} en paralelo → 4 (necesita 3) → 6 (3 y 4) → 8 (7) → 9 (5 y 8) → 10 → {11, 12} en paralelo → 13 → 14.
+Orden real de ejecución: 1, 2, 3, 4, 5, 6, 7, 15, 8, 9, 10, 18, 19, 11, 12, 16, 17, 13, 20, (14 opcional). Plan original: 1 → 2 → {3, 5, 7} en paralelo → 4 (necesita 3) → 6 (3 y 4) → 8 (7) → 9 (5 y 8) → 10 → {11, 12} en paralelo → 13 → 14.
 Cada rama paralela vive en su worktree y se integra con revisión fresca antes de la siguiente.
 
 ### Task 15: Personaje realista animado (agregada por pedido del dueño; se ejecuta después de la Task 7)
@@ -370,3 +370,17 @@ Reglas que acotan esta tarea (spec): no inventar posiciones de equipo ni secuenc
 - [ ] **Step 4: Correr tests; esperar PASS.**
 - [ ] **Step 5: E2E en navegador real**: el salto sube y vuelve a `y = 0`; el jugador sube por la escalera o rampa que el Step 0 confirme hasta la altura medida y se queda de pie sobre la plataforma; sube y baja una escalera vertical si existe; opera una válvula con E (el estado cambia y el objetivo `interact` de una misión de prueba solo para DEV avanza); sin ninguna etiqueta de distancia; `window.__game` solo en DEV; `npm test`, `npm run test:e2e`, `npm run build` verdes. Sin capturas.
 - [ ] **Step 6: Commit `feat: salto, escaleras, subir a los equipos y operar válvulas`.**
+
+
+### Task 19: Estabilización y arreglos de la auditoría (se ejecuta después de la Task 18B y antes de la 11)
+
+Origen: auditoría ponytail del 2026-11-27 (14 hallazgos, ver el registro SDD). Arreglar sí o sí: (1) `canEnter` con altura y limpiar el estado de escalera al entrar a la camioneta; (2) limpiar `keys` en `blur` (Player y Truck); (3) e2e de misiones alineado con la regla de sectores por altura; (4) aviso "signo lateral (+Y = este) sin verificar" en `NOTICE.md`; (5) cambiar esperas fijas de 250 ms por esperas de estado en todos los e2e (missions, truck, otros); (6) sacar de `public/` los 16 `.meta.json` internos y los 4 GLB sin uso (mover a `vendor/visor/models/`, ajustar `check-assets` y `sync-assets`, quitar el campo `meta`) y verificar que `dist/` no los contiene; (8) declarar `@gltf-transform/core`, `@gltf-transform/extensions` y `meshoptimizer` en `devDependencies` y agregar el script npm `extract-traversal`. Además: README actualizado (cómo correr, controles), `.claude-flow/` y `.superpowers/` en `.gitignore`, y los menores diferidos de 18A (M1 cobertura perdida del mástil/pórticos/BOP/piletas, M4 altura del pie en escaleras, M7 prettier). Decisiones del dueño pendientes que no bloquean: dependencias `phaser` y `playcanvas` sin uso (se mantienen hasta que el dueño decida) y la misión 8 (se mantiene omitida por falta de dato). Verde obligatorio: `npm test`, `npm run test:e2e` (dos corridas seguidas), `npx tsc --noEmit`, `npm run build`, `npm run check-assets`.
+
+
+### Task 20: QA de punta a punta y mejoras para dejarlo jugable, 100% operativo y compartible (agregada por pedido del dueño; se ejecuta al final, después de la Task 13)
+
+Pedido del dueño: "lanza agentes que prueben de punta a punta el juego, propongan y hagan mejoras; tiene que quedar jugable, 100% operativo y viral".
+
+Alcance: (a) agentes de prueba jugable independientes (Playwright headless + hooks DEV) que recorren el juego completo como un jugador nuevo: arranque, carga, controles, caminar, correr, saltar, escaleras, válvulas, camioneta, misiones 1 a 7 (y 8/9 si existen), pausa, ajustes, mapa, ficha, guardado y recarga, audio, día/noche, rendimiento (FPS, draw calls, triángulos, memoria en sesión larga de 20 minutos simulados), resolución 1280x720 y 1920x1080 y anchos angostos, teclado y gamepad; cada agente entrega una lista de defectos con pasos para reproducir y severidad; (b) un agente de producto/UX propone mejoras priorizadas con costo estimado (primeros 60 segundos, claridad de objetivos, feedback de acciones, onboarding, tutorial corto, accesibilidad); (c) agentes implementadores corrigen los defectos y aplican las mejoras de mayor valor y menor riesgo, cada una con tests; (d) compartible ("viral") dentro de las reglas del proyecto: modo foto con captura de pantalla y tarjeta de misión completada sin texto "aprobado", clip corto grabable (MediaRecorder) con marca de agua genérica "referencia digital, ilustrativo", enlace compartible a una misión concreta, pantalla de título atractiva con inicio en un clic, tiempo de carga corto y carga progresiva; (e) cierre: suite completa verde dos veces seguidas, build de producción verificado, auditoría final (ponytail-audit) sin hallazgos "Hay que arreglar", y un informe de estado con límites conocidos.
+
+Restricción central: "viral" requiere publicar el juego, y hoy el repo es privado, el visor de origen es privado y sin licencia, y los GLB y datos son confidenciales. PUBLICAR NO ENTRA en esta tarea: se deja un build listo y un informe de qué habría que resolver antes (autorización escrita del dueño del visor, retirar datos internos y metadatos, revisión de licencias de cada asset en `NOTICE.md`). Publicar, hacer público el repo o desplegar en un hosting externo requiere la confirmación explícita del dueño en el momento.
