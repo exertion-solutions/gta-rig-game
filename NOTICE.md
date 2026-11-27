@@ -41,3 +41,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Adiciones al escenario (`public/models/scenario/additions.glb`)
+
+Creado para este proyecto con `scripts/build-scenario.py` (Blender 5.3) y comprimido con `@gltf-transform/cli meshopt`:
+escalera de la pasarela, barandas de la rampa de la V y escalera vertical al piso de enganche. Geometría, materiales y la
+textura de reja (procedimental, generada por el script) son propios; sin assets ni texturas de terceros. Escenario
+ilustrativo añadido por el juego, no as-built (`docs/scenario-additions.md`).
