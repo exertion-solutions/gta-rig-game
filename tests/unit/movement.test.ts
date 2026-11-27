@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { LOCACION_BOUNDS } from '../../src/game/world/frame'
-import { RESPAWN, RUN_SPEED, WALK_SPEED, clampToBounds, needsRespawn, stepMovement } from '../../src/game/player/movement'
+import { RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, canStepUp, clampToBounds, needsRespawn, respawnPoint, stepMovement, trackSafe } from '../../src/game/player/movement'
 
 describe('movement', () => {
   it('stepMovement sin input devuelve 0', () => {
@@ -51,11 +51,32 @@ describe('movement', () => {
     expect(clampToBounds([0, 1, 0], LOCACION_BOUNDS)).toEqual([0, 1, 0])
   })
 
-  it('needsRespawn: |y| > 5 o fuera del vallado; RESPAWN queda dentro', () => {
-    expect(needsRespawn([0, 6, 0], LOCACION_BOUNDS)).toBe(true)
+  it('needsRespawn: solo por debajo del suelo (y < -5) o fuera del vallado; el piso de enganche (20,65) no reubica', () => {
+    expect(needsRespawn([0, 20.651, 0], LOCACION_BOUNDS)).toBe(false)
+    expect(needsRespawn([0, 6, 0], LOCACION_BOUNDS)).toBe(false)
     expect(needsRespawn([0, -6, 0], LOCACION_BOUNDS)).toBe(true)
     expect(needsRespawn([40, 0, 0], LOCACION_BOUNDS)).toBe(true)
     expect(needsRespawn([0, 1, 0], LOCACION_BOUNDS)).toBe(false)
     expect(needsRespawn(RESPAWN, LOCACION_BOUNDS)).toBe(false)
+  })
+
+  it('ultimo punto firme: se actualiza solo de pie y dentro del vallado; la reubicacion vuelve ahi', () => {
+    let safe = RESPAWN
+    safe = trackSafe(safe, [1, 3.606, 0], true, LOCACION_BOUNDS)
+    expect(safe).toEqual([1, 3.606, 0])
+    safe = trackSafe(safe, [1, 2, 0], false, LOCACION_BOUNDS) // en el aire: no cambia
+    expect(safe).toEqual([1, 3.606, 0])
+    safe = trackSafe(safe, [40, 0, 0], true, LOCACION_BOUNDS) // fuera del vallado: no cambia
+    expect(safe).toEqual([1, 3.606, 0])
+    expect(respawnPoint([0, -6, 0], safe, LOCACION_BOUNDS)).toEqual([1, 3.606, 0])
+    expect(respawnPoint([0, 20.651, 0], safe, LOCACION_BOUNDS)).toBeNull()
+  })
+
+  it('canStepUp: escalones hasta STEP_MAX (>= la contrahuella mayor medida, 0,26 m); la pasarela (1,05) no', () => {
+    expect(STEP_MAX).toBeGreaterThanOrEqual(0.26)
+    expect(canStepUp(0.26, STEP_MAX)).toBe(true)
+    expect(canStepUp(0.175, STEP_MAX)).toBe(true)
+    expect(canStepUp(1.05, STEP_MAX)).toBe(false)
+    expect(canStepUp(STEP_MAX + 0.01, STEP_MAX)).toBe(false)
   })
 })

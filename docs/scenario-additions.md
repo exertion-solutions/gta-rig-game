@@ -60,3 +60,19 @@ Limitación visible: la plancha del piso de enganche del GLB es continua, sin ab
   y por la rampa.
 - Barandas en la pasarela de la planchada: no están en el GLB y ninguna fuente las ubica (PLA-2 habla de la planchada sin
   precisar dónde); se sale de la pasarela por los costados como en el modelo.
+
+## Escaleras de las piletas (limitación de colisión, Task 18B)
+
+Las 4 escaleras reales de las piletas (GLB, 43°) miden **0,70 m** de ancho, igual que el diámetro de la cápsula del jugador
+(2 × 0,35). Su colisión es la losa inclinada por la línea de narices, de 0,70 m de ancho, **sin colisión en los pasamanos de
+la escalera**: con pasamanos sólidos la cápsula no entra. No se ensancha la losa (sería superficie invisible fuera de lo que
+se ve). Consecuencia: el jugador puede salirse por un costado de la escalera y caer al suelo (≈ 0 a 2 m); **sin daño**:
+queda de pie en el suelo y puede volver a subir. No se reubica (no está debajo del suelo ni fuera del vallado).
+
+## Escalera vertical A3 en el juego (Task 18B)
+
+- Modo escalera: E (o W mirando a la escalera, desde abajo) engancha; W/S trepa y baja a 1,2 m/s (valor de juego,
+  `CLIMB_SPEED`); se suelta solo en los extremos: abajo sobre el piso de trabajo, arriba sobre la plancha a 0,75 m de la línea
+  de la escalera (fuera de la caja `sk575_mastil_banda9`, que se solapa 0,11 m con la plancha).
+- Como la plancha del GLB no tiene abertura, en el último tramo el cuerpo atraviesa visualmente la plancha (0,08 m): el
+  trepado es cinemático (sin colisión) y no hay trampa que dibujar sin inventarla.

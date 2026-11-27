@@ -10,6 +10,9 @@ import { Player } from '../game/player/Player'
 import { Truck } from '../game/vehicle/Truck'
 import { Ground, PhysicsWorld, RigColliders, WalkableColliders } from '../game/world/Ground'
 import { RigScene } from '../game/world/loadRig'
+import { Valves } from '../game/world/Valve'
+import { INTERACTABLES } from '../game/world/walkable'
+import { InteractPrompt } from '../ui/InteractPrompt'
 import { SceneProbes, ScenarioAdditions } from '../game/world/scenario/Additions'
 import { Hud } from '../ui/Hud'
 import { useHudStore } from '../ui/hudStore'
@@ -20,7 +23,7 @@ export function App() {
     let live = true
     void loadMissionDefs().then((defs) => {
       if (!live) return
-      useMissionStore.getState().init(defs, { sectors: getSectors() })
+      useMissionStore.getState().init(defs, { sectors: getSectors(), interactables: INTERACTABLES })
     })
     exposeGame({
       startMission: (id: string) => useMissionStore.getState().start(id),
@@ -46,12 +49,14 @@ export function App() {
           </PhysicsWorld>
           <RigScene />
           <ScenarioAdditions />
+          <Valves />
           <SceneProbes />
           <SectorReporter />
           <ObjectiveMarker />
         </Suspense>
       </Canvas>
       <Hud />
+      <InteractPrompt />
     </>
   )
 }

@@ -4,21 +4,36 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { clampPitch } from '../camera/followCamera'
 import { exposeGame } from '../dev'
+import { useMissionStore } from '../missions/store'
+import { canEnter } from '../vehicle/enterExit'
 import { LOCACION_BOUNDS } from '../world/frame'
-import { PLAYER_RADIUS, RESPAWN, needsRespawn, stepMovement, type Vec3 } from './movement'
+import { nearestInteractable, useValveStore } from '../world/interactables'
+import { INTERACTABLES, LADDERS, MAX_MEASURED_SLOPE_DEG, type LadderVolume } from '../world/walkable'
+import { climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from './climb'
+import { stepVertical, type VState } from './jump'
+import { PLAYER_RADIUS, RESPAWN, STEP_MAX, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
 import { CharacterModel } from './CharacterModel'
 import { teleportTo, usePlayerStore } from './store'
 
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
 const FOOT = HALF + PLAYER_RADIUS // centro de la cápsula sobre los pies
-const GRAVITY = 9.81
 const FIXED_DT = 1 / 60 // = timeStep por defecto de <Physics>
+// Pendiente máxima: la mayor medida (escalera del trip tank, 43,4°) + 1° de tolerancia numérica; la casilla (54°) queda fuera.
+const MAX_SLOPE_DEG = MAX_MEASURED_SLOPE_DEG + 1
+const HAND_Y = 1.0 // altura de las manos sobre los pies (juego) para el alcance de una válvula
+const OPERATE_MS = 1500 // duración del clip de operar tras pulsar E (juego)
+const FACING_COS = 0.7 // W engancha la escalera solo mirando hacia ella
 export const keys = new Set<string>()
+// Pulsaciones pendientes (se consumen en el paso de física). Con un panel abierto el Hud corta las teclas antes.
+const pending = { jump: false, use: false }
+let steps = 0 // pasos de física del jugador (DEV: los e2e esperan pasos reales, no tiempo)
 let override: { x: number; z: number; run: boolean } | null = null // solo lo usa window.__game (tests)
 // cuerpo del jugador: la cámara de seguimiento lo excluye de su raycast
 export const playerBody: { current: RapierRigidBody | null } = { current: null }
 // rapidez horizontal real (m/s) del último paso de física; la usa CharacterModel para elegir clip
 export const playerSpeed = { current: 0 }
+// acción en curso, para el clip: trepando (y si se mueve), en el aire tras saltar, operando hasta `operatingUntil` (ms)
+export const playerAction = { climbing: false, climbMoving: false, airborne: false, operatingUntil: 0 }
 
 const readInput = () =>
   override ?? {
@@ -32,15 +47,18 @@ export function Player() {
   const { world } = useRapier()
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
-  const vy = useRef(0)
+  const vs = useRef<VState>({ vy: 0, airMs: 0 })
+  const grounded = useRef(true)
+  const safe = useRef<Vec3>(RESPAWN)
+  const climb = useRef<{ ladder: LadderVolume; p: number } | null>(null)
   const ctl = useRef<ReturnType<typeof world.createCharacterController> | null>(null)
 
   useEffect(() => {
     const c = world.createCharacterController(0.01) // en el efecto: StrictMode lo monta/desmonta dos veces
     ctl.current = c
-    c.enableAutostep(0.3, 0.1, false)
+    c.enableAutostep(STEP_MAX, 0.1, false)
     c.enableSnapToGround(0.3)
-    c.setMaxSlopeClimbAngle((50 * Math.PI) / 180)
+    c.setMaxSlopeClimbAngle((MAX_SLOPE_DEG * Math.PI) / 180)
     return () => {
       ctl.current = null
       world.removeCharacterController(c)
@@ -48,7 +66,12 @@ export function Player() {
   }, [world])
 
   useEffect(() => {
-    const down = (e: KeyboardEvent) => keys.add(e.code)
+    const down = (e: KeyboardEvent) => {
+      keys.add(e.code)
+      if (e.repeat || usePlayerStore.getState().mode !== 'foot') return // en la camioneta Espacio es freno y E la maneja Truck
+      if (e.code === 'Space') pending.jump = true
+      if (e.code === 'KeyE') pending.use = true
+    }
     const up = (e: KeyboardEvent) => keys.delete(e.code)
     const move = (e: MouseEvent) => {
       if (document.pointerLockElement !== gl.domElement) return
@@ -73,9 +96,19 @@ export function Player() {
       },
       teleport: (p: Vec3) => {
         body.current?.setTranslation({ x: p[0], y: p[1] + FOOT, z: p[2] }, true)
-        vy.current = 0
+        vs.current = { vy: 0, airMs: 0 }
+        climb.current = null
+        playerAction.climbing = false
         teleportTo(p)
       },
+      jump: () => void (pending.jump = true),
+      interact: () => void (pending.use = true),
+      climbState: () => (climb.current ? { ladderId: climb.current.ladder.id, progress: climb.current.p } : null),
+      isGrounded: () => grounded.current,
+      steps: () => steps,
+      lastSafe: () => safe.current,
+      valveState: (id: string) => useValveStore.getState().states[id] ?? null,
+      nearInteractable: () => useValveStore.getState().near,
     })
     return () => {
       window.removeEventListener('keydown', down)
@@ -95,7 +128,7 @@ export function Player() {
         if (s.mode === 'truck') return rb.setEnabled(false)
         rb.setTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] }, true)
         rb.setNextKinematicTranslation({ x: s.position[0], y: s.position[1] + FOOT, z: s.position[2] })
-        vy.current = 0
+        vs.current = { vy: 0, airMs: 0 }
         rb.setEnabled(true)
       }),
     [],
@@ -106,29 +139,95 @@ export function Player() {
   useBeforePhysicsStep(() => {
     const rb = body.current
     const c = ctl.current
-    if (!rb || !c || usePlayerStore.getState().mode === 'truck') return void (playerSpeed.current = 0)
+    if (!rb || !c || usePlayerStore.getState().mode === 'truck') {
+      pending.jump = pending.use = false
+      return void (playerSpeed.current = 0)
+    }
+    steps++
     const dt = FIXED_DT
-    const { yaw } = usePlayerStore.getState()
-    const { vx, vz } = stepMovement(readInput(), yaw, dt)
-    vy.current -= GRAVITY * dt
-    c.computeColliderMovement(rb.collider(0), { x: vx * dt, y: vy.current * dt, z: vz * dt })
-    if (c.computedGrounded() && vy.current < 0) vy.current = 0
+    const input = readInput()
+    const { yaw, position, truck } = usePlayerStore.getState()
+    const place = (p: Vec3) => {
+      const t = { x: p[0], y: p[1] + FOOT, z: p[2] }
+      rb.setTranslation(t, true)
+      rb.setNextKinematicTranslation(t)
+    }
+    const use = pending.use
+    const jump = pending.jump
+    pending.use = pending.jump = false
+
+    // Modo escalera: cinemático a lo largo del LadderVolume (sin colisión); se suelta en los extremos.
+    const cl = climb.current
+    if (cl) {
+      const dir = Math.sign(input.z)
+      const p = climbStep(cl.p, dir, dt, ladderLength(cl.ladder))
+      const end = (p === 1 && dir > 0) || (use && cl.p === 1) ? 'top' : (p === 0 && dir < 0) || (use && cl.p === 0) ? 'bottom' : null
+      playerSpeed.current = 0
+      playerAction.climbMoving = p !== cl.p
+      if (end) {
+        const q = ladderRelease(cl.ladder, end)
+        climb.current = null
+        playerAction.climbing = false
+        vs.current = { vy: 0, airMs: 0 }
+        grounded.current = true
+        place(q)
+        return void usePlayerStore.setState({ position: q })
+      }
+      cl.p = p
+      const q = ladderFeet(cl.ladder, p)
+      rb.setNextKinematicTranslation({ x: q[0], y: q[1] + FOOT, z: q[2] })
+      return void usePlayerStore.setState({ position: q })
+    }
+
+    // E (o W mirando hacia la escalera, desde abajo) engancha la escalera; E opera la válvula al alcance.
+    // Si la camioneta está al alcance, E es de la camioneta (Truck.tsx).
+    const near = ladderEndNear(position, LADDERS)
+    const hand: Vec3 = [position[0], position[1] + HAND_Y, position[2]]
+    const valve = near ? null : nearestInteractable(hand, INTERACTABLES)
+    const vstore = useValveStore.getState()
+    if (vstore.near !== (valve?.id ?? null) || vstore.ladder !== (near?.end ?? null))
+      useValveStore.setState({ near: valve?.id ?? null, ladder: near?.end ?? null })
+    const eFree = use && !canEnter(position, truck.position)
+    const facing = near ? Math.cos(yaw - near.ladder.facing) > FACING_COS : false
+    if (near && (eFree || (near.end === 'bottom' && input.z > 0 && facing))) {
+      const lc = { ladder: near.ladder, p: near.end === 'top' ? 1 : 0 }
+      climb.current = lc
+      playerAction.climbing = true
+      usePlayerStore.setState({ yaw: near.ladder.facing })
+      const q = ladderFeet(lc.ladder, lc.p)
+      place(q)
+      return void usePlayerStore.setState({ position: q })
+    }
+    if (eFree && valve) {
+      const state = useValveStore.getState().operate(valve.id)
+      playerAction.operatingUntil = performance.now() + OPERATE_MS
+      useMissionStore.getState().report({ type: 'interact', targetId: valve.id, state })
+    }
+
+    const { vx, vz } = stepMovement(input, yaw, dt)
+    vs.current = stepVertical(vs.current, grounded.current, jump, dt)
+    if (vs.current.airMs === Infinity && vs.current.vy > 0) playerAction.airborne = true
+    c.computeColliderMovement(rb.collider(0), { x: vx * dt, y: vs.current.vy * dt, z: vz * dt })
+    grounded.current = c.computedGrounded()
+    if (grounded.current && vs.current.vy < 0) {
+      vs.current = { ...vs.current, vy: 0 }
+      playerAction.airborne = false
+    }
     const m = c.computedMovement()
     playerSpeed.current = Math.hypot(m.x, m.z) / dt
     const t = rb.translation()
     const next = { x: t.x + m.x, y: t.y + m.y, z: t.z + m.z }
-    let pos: Vec3 = [next.x, next.y - FOOT, next.z]
-    if (needsRespawn(pos, LOCACION_BOUNDS)) {
-      pos = RESPAWN
-      vy.current = 0
-      next.x = pos[0]
-      next.y = pos[1] + FOOT
-      next.z = pos[2]
-      rb.setTranslation(next, true)
-      rb.setNextKinematicTranslation(next)
-      teleportTo(pos)
+    const pos: Vec3 = [next.x, next.y - FOOT, next.z]
+    // Sin daño por caída: debajo del suelo o fuera del vallado -> al último punto firme.
+    const back = respawnPoint(pos, safe.current, LOCACION_BOUNDS)
+    if (back) {
+      vs.current = { vy: 0, airMs: 0 }
+      playerAction.airborne = false
+      place(back)
+      teleportTo(back)
       return
     }
+    safe.current = trackSafe(safe.current, pos, grounded.current, LOCACION_BOUNDS)
     rb.setNextKinematicTranslation(next)
     usePlayerStore.setState({ position: pos })
   })
