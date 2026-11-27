@@ -466,7 +466,7 @@ const out = {
 }
 const json = JSON.stringify(out, null, 1) + '\n'
 if (process.argv.includes('--check')) {
-  const cur = readFileSync(OUT, 'utf8')
+  const cur = readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n') // checkout con autocrlf
   if (cur !== json) fail(`${OUT} no coincide con lo generado: corré node scripts/extract-traversal.mjs`)
   console.log('traversal.json OK')
 } else {
