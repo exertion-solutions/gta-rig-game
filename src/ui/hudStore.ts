@@ -7,6 +7,8 @@ type HudState = {
   pauseOpen: boolean
   /** Mapa completo (Tab). */
   mapOpen: boolean
+  /** Pantalla de título (inicio en un clic). Con navegador automatizado (e2e) arranca cerrada: no tapa ni bloquea. */
+  titleOpen: boolean
   /** Sector en cuyo radio de llegada está el jugador (o la camioneta que conduce). */
   atSector: string | null
   /** Sectores a los que llegó en esta sesión, en orden. */
@@ -15,6 +17,7 @@ type HudState = {
   setFicha: (open: boolean) => void
   setPause: (open: boolean) => void
   setMap: (open: boolean) => void
+  setTitle: (open: boolean) => void
   setAt: (id: string | null) => void
 }
 
@@ -23,17 +26,19 @@ export const useHudStore = create<HudState>((set) => ({
   fichaOpen: false,
   pauseOpen: false,
   mapOpen: false,
+  titleOpen: typeof navigator !== 'undefined' && !navigator.webdriver,
   atSector: null,
   visited: [],
   setPanel: (panelOpen) => set({ panelOpen }),
   setFicha: (fichaOpen) => set({ fichaOpen }),
   setPause: (pauseOpen) => set({ pauseOpen }),
   setMap: (mapOpen) => set({ mapOpen }),
+  setTitle: (titleOpen) => set({ titleOpen }),
   setAt: (atSector) => set((s) => ({ atSector, visited: atSector && !s.visited.includes(atSector) ? [...s.visited, atSector] : s.visited })),
 }))
 
 /** Hay un panel, menú o mapa abierto: el juego (teclado y mando) queda congelado. */
-export const isBlocking = (s: Pick<HudState, 'panelOpen' | 'pauseOpen' | 'mapOpen'>) => s.panelOpen || s.pauseOpen || s.mapOpen
+export const isBlocking = (s: Pick<HudState, 'panelOpen' | 'pauseOpen' | 'mapOpen'> & { titleOpen?: boolean }) => s.panelOpen || s.pauseOpen || s.mapOpen || !!s.titleOpen
 export const uiBlocking = () => isBlocking(useHudStore.getState())
 
 /** Qué hace Esc: cierra lo que haya abierto (de adentro hacia afuera); sin nada abierto, abre la pausa. */

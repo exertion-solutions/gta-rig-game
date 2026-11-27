@@ -48,6 +48,16 @@ test('Tab abre el mapa con sectores numerados, sin distancias ni zonas, y Esc lo
   await expect(map).toHaveCount(0)
 })
 
+test('pantalla de título: sin automatización aparece, bloquea el juego y "Jugar" la cierra con un clic', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'webdriver', { get: () => false }))
+  await page.goto('/')
+  await expect(page.getByTestId('title-screen')).toBeVisible()
+  await expect(page.getByTestId('title-play')).toBeVisible({ timeout: 90_000 })
+  expect(await page.getByTestId('title-screen').innerText()).not.toMatch(/aprob|habilit|certific/i)
+  await page.getByTestId('title-play').click()
+  await expect(page.getByTestId('title-screen')).toHaveCount(0)
+})
+
 test('C agacha: baja la velocidad a ~0,6x y se suelta al levantar la tecla', async ({ page }) => {
   await page.keyboard.down('KeyC')
   await expect.poll(() => page.evaluate(() => (window as any).__game.isCrouching?.())).toBe(true)

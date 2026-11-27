@@ -28,6 +28,7 @@ function useHotkeys() {
     const down = (e: KeyboardEvent) => {
       const hud = useHudStore.getState()
       const blocking = isBlocking(hud)
+      if (hud.titleOpen) return void (GAME_KEYS.has(e.code) && e.stopPropagation()) // pantalla de título: el clic en Jugar inicia
       if (e.code === 'KeyM' && !e.repeat) {
         if (!hud.pauseOpen && !hud.mapOpen) hud.setPanel(!hud.panelOpen)
       } else if (e.code === 'KeyN' && !e.repeat) useAudioStore.getState().toggleMute()
