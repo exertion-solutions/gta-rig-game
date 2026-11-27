@@ -6,20 +6,30 @@ const FORBIDDEN = /aprob|habilit|certific/i
 const g = <T>(page: Page, fn: string, ...a: unknown[]) =>
   page.evaluate(([f, args]) => (window as any).__game[f as string](...(args as unknown[])) as T, [fn, a] as const)
 
-// Posiciones de los sectores (viewpoints.json, marco del juego). Varios comparten planta: en (0,0) están BOP, piso de trabajo, llave, piso de enganche y mástil.
+// Puntos de llegada (marco del juego) y el sector que debe mostrar el HUD ahí. Solo cuenta el sector MÁS CERCANO cuyo
+// radio y banda de piso contienen al jugador: BOP, mástil, piso de trabajo, llave y piso de enganche comparten planta
+// (antes todos en (0,0)); cada uno pide ir a su lugar, y los pisos elevados piden estar a su altura (medida).
+const PT = 3.606 // chapa del piso de trabajo (traversal.json)
+const PE = 20.651 // plancha del piso de enganche (traversal.json)
 const AWAY: Vec = [-10, 0, 20]
 const ACCESO: Vec = [-26, 0, -24]
-const CENTRO: Vec = [0, 0, 0]
-const TOUR: Vec[] = [
-  [-20.5, 0, 4.6], // acumulador
-  [6.2, 0, -11.2], // manifold
-  CENTRO, // bop, piso de trabajo, llave, piso de enganche, mástil
-  [-6.3, 0, 0], // cuadro
-  [8, 0, -1], // planchada
-  [-16.2, 0, -15.5], // bomba
-  [-6.5, 0, -17.5], // piletas
-  [-12.5, 0, 0.5], // carrier
-  [11, 0, 5], // pozo vecino
+const MASTIL: Vec = [-3, 0, 3.5] // suelo, lado -X de la subestructura
+const ENGANCHE: Vec = [1.0, PE, 0]
+const BOP: Vec = [2.5, 0, 0] // suelo, bajo la rampa de la V
+const TOUR: [Vec, string][] = [
+  [[-20.5, 0, 4.6], 'acumulador'],
+  [[6.2, 0, -11.2], 'manifold'],
+  [BOP, 'bop'],
+  [MASTIL, 'mastil'],
+  [[-0.6, PT, 1.5], 'piso-trabajo'],
+  [[1.0, PT, 0.5], 'llave'],
+  [ENGANCHE, 'piso-enganche'],
+  [[-6.3, 0, 0], 'cuadro'],
+  [[8, 0, -1.6], 'planchada'],
+  [[-16.2, 0, -15.5], 'bomba'],
+  [[-6.5, 0, -17.5], 'piletas'],
+  [[-12.5, 0, 0.5], 'carrier'],
+  [[11, 0, 5], 'pozo-vecino'],
 ]
 
 test.beforeEach(async ({ page }) => {
@@ -32,15 +42,18 @@ test.beforeEach(async ({ page }) => {
   await page.waitForTimeout(500)
 })
 
-const go = async (page: Page, p: Vec) => {
+// Teletransporta y espera ESTADO (no tiempo): el HUD muestra `at` (el reporter ya informó al motor en ese frame).
+const go = async (page: Page, p: Vec, at: string | null) => {
   await g(page, 'teleport', p)
-  await page.waitForTimeout(250) // el reporter informa el sector en el frame siguiente
+  await page.waitForFunction((want) => (window as any).__game.getAtSector() === want, at, { timeout: 15_000 })
 }
+const index = async (page: Page, i: number) =>
+  page.waitForFunction((k) => (window as any).__game.getMission().objectiveIndex === k, i, { timeout: 15_000 })
 
 async function start(page: Page, id: string) {
   await page.keyboard.press('KeyM')
   await page.getByTestId('mission-panel').locator(`[data-mission="${id}"]`).getByRole('button', { name: 'Iniciar' }).click()
-  await page.waitForTimeout(500) // el reporter informa "estás en el Acceso" antes de que cuente una llegada
+  await page.waitForFunction((m) => (window as any).__game.getMission().missionId === m, id)
 }
 
 test('lista: las misiones 1 a 7 están, la 8 se omite y su motivo nunca se muestra', async ({ page }) => {
@@ -57,13 +70,20 @@ test('lista: las misiones 1 a 7 están, la 8 se omite y su motivo nunca se muest
 test('misión 1 de punta a punta: Acceso (salir y volver) y los 14 sectores', async ({ page }) => {
   await start(page, 'm1-reconocimiento')
   await expect(page.getByTestId('hud-objective')).toHaveText('Conducí hasta el Acceso a la locación')
-  await go(page, ACCESO) // ya estaba en el Acceso al empezar: no cuenta
+  await go(page, ACCESO, 'acceso') // ya estaba en el Acceso al empezar: no cuenta
   expect((await g<{ objectiveIndex: number }>(page, 'getMission')).objectiveIndex).toBe(0)
-  await go(page, AWAY)
-  await go(page, ACCESO)
+  await go(page, AWAY, null)
+  await go(page, ACCESO, 'acceso')
+  await index(page, 1)
   await expect(page.getByTestId('hud-objective')).toHaveText('Visitá los 14 sectores')
-  await go(page, AWAY) // para que el Acceso cuente también como sector del recorrido
-  for (const p of [ACCESO, ...TOUR]) await go(page, p)
+  await go(page, AWAY, null) // para que el Acceso cuente también como sector del recorrido
+  const tour: [Vec, string][] = [[ACCESO, 'acceso'], ...TOUR]
+  for (const [i, [p, at]] of tour.entries()) {
+    await go(page, p, at)
+    if (i < tour.length - 1)
+      await page.waitForFunction((n) => (window as any).__game.getMission().visited.length === n, i + 1, { timeout: 15_000 })
+  }
+  await page.waitForFunction(() => (window as any).__game.getMission().status === 'completed')
   await expect(page.getByTestId('mission-completed')).toBeVisible()
   expect(await page.getByTestId('mission-panel').innerText()).not.toMatch(FORBIDDEN)
 })
@@ -106,8 +126,10 @@ test('misión 7: reordena con las flechas, el orden incorrecto reintenta y el co
 
 test('misión 4: llegar al piso de enganche y autorregistrar; el resumen refleja lo marcado, sin calificar', async ({ page }) => {
   await start(page, 'm4-retencion-en-altura')
-  await go(page, AWAY)
-  await go(page, CENTRO)
+  await go(page, [1.2, 0, 3.4], 'bop') // en el suelo debajo del piso de enganche: cuenta el BOP, no el piso
+  expect((await g<{ objectiveIndex: number }>(page, 'getMission')).objectiveIndex).toBe(0)
+  await go(page, ENGANCHE, 'piso-enganche') // la subida por la escalera vertical se prueba en climb.e2e.ts
+  await index(page, 1)
   const marks = page.getByTestId('mark-controls')
   await expect(marks).toBeVisible()
   const active = await page.getByTestId('mission-panel').innerText()
@@ -143,10 +165,18 @@ test('misión 2: 8 preguntas; el resumen cuenta coincidencias sin calificar', as
 
 test('misión 3: en boca de pozo se ve la Fuente en conflicto A2 Medio vs RCCO Alto', async ({ page }) => {
   await start(page, 'm3-mapa-de-zonas')
-  await go(page, AWAY)
-  await go(page, CENTRO) // mástil, piso de enganche y BOP comparten planta: los tres cuentan
+  await go(page, AWAY, null)
+  // mástil, piso de enganche y BOP comparten planta: cada uno cuenta solo en su lugar (y el piso, a su altura)
+  await go(page, MASTIL, 'mastil')
+  await index(page, 1)
+  await go(page, BOP, 'bop') // todavía pide el piso de enganche: el BOP no cuenta antes
+  expect((await g<{ objectiveIndex: number }>(page, 'getMission')).objectiveIndex).toBe(1)
+  await go(page, ENGANCHE, 'piso-enganche')
+  await index(page, 2)
+  await go(page, AWAY, null)
+  await go(page, BOP, 'bop')
+  await index(page, 3)
   await expect(page.getByTestId('hud-objective')).toContainText('Carrier')
-  expect((await g<{ objectiveIndex: number }>(page, 'getMission')).objectiveIndex).toBe(3)
   const list = await page.getByTestId('hud-objectives').innerText() // la lista muestra el texto de la boca de pozo
   expect(list).toContain('Fuente en conflicto')
   expect(list).toContain('Layout A2 Medio')
