@@ -1,6 +1,6 @@
 # Estado de QA (Task 20)
 
-Fecha: 2026-11-27. Rama de trabajo: la del worktree sobre `feat/gta-rig-game`. Nada se publicó ni se desplegó.
+Fecha: 2026-11-27. Rama de trabajo: la del worktree sobre `feat/gta-rig-game`. Publicado el 2026-11-27 en GitHub Pages por decisión del dueño del proyecto: https://exertion-solutions.github.io/gta-rig-game/ (rama `gh-pages`, build del commit `194d0d7`, sin los .mp3 de voz: solo subtítulos).
 
 ## Qué se probó
 
@@ -66,7 +66,7 @@ agachado ~0,8 m/s, camioneta ~12 m/s tras 2,4 s de acelerador y se detiene al fr
 - Descarga de la tarjeta y copia del enlace dependen de permisos del navegador (portapapeles).
 - Táctil y móvil siguen fuera de alcance.
 
-## Antes de publicar (requiere confirmación explícita del dueño)
+## Publicación: pendientes que siguen abiertos
 
 1. Autorización escrita del dueño del visor de origen para publicar el juego y sus GLB.
 2. Retirar datos internos y metadatos de lo que se empaqueta (`tests/unit/ui-publico.test.ts` ya vigila `public/`, `src/` y `dist/`).
