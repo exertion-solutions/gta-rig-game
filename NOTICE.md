@@ -1,6 +1,7 @@
 # Aviso
 
-- Los GLB y `.meta.json` de `public/models/rig10/` provienen del visor (commit en `assets.lock.json`). El visor es privado y sin licencia: **este repo debe permanecer privado** hasta autorización escrita del dueño.
+- Los GLB de `public/models/rig10/` y los `.meta.json` y GLB sin uso de `vendor/visor/models/` provienen del visor (commit en `assets.lock.json`). Los `.meta.json` son internos y no se copian al build. El visor es privado y sin licencia: **este repo debe permanecer privado** hasta autorización escrita del dueño.
+- Signo lateral (+Y = este) sin verificar contra el layout interno.
 - Geometría de confianza B/C, `as_built: false`: aproximada, no apta para fabricación ni certificada.
 - El juego es ilustrativo. No es simulación, cálculo ni validación de seguridad.
 - Nombres genéricos: sin marca de empresa ni documentos internos.
@@ -54,3 +55,16 @@ Creado para este proyecto con `scripts/build-scenario.py` (Blender 5.3) y compri
 escalera de la pasarela, barandas de la rampa de la V y escalera vertical al piso de enganche. Geometría, materiales y la
 textura de reja (procedimental, generada por el script) son propios; sin assets ni texturas de terceros. Escenario
 ilustrativo añadido por el juego, no as-built (`docs/scenario-additions.md`).
+
+## Publicación
+
+El build queda listo para servirse bajo una sub-ruta (`npm run build:pages`), pero **publicarlo** (GitHub Pages u otro
+hosting, o hacer público el repo) requiere la autorización escrita del dueño del visor: un sitio de Pages es público
+aunque el repo sea privado y expone los GLB. Sin esa autorización no se publica. El build no incluye los `.meta.json`
+internos, el número de serie del fabricante ni la marca comercial del acumulador (lo verifica `tests/unit/ui-publico.test.ts`).
+
+## Textos en pantalla
+
+El juego nunca dice "aprobado", "habilitado" ni "certificado". Las fichas citan el texto de las fuentes a través de
+`uiSafe` (`src/game/data/evidence.ts`), que reformula "certificado" como "con certificación": esa raíz citada de la
+fuente se acepta (decisión del dueño en la QA, D-05) y el texto no se cambia.
