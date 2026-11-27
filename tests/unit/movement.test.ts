@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { LOCACION_BOUNDS } from '../../src/game/world/frame'
-import { CROUCH_FACTOR, RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, atLimit, canCrouch, clampToBounds, lookDelta, needsRespawn, respawnPoint, stepMovement, trackSafe } from '../../src/game/player/movement'
+import { CROUCH_FACTOR, RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, atLimit, canCrouch, clampToBounds, lookDelta, needsRespawn, respawnPoint, mergeMove, stepMovement, trackSafe } from '../../src/game/player/movement'
 
 describe('movement', () => {
   it('stepMovement sin input devuelve 0', () => {
@@ -141,5 +141,35 @@ describe('lookDelta', () => {
     const b = lookDelta(5, 8, 1, true)
     expect(b.pitch).toBeCloseTo(-a.pitch)
     expect(b.yaw).toBeCloseTo(a.yaw)
+  })
+})
+
+describe('mando analógico', () => {
+  const sp = (o: Parameters<typeof stepMovement>[0]) => {
+    const r = stepMovement(o, 0, 1 / 60)
+    return Math.hypot(r.vx, r.vz)
+  }
+  it('stick a medias va entre caminar y correr; a fondo corre; apenas inclinado camina', () => {
+    expect(sp({ x: 0, z: 1, run: false, analog: true })).toBeCloseTo(RUN_SPEED, 9)
+    expect(sp({ x: 0, z: 0.5, run: false, analog: true })).toBeCloseTo((WALK_SPEED + RUN_SPEED) / 2, 9)
+    expect(sp({ x: 0, z: 0.001, run: false, analog: true })).toBeCloseTo(WALK_SPEED, 2)
+  })
+  it('la magnitud usa ambos ejes (diagonal) y no pasa de 1', () => {
+    expect(sp({ x: 0.3, z: 0.4, run: false, analog: true })).toBeCloseTo((WALK_SPEED + RUN_SPEED) / 2, 9)
+    expect(sp({ x: 1, z: 1, run: false, analog: true })).toBeCloseTo(RUN_SPEED, 9)
+  })
+  it('agachado ignora la magnitud (velocidad fija de agachado); la dirección se conserva', () => {
+    expect(sp({ x: 0, z: 0.5, run: false, analog: true, crouch: true })).toBeCloseTo(WALK_SPEED * CROUCH_FACTOR, 9)
+    expect(stepMovement({ x: 0, z: 0.5, run: false, analog: true }, 0, 0.016).vz).toBeLessThan(0)
+  })
+  it('teclado sin analog: igual que antes (magnitud ignorada)', () => {
+    expect(sp({ x: 0, z: 0.5, run: false })).toBeCloseTo(WALK_SPEED, 9)
+  })
+  it('mergeMove: teclado manda sobre el stick; sin teclas, el stick conserva su magnitud', () => {
+    expect(mergeMove({ x: 1, z: 0 }, { x: 0, z: 0.4 }, false)).toMatchObject({ x: 1, z: 0.4, analog: false })
+    expect(mergeMove({ x: 0, z: 0 }, { x: 0, z: 0.4 }, false)).toMatchObject({ x: 0, z: 0.4, analog: true })
+    expect(mergeMove({ x: 0, z: 0 }, null, true)).toMatchObject({ x: 0, z: 0, analog: false, run: true })
+    const big = mergeMove({ x: 0, z: 0 }, { x: 1, z: 1 }, false)
+    expect(Math.hypot(big.x, big.z)).toBeCloseTo(1, 9)
   })
 })

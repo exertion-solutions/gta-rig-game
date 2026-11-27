@@ -14,7 +14,7 @@ import { nearestInteractable, useValveStore } from '../world/interactables'
 import { INTERACTABLES, LADDERS, MAX_MEASURED_SLOPE_DEG, type LadderVolume } from '../world/walkable'
 import { WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from './climb'
 import { JUMP, stepVertical, type VState } from './jump'
-import { PLAYER_RADIUS, RESPAWN, STEP_MAX, approachVelocity, atLimit, canCrouch, lookDelta, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
+import { PLAYER_RADIUS, RESPAWN, STEP_MAX, approachVelocity, atLimit, canCrouch, lookDelta, mergeMove, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
 import { useSettings } from '../settings/store'
 import { CharacterModel } from './CharacterModel'
 import { keys, onKeysCleared } from './keys'
@@ -44,11 +44,12 @@ const padPrev ={ jump: false, interact: false } // flancos del mando: un botón 
 
 // Teclado + mando (el mando suma; teclado intacto). Con un panel abierto el mando no mueve.
 const readInput = (pad: PadInput | null) =>
-  override ?? {
-    x: Math.max(-1, Math.min(1, (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) + (pad?.move.x ?? 0))),
-    z: Math.max(-1, Math.min(1, (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) + (pad?.move.z ?? 0))),
-    run: keys.has('ShiftLeft') || keys.has('ShiftRight') || !!pad?.run || runLock.on,
-  }
+  override ??
+  mergeMove(
+    { x: (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0), z: (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) },
+    pad?.move ?? null,
+    keys.has('ShiftLeft') || keys.has('ShiftRight') || !!pad?.run || runLock.on,
+  )
 
 export function Player() {
   const body = useRef<RapierRigidBody>(null)

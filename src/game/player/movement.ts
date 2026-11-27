@@ -21,15 +21,34 @@ export const RESPAWN: Vec3 = ACCESO_POSITION
 
 // input.x = strafe (+ derecha), input.z = avance (+ adelante). yaw 0 mira hacia -Z (convención three).
 // Devuelve velocidad en el plano XZ del mundo (m/s). dt se acepta por contrato; sin rampa de aceleración.
-export function stepMovement(input: { x: number; z: number; run: boolean; crouch?: boolean }, yaw: number, _dt: number) {
+export function stepMovement(input: { x: number; z: number; run: boolean; crouch?: boolean; analog?: boolean }, yaw: number, _dt: number) {
   const len = Math.hypot(input.x, input.z)
   if (len === 0) return { vx: 0, vz: 0 }
-  const speed = input.crouch ? WALK_SPEED * CROUCH_FACTOR : input.run ? RUN_SPEED : WALK_SPEED
+  // analog (stick sin teclas): la magnitud (0..1, ya sin zona muerta) escala entre caminar y correr; agachado queda fijo.
+  const speed = input.crouch
+    ? WALK_SPEED * CROUCH_FACTOR
+    : input.analog
+      ? WALK_SPEED + (RUN_SPEED - WALK_SPEED) * Math.min(1, len)
+      : input.run
+        ? RUN_SPEED
+        : WALK_SPEED
   const x = input.x / len
   const z = input.z / len
   const s = Math.sin(yaw)
   const c = Math.cos(yaw)
   return { vx: speed * (x * c - z * s), vz: speed * (-x * s - z * c) }
+}
+
+/** Teclado + stick: el teclado manda (sin magnitud, como siempre); sin teclas, el stick conserva su magnitud (`analog`). */
+export function mergeMove(kb: { x: number; z: number }, pad: { x: number; z: number } | null, run: boolean) {
+  const clamp = (v: number) => Math.max(-1, Math.min(1, v))
+  const p = pad ?? { x: 0, z: 0 }
+  if (kb.x === 0 && kb.z === 0 && (p.x !== 0 || p.z !== 0)) {
+    const m = Math.hypot(p.x, p.z)
+    const k = m > 1 ? 1 / m : 1
+    return { x: p.x * k, z: p.z * k, run, analog: true }
+  }
+  return { x: clamp(kb.x + p.x), z: clamp(kb.z + p.z), run, analog: false }
 }
 
 // Rampa de velocidad (valores de juego): arranque y frenada en ~0,15 s a pie, poco control en el aire (conserva el impulso).
