@@ -29,6 +29,7 @@ Si faltan assets o cambió un hash: `npm run sync-assets` (usa `gh` con acceso a
 | Ratón (clic en la escena) | mirar | |
 | M | panel de misiones | |
 | F | ficha del sector | |
+| N | silenciar / activar el audio | |
 | Esc | cerrar panel | |
 
 Solo escritorio con teclado y ratón (táctil/móvil fuera de alcance por ahora).
@@ -51,8 +52,13 @@ npm run build:pages    # dist/ con base absoluta /gta-rig-game/ (GitHub Pages de
 ```
 
 La base también se puede fijar con la variable `BASE_PATH` (p. ej. en CI: `BASE_PATH=/otro/ npm run build`).
-No hay router: no hace falta `404.html`. `.github/workflows/ci.yml` solo corre typecheck, tests y build; **no publica**.
-Publicar (GitHub Pages u otro hosting) requiere autorización escrita del dueño del visor: ver `NOTICE.md`.
+No hay router: no hace falta `404.html`. `.github/workflows/ci.yml` corre typecheck, tests, build y `check-assets` (más un job aparte con los e2e de Playwright); **no publica**.
+Publicar (GitHub Pages u otro hosting) está autorizado por el dueño del visor desde 2026-11-27 pero se hace a mano, no desde CI: ver `NOTICE.md`.
+
+## Licencias de los assets
+
+Los GLB del visor, el personaje (Microsoft Rocketbox, MIT) y las adiciones del escenario tienen su procedencia y licencia
+en [`NOTICE.md`](NOTICE.md); léelo antes de reutilizar o redistribuir cualquier archivo de `public/models/`.
 
 ## Datos
 

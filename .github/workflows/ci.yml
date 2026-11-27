@@ -1,4 +1,4 @@
-# Solo verificación: typecheck, tests unitarios y build. NO publica ni despliega (publicar requiere autorización, ver NOTICE.md).
+# Solo verificación: typecheck, tests unitarios, check-assets, build y e2e. NO publica ni despliega (ver NOTICE.md).
 # Nota: los GLB del visor están en el repo; check-assets (prebuild) falla si faltan o cambió un hash.
 name: ci
 on:
@@ -18,4 +18,20 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run check-assets
       - run: npm run build
+      # dist/ ya existe: ui-publico.test.ts verifica que no traiga .meta.json, S/N ni marca.
+      - run: npx vitest run tests/unit/ui-publico.test.ts
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      E2E_PORT: '5199'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

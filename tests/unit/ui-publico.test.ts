@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -36,5 +36,38 @@ describe('texto del juego sin aprobado/habilitado/certificado', () => {
       .map(norm)
       .filter((f) => !FILTERS.includes(f) && /aprobad|habilitad|certificad/i.test(readFileSync(f, 'utf8')))
     expect(hits).toEqual([])
+  })
+})
+
+// Palabras que el juego tampoco puede decir (spec): sin "área segura" ni "zona de exclusión", en src/ y public/.
+describe('texto del juego sin área segura / zona de exclusión', () => {
+  it.each(['public', 'src'])('%s/ no las usa', (dir) => {
+    const hits = files(dir).filter((f) => /[áa]rea segura|zona de exclusi[óo]n/i.test(readFileSync(f, 'utf8'))).map(norm)
+    expect(hits).toEqual([])
+  })
+})
+
+// El repo es público desde 2026-11-27 con la autorización del dueño del visor: NOTICE y README lo declaran.
+describe('NOTICE.md y README.md', () => {
+  const notice = readFileSync('NOTICE.md', 'utf8')
+  it('NOTICE declara repo público autorizado y el signo lateral sin verificar', () => {
+    expect(notice).toMatch(/se hizo público el 2026-11-27 con la autorización del dueño del visor/)
+    expect(notice).toContain('Signo lateral (+Y = este) sin verificar')
+    expect(notice).not.toMatch(/repo privado/i)
+  })
+  it('README apunta a NOTICE y documenta las teclas del juego', () => {
+    const readme = readFileSync('README.md', 'utf8')
+    expect(readme).toContain('NOTICE.md')
+    for (const k of ['W A S D', 'Shift', 'Espacio', '| E |', '| M |', '| F |', '| N |', 'Esc']) expect(readme).toContain(k)
+  })
+})
+
+// dist/ solo existe tras `npm run build`; si está, no puede traer metadatos internos ni datos internos.
+describe.skipIf(!existsSync('dist'))('dist/ sin datos internos', () => {
+  it('no tiene .meta.json', () => {
+    expect(files('dist').map(norm).filter((f) => f.endsWith('.meta.json'))).toEqual([])
+  })
+  it('no contiene informe interno, S/N, fabricante ni marca', () => {
+    expect(files('dist').filter((f) => INTERNAL.test(readFileSync(f, 'utf8'))).map(norm)).toEqual([])
   })
 })
