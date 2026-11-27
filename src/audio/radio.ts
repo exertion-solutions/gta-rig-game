@@ -55,6 +55,14 @@ export function lineHash(text: string): string {
   return h.toString(16).padStart(8, '0')
 }
 
+export type VoiceManifest = Record<string, { file: string; hash: string }>
+
+/** Archivo de voz de la línea: solo si el manifest la lista y su hash coincide con el texto actual (si no, null: subtítulos). */
+export const voiceFile = (line: Line, manifest: VoiceManifest): string | null => {
+  const v = manifest[line.id]
+  return v && v.hash === lineHash(line.text) ? v.file : null
+}
+
 /** Cola de líneas: `current` es la que suena; una línea ya en cola no se repite. */
 export function createRadioQueue() {
   let q: Line[] = []

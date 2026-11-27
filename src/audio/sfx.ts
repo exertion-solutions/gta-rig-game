@@ -7,7 +7,8 @@ let ctx: AudioContext | null = null
 let sfxBus: GainNode | null = null
 let ambBus: GainNode | null = null
 let noise: AudioBuffer | null = null
-let engine: { osc: OscillatorNode; gain: GainNode } | null = null
+let engine: { osc: OscillatorNode; gain: GainNode; speed: number } | null = null
+const ENGINE_EPS = 0.05 // m/s: por debajo de este cambio no se reprograma el AudioParam (una vez por cuadro como máximo)
 
 const applyMix = () => {
   if (!ctx || !sfxBus || !ambBus) return
@@ -130,8 +131,10 @@ export const sfx = {
       gain.gain.value = 0
       osc.connect(f).connect(gain).connect(sfxBus)
       osc.start()
-      engine = { osc, gain }
+      engine = { osc, gain, speed: Number.NaN }
     }
+    if (Math.abs(speed - engine.speed) < ENGINE_EPS) return
+    engine.speed = speed
     const p = engineParams(speed)
     engine.osc.frequency.setTargetAtTime(p.freq, ctx.currentTime, 0.1)
     engine.gain.gain.setTargetAtTime(p.gain * 0.35, ctx.currentTime, 0.1)

@@ -2,15 +2,14 @@ import { create } from 'zustand'
 import { useMissionStore } from '../game/missions/store'
 import { assetUrl } from '../game/world/assetUrl'
 import { busGain, useAudioStore } from './mix'
-import { LINK_LINES, createRadioQueue, lineHash, missionLines, readMs, splitSubtitles, type Line } from './radio'
+import { LINK_LINES, createRadioQueue, missionLines, readMs, splitSubtitles, voiceFile, type Line, type VoiceManifest } from './radio'
 
 /** Subtítulo en pantalla (siempre visible mientras suena una línea). */
 export const useRadioStore = create<{ line: Line | null; subtitle: string | null }>(() => ({ line: null, subtitle: null }))
 
 // Voces opcionales: public/audio/voice/manifest.json lista { lines: { id: { file, hash } } }. Solo se pide un archivo
 // listado y cuyo hash coincide con el texto actual: nunca se pide un archivo inexistente (sin 404 en consola).
-type Manifest = Record<string, { file: string; hash: string }>
-let manifest: Manifest = {}
+let manifest: VoiceManifest = {}
 
 const queue = createRadioQueue()
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -57,9 +56,9 @@ function play(line: Line | null) {
   chunks = splitSubtitles(line.text)
   chunk = 0
   textDone = false
-  const v = manifest[line.id]
-  if (v && v.hash === lineHash(line.text)) {
-    const a = (audio = new Audio(assetUrl(`audio/voice/${v.file}`)))
+  const file = voiceFile(line, manifest)
+  if (file) {
+    const a = (audio = new Audio(assetUrl(`audio/voice/${file}`)))
     a.volume = busGain(useAudioStore.getState().mix, 'voice')
     const end = () => {
       if (audio !== a) return
@@ -80,12 +79,12 @@ function push(lines: Line[]) {
 
 let started = false
 /** Engancha la radio a las misiones: enlace + briefing al iniciar, cada objetivo nuevo, cierre al completar. */
-export function startRadio() {
-  if (started) return
+export function startRadio(): Promise<void> {
+  if (started) return Promise.resolve()
   started = true
-  fetch(assetUrl('audio/voice/manifest.json'))
+  const loaded = fetch(assetUrl('audio/voice/manifest.json'))
     .then((r) => (r.ok ? r.json() : {}))
-    .then((m: { lines?: Manifest }) => void (manifest = m.lines ?? {}))
+    .then((m: { lines?: VoiceManifest }) => void (manifest = m.lines ?? {}))
     .catch(() => {})
   useAudioStore.subscribe((s) => {
     if (audio) audio.volume = busGain(s.mix, 'voice')
@@ -94,7 +93,8 @@ export function startRadio() {
     const m = s.mission
     const pm = p.mission
     if (m.status === 'idle') {
-      if (pm.status !== 'idle') (queue.clear(), play(null))
+      // salir a mitad de misión corta la radio; cerrar la misión completada deja terminar la línea de cierre
+      if (pm.status === 'active') (queue.clear(), play(null))
       return
     }
     const def = s.available.find((d) => d.id === m.missionId)
@@ -108,6 +108,7 @@ export function startRadio() {
     } else if (m.status === 'active' && m.objectiveIndex > pm.objectiveIndex) push([lines[1 + m.objectiveIndex]])
     else if (m.status === 'completed' && pm.status !== 'completed') push([LINK_LINES.completada])
   })
+  return loaded
 }
 
 /** DEV: congelar/soltar el subtítulo actual. */

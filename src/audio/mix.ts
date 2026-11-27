@@ -9,10 +9,12 @@ export const DEFAULT_MIX: Mix = { master: 0.8, sfx: 0.8, ambient: 0.4, voice: 1,
 
 const vol = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : d)
 
-// localStorage puede no existir o lanzar (ventana privada, sitio bloqueado): entonces la mezcla vive en memoria.
-export function loadMix(storage: Storage | undefined = globalThis.localStorage): Mix {
+// localStorage puede no existir o lanzar (ventana privada, sitio bloqueado: hasta el getter lanza SecurityError):
+// se accede siempre dentro del try y entonces la mezcla vive en memoria.
+export function loadMix(storage?: Storage): Mix {
   try {
-    const p = JSON.parse(storage?.getItem(MIX_KEY) ?? 'null')
+    const s = storage ?? globalThis.localStorage
+    const p = JSON.parse(s?.getItem(MIX_KEY) ?? 'null')
     if (p && typeof p === 'object')
       return {
         master: vol(p.master, DEFAULT_MIX.master),
@@ -27,9 +29,9 @@ export function loadMix(storage: Storage | undefined = globalThis.localStorage):
   return { ...DEFAULT_MIX }
 }
 
-export function saveMix(mix: Mix, storage: Storage | undefined = globalThis.localStorage) {
+export function saveMix(mix: Mix, storage?: Storage) {
   try {
-    storage?.setItem(MIX_KEY, JSON.stringify(mix))
+    ;(storage ?? globalThis.localStorage)?.setItem(MIX_KEY, JSON.stringify(mix))
   } catch {
     /* sigue en memoria */
   }

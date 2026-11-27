@@ -11,7 +11,7 @@ export function MuteButton() {
     <button
       className={`${card} pointer-events-auto shrink-0 px-3 py-1.5 text-sm hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400`}
       aria-pressed={muted}
-      aria-label="Silenciar sonido (N)"
+      aria-label={`${muted ? 'Sin sonido' : 'Sonido'} (N)`}
       onClick={toggle}
       data-testid="audio-mute"
     >
