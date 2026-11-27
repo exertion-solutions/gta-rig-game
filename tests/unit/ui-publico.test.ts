@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { uiSafe } from '../../src/game/data/evidence'
 
 // Higiene de lo que se publica: public/ se copia tal cual al build y src/ se empaqueta en el JS.
 // Los metadatos internos (*.meta.json) y los GLB sin uso viven en vendor/visor/models (fuera del build).
@@ -24,6 +25,22 @@ describe('public/ y src/ sin datos internos', () => {
   it.each(['public', 'src'])('%s/ no contiene informe interno, S/N, fabricante ni marca', (dir) => {
     const hits = scan(files(dir)).filter((f) => INTERNAL.test(readFileSync(f, 'utf8'))).map(norm)
     expect(hits).toEqual([])
+  })
+})
+
+// Nombre anterior del equipo: ni en el código ni en lo que se copia tal cual al build. (El rótulo 3D de los GLB es
+// geometría sin texto: lo cambia relabel.ts al cargar. Los JSON de vendor/ quedan literales; el build los limpia.)
+const OLD_NAME = /\b(?:tacker|tkr|equipo)[\s_-]*10\b/i
+const text = (fs: string[]) => scan(fs).filter((f) => !/\.(glb|webp|hdr|wasm|png|jpg)$/.test(f))
+describe('nombre del equipo', () => {
+  it.each(['public', 'src'])('%s/ no menciona el nombre anterior', (dir) => {
+    expect(text(files(dir)).filter((f) => OLD_NAME.test(readFileSync(f, 'utf8'))).map(norm)).toEqual([])
+  })
+  it('uiSafe lo reemplaza en el texto que viene de las fuentes', () => {
+    expect(uiSafe('aplicabilidad al equipo 10 y al TKR-10')).toBe('aplicabilidad al EXERTION 01 y al EXERTION 01')
+  })
+  it.skipIf(!existsSync('dist'))('dist/ no lo trae (el build limpia los JSON vendorizados)', () => {
+    expect(text(files('dist')).filter((f) => OLD_NAME.test(readFileSync(f, 'utf8'))).map(norm)).toEqual([])
   })
 })
 

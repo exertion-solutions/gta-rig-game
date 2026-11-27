@@ -4,6 +4,7 @@ import { useLoadStore } from '../../app/loadStore'
 import { DRACO_PATH, rigUrl } from './assetUrl'
 import { RIG_PARTS } from './frame'
 import { mergeByMaterial } from './mergeByMaterial'
+import { relabel } from './relabel'
 import { stripLines } from './stripLines'
 
 // Decoders Draco locales (public/decoders/draco), sin CDN. Meshopt lo agrega drei por defecto.
@@ -17,18 +18,19 @@ const SHADOW_CASTERS = new Set(['sk575_mastil.glb', 'sk575_carrier.glb', 'sk575_
 
 function Part({ glb }: { glb: string }) {
   const { scene } = useGLTF(rigUrl(glb), DRACO_PATH)
-  const { clone, merged } = useMemo(() => {
+  const { clone, merged, labels } = useMemo(() => {
     const c = scene.clone(true)
     stripLines(c)
+    const labels = relabel(c) // rótulo con el nombre del equipo (antes de unir: el plano nuevo no se une con nada)
     const merged = mergeByMaterial(c) // piezas estáticas: un draw call por material (el acumulador traía 63 nodos), docs/perf.md
     const cast = SHADOW_CASTERS.has(glb)
     c.traverse((o) => {
       o.castShadow = cast
       o.receiveShadow = true
     })
-    return { clone: c, merged }
+    return { clone: c, merged, labels }
   }, [scene, glb])
-  useEffect(() => () => merged.forEach((g) => g.dispose()), [merged])
+  useEffect(() => () => [...merged, ...labels].forEach((g) => g.dispose()), [merged, labels])
   return <primitive object={clone} name={glb.replace(/\.glb$/, '')} /> // nombre = id de la pieza (lo usan los tests)
 }
 

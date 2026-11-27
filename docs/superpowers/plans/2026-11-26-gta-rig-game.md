@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Juego web 3D de misiones en tercera persona (a pie + camioneta) para recorrer el Equipo 10 (SK-575) con 8 misiones de inducción basadas en datos documentados.
+**Goal:** Juego web 3D de misiones en tercera persona (a pie + camioneta) para recorrer el EXERTION 01 (SK-575) con 8 misiones de inducción basadas en datos documentados.
 
 **Architecture:** App React + R3F. Lógica pura (movimiento, cámara, radar, misiones, reglas de evidencia) en módulos sin React, testeados con Vitest. Rapier aporta física con cajas de colisión derivadas de los bounding boxes de los GLB. Datos y GLB del visor se traen con `sync-assets` a un commit fijado.
 

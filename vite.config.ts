@@ -11,7 +11,13 @@ const scrubBrand: Plugin = {
   enforce: 'pre',
   transform(code, id) {
     if (!/[\\/]vendor[\\/]visor[\\/][^\\/]+\.json$/.test(id)) return null
-    return { code: code.replace(/\s*\(Koomey\)/gi, '').replace(/\bKoomey\b/gi, 'acumulador'), map: null }
+    return {
+      code: code
+        .replace(/\s*\(Koomey\)/gi, '')
+        .replace(/\bKoomey\b/gi, 'acumulador')
+        .replace(/\b(?:tacker|tkr|equipo)[\s_-]*10\b/gi, 'EXERTION 01'), // nombre anterior del equipo
+      map: null,
+    }
   },
 }
 

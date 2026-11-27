@@ -4,7 +4,7 @@ Fecha: 2026-11-26. Estado: borrador para aprobación.
 
 ## Intención y por qué
 
-Un juego 3D web de misiones, en tercera persona y estilo GTA, para recorrer el Equipo 10 (pulling/workover SK-575) y su locación a pie y en camioneta. Quien juega acepta misiones de un instructor por radio, se mueve por el mapa con radar, llega a los equipos y completa objetivos. Las misiones enseñan el equipo y su locación usando datos ya documentados en el visor `exertion-solutions/visor-equipo-de-torre`.
+Un juego 3D web de misiones, en tercera persona y estilo GTA, para recorrer el EXERTION 01 (pulling/workover SK-575) y su locación a pie y en camioneta. Quien juega acepta misiones de un instructor por radio, se mueve por el mapa con radar, llega a los equipos y completa objetivos. Las misiones enseñan el equipo y su locación usando datos ya documentados en el visor `exertion-solutions/visor-equipo-de-torre`.
 
 El dueño pidió "un juego con misiones, estilo GTA". No indicó audiencia. Mi llamado: el núcleo sirve a inducción, clientes y juego libre; un selector de modo cambia solo qué misiones y fichas se muestran.
 
