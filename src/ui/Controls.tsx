@@ -10,7 +10,8 @@ export function Controls() {
       <p><K k="W A S D" /> mover · <K k="Shift" /> correr · <K k="V" /> fijar</p>
       <p><K k="Espacio" /> saltar · <K k="E" /> usar · <K k="C" /> agacharse</p>
       <p>Clic en el juego: mirar con el mouse</p>
-      <p><K k="M" /> misiones · <K k="F" /> ficha · <K k="N" /> sonido</p>
+      <p><K k="M" /> misiones · <K k="Tab" /> mapa · <K k="F" /> ficha</p>
+      <p><K k="N" /> sonido · <K k="Esc" /> pausa</p>
     </div>
   )
 }

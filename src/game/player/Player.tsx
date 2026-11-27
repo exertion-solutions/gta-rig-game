@@ -124,6 +124,7 @@ export function Player() {
       interact: () => void (pending.use = true),
       climbState: () => (climb.current ? { ladderId: climb.current.ladder.id, progress: climb.current.p } : null),
       isGrounded: () => grounded.current,
+      isCrouching: () => usePlayerStore.getState().crouching,
       steps: () => steps,
       jumpStats: () => ({ rise: jumpLog.apex - jumpLog.y0, cuts: jumpLog.cuts }),
       lastSafe: () => safe.current,

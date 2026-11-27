@@ -5,8 +5,10 @@ import { clearKeys } from '../game/player/keys'
 import { useAudioStore } from '../audio/mix'
 import { MuteButton, RadioSubtitle } from './AudioControls'
 import { Ficha } from './Ficha'
-import { useHudStore } from './hudStore'
+import { escapeAction, isBlocking, useHudStore } from './hudStore'
 import { Controls } from './Controls'
+import { FullMap } from './FullMap'
+import { PauseMenu } from './PauseMenu'
 import { Legend } from './Legend'
 import { MissionPanel } from './MissionPanel'
 import { Radar } from './Radar'
@@ -21,26 +23,49 @@ const GAME_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'Space', 'Shi
 function useHotkeys() {
   useEffect(() => {
     // En captura y en window: corre antes que los listeners del juego y puede cortarles la tecla.
+    let locked = false
+    let lostAt = -1e9
     const down = (e: KeyboardEvent) => {
       const hud = useHudStore.getState()
+      const blocking = isBlocking(hud)
       if (e.code === 'KeyM' && !e.repeat) {
-        hud.setPanel(!hud.panelOpen)
+        if (!hud.pauseOpen && !hud.mapOpen) hud.setPanel(!hud.panelOpen)
       } else if (e.code === 'KeyN' && !e.repeat) useAudioStore.getState().toggleMute()
-      else if (e.code === 'KeyF' && !e.repeat && !hud.panelOpen) hud.setFicha(!hud.fichaOpen)
-      else if (e.code === 'Escape' && hud.panelOpen) hud.setPanel(false)
-      else if (e.code === 'Escape' && hud.fichaOpen) hud.setFicha(false)
-      else if (hud.panelOpen && GAME_KEYS.has(e.code)) e.stopPropagation()
+      else if (e.code === 'KeyF' && !e.repeat && !blocking) hud.setFicha(!hud.fichaOpen)
+      else if (e.code === 'Tab') {
+        e.preventDefault() // sin esto Tab mueve el foco del navegador
+        if (!e.repeat && !hud.pauseOpen && !hud.panelOpen) hud.setMap(!hud.mapOpen)
+      } else if (e.code === 'Escape') {
+        // En algunos navegadores Esc con el puntero capturado llega además del pointerlockchange: no abrir y cerrar la pausa de una.
+        if (e.repeat || performance.now() - lostAt < 250) return
+        const a = escapeAction(hud)
+        if (a === 'close-pause') hud.setPause(false)
+        else if (a === 'close-map') hud.setMap(false)
+        else if (a === 'close-panel') hud.setPanel(false)
+        else if (a === 'close-ficha') hud.setFicha(false)
+        else hud.setPause(true)
+      } else if (blocking && GAME_KEYS.has(e.code)) e.stopPropagation()
     }
     window.addEventListener('keydown', down, true)
-    // Al abrir un panel: suelta el puntero (para poder clicar) y detiene al jugador.
+    // Esc con el puntero capturado: el navegador lo suelta y NO manda la tecla; ese soltado abre la pausa (si no hay nada abierto).
+    const onLock = () => {
+      if (document.pointerLockElement) return void (locked = true)
+      if (!locked) return
+      locked = false
+      lostAt = performance.now()
+      if (!isBlocking(useHudStore.getState())) useHudStore.getState().setPause(true)
+    }
+    document.addEventListener('pointerlockchange', onLock)
+    // Al abrir un panel, la pausa o el mapa: suelta el puntero (para poder clicar) y detiene al jugador.
     const unsub = useHudStore.subscribe((s, prev) => {
-      if (s.panelOpen && !prev.panelOpen) {
+      if (isBlocking(s) && !isBlocking(prev)) {
         clearKeys()
         document.exitPointerLock?.()
       }
     })
     return () => {
       window.removeEventListener('keydown', down, true)
+      document.removeEventListener('pointerlockchange', onLock)
       unsub()
     }
   }, [])
@@ -83,7 +108,7 @@ function ObjectiveText({ text }: { text: string }) {
 export function Hud() {
   useHotkeys()
   const { mission, available } = useMissionStore()
-  const { panelOpen, fichaOpen, atSector, visited, setPanel } = useHudStore()
+  const { panelOpen, fichaOpen, pauseOpen, mapOpen, atSector, visited, setPanel } = useHudStore()
   const placed = useMemo(() => getSectors().filter((s) => s.position).length, [])
   const def = available.find((d) => d.id === mission.missionId)
   const idx = mission.objectiveIndex
@@ -178,6 +203,8 @@ export function Hud() {
       </div>
 
       {panelOpen && <MissionPanel />}
+      {mapOpen && <FullMap />}
+      {pauseOpen && <PauseMenu />}
     </div>
   )
 }

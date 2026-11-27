@@ -141,8 +141,7 @@ test('de pie en el suelo debajo del piso de enganche y del piso de trabajo no cu
 
 test('válvula M1 del manifold: aviso sin distancias, E alterna el registro, clip operate y avanza el objetivo interact (DEV)', async ({ page }) => {
   await page.keyboard.press('KeyM')
-  await page.getByTestId('mission-panel').locator('[data-mission="dev-valvula"]').getByRole('button', { name: 'Iniciar' }).click()
-  await page.keyboard.press('Escape')
+  await page.getByTestId('mission-panel').locator('[data-mission="dev-valvula"]').getByRole('button', { name: 'Iniciar' }).click() // Iniciar ya cierra el panel (Esc sin nada abierto abre la pausa)
   await expect(page.getByTestId('hud-objective')).toHaveText('Operá la válvula M1 del manifold')
   const v = TRAVERSAL.interactables.find((x) => x.id === 'manifold_M1')!
   await place(page, M1_SPOT(), 0)
