@@ -11,7 +11,7 @@ const VIEWPORTS = [
   [768, 1024],
   [390, 844],
 ] as const
-const IDS = ['radar', 'hud-mission', 'hud-visited', 'legend', 'hud-ficha', 'open-missions', 'hud-sector']
+const IDS = ['radar', 'hud-mission', 'hud-visited', 'legend', 'hud-ficha', 'open-missions', 'hud-sector', 'hud-limit']
 const SKY = '#9fc3e8'
 type Rect = { id: string; x: number; y: number; w: number; h: number }
 
@@ -136,4 +136,12 @@ for (const [vw, vh] of VIEWPORTS)
     await g(page, 'teleport', [-10, 0, 21.5])
     await expect(page.getByTestId('interact-prompt')).toBeVisible()
     await audit(page, vw, vh, 'aviso de camioneta')
+
+    // contra el vallado del borde: aviso "Límite de la locación"
+    await g(page, 'setYaw', -Math.PI / 2)
+    await g(page, 'teleport', [32.5, 0, 10])
+    await g(page, 'setInput', { x: 0, z: 1, run: true })
+    await expect(page.getByTestId('hud-limit')).toBeVisible()
+    await audit(page, vw, vh, 'límite de la locación')
+    await g(page, 'setInput', null)
   })

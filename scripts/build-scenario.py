@@ -181,6 +181,18 @@ while yb + k * LAD_PITCH < yt - 0.05:
 anchor('anchor_ladder_mastil_bottom', (lad_x(yb), yb, LAD_Z), kind='ladderBottom', partId='sk575_mastil', facing=math.pi / 2)
 anchor('anchor_ladder_mastil_top', (lad_x(yt), yt, LAD_Z), kind='ladderTop', partId='sk575_mastil', rungs=k - 1)
 
+# ---------- A4: baranda del frente +X del piso de enganche (QA D-06: borde abierto, caída de 17 m) ----------
+# MEDIDA: plancha x -0,05..1,82 (borde +X), y 20,65; barandas laterales del GLB en z -1,20 y +1,24 con pasamanos
+# 1,11 m sobre la plancha (sk575_enganche). ESTIMADA: que exista (el GLB solo trae parantes en +X), 0,05 m afuera del
+# borde para no achicar la plancha, intermedio a la mitad y 3 parantes. Ilustrativa: no es una barrera de seguridad.
+PE_EDGE_X, PE_Z0, PE_Z1, PE_RAIL_H = 1.82 + 0.05, -1.20, 1.24, 1.11
+tube((PE_EDGE_X, BOARD_Y + PE_RAIL_H, PE_Z0), (PE_EDGE_X, BOARD_Y + PE_RAIL_H, PE_Z1), 0.024, M_YELLOW)  # pasamanos
+tube((PE_EDGE_X, BOARD_Y + PE_RAIL_H / 2, PE_Z0), (PE_EDGE_X, BOARD_Y + PE_RAIL_H / 2, PE_Z1), 0.016, M_YELLOW)
+for z in (PE_Z0, (PE_Z0 + PE_Z1) / 2, PE_Z1):
+    tube((PE_EDGE_X, BOARD_Y, z), (PE_EDGE_X, BOARD_Y + PE_RAIL_H, z), 0.022, M_YELLOW)
+anchor('anchor_rail_enganche', (PE_EDGE_X, BOARD_Y, 0), kind='boardRail', partId='sk575_mastil', z0=PE_Z0, z1=PE_Z1,
+       railHeight=PE_RAIL_H)
+
 # ---------- UV y unión por material (pocas draw calls) ----------
 bpy.ops.object.select_all(action='DESELECT')
 for mname, objs in parts.items():

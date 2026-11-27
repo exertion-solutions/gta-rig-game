@@ -10,6 +10,7 @@ import { Radar } from './Radar'
 import { sectorLabel } from './sectorLabel'
 import { buildFicha } from '../game/data/ficha'
 import { visitedView } from './visitedView'
+import { usePlayerStore } from '../game/player/store'
 
 // Teclas que mueven al jugador o suben/bajan de la camioneta: con un panel abierto no deben llegar al juego.
 const GAME_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'Space', 'ShiftLeft', 'ShiftRight'])
@@ -91,6 +92,7 @@ export function Hud() {
   const ficha = useMemo(() => (atSector ? buildFicha(atSector) : null), [atSector])
   const view = visitedView(def, mission, visited, placed)
   const showFicha = !!ficha && fichaOpen && !panelOpen
+  const atLimit = usePlayerStore((s) => s.atLimit)
   // Lector de pantalla: cada objetivo nuevo y la misión completada (polite: no interrumpe).
   const announce = def && obj ? `Objetivo ${idx + 1} de ${def.objectives.length}: ${obj.text}` : mission.status === 'completed' && def ? `Misión completada: ${def.title}` : ''
 
@@ -131,6 +133,11 @@ export function Hud() {
             <p className="mt-1 line-clamp-2 text-sm text-slate-200">{view.ids.length ? view.ids.map(sectorLabel).join(' · ') : 'ninguno todavía'}</p>
           </div>
         </div>
+        {atLimit && (
+          <p className={`${card} self-start px-3 py-1.5 text-sm text-amber-300`} role="status" data-testid="hud-limit">
+            Límite de la locación
+          </p>
+        )}
         {ficha && !fichaOpen && (
           <div className={`${card} self-start px-3 py-1.5 text-sm`} data-testid="hud-sector">
             {ficha.name} · <kbd className="rounded bg-white/15 px-1 font-mono text-xs">F</kbd> ficha

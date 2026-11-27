@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import type { TraversalData } from '../../src/game/world/walkable'
 import { waitFrames } from './wait'
+import { standSpots } from '../reach'
 
 // Task 18B: salto, escalera vertical, válvulas y objetivo `interact`. Espera estados (no tiempos fijos) con los ganchos DEV.
 type Pos = [number, number, number]
@@ -10,6 +11,12 @@ const PT = TRAVERSAL.platforms.find((p) => p.id === 'piso_trabajo')!.y
 const PE = TRAVERSAL.platforms.find((p) => p.id === 'piso_enganche')!.y
 const LADDER = TRAVERSAL.ladders.find((l) => l.id === 'mastil_escalera')!
 const DISTANCE = /\d\s?(m|metros|mts)\b/i
+// De pie al norte de M1, fuera de las cajas de los volantes (QA D-07) y del lado de la calle (z <= -9,4: la camioneta
+// estacionada en z = -8 ocupa hasta z = -9).
+const M1_SPOT = (): Pos => {
+  const v = TRAVERSAL.interactables.find((x) => x.id === 'manifold_M1')!
+  return standSpots(v as never).filter((p) => p[2] <= -9.4).sort((a, b) => b[2] - a[2])[0] as Pos
+}
 
 const g = <T,>(page: Page, fn: string, ...args: unknown[]) =>
   page.evaluate(([f, a]) => (window as any).__game[f as string](...(a as unknown[])), [fn, args] as const) as Promise<T>
@@ -133,7 +140,7 @@ test('válvula M1 del manifold: aviso sin distancias, E alterna el registro, cli
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('hud-objective')).toHaveText('Operá la válvula M1 del manifold')
   const v = TRAVERSAL.interactables.find((x) => x.id === 'manifold_M1')!
-  await place(page, [v.position[0], 0, v.position[2] + 0.2], 0)
+  await place(page, M1_SPOT(), 0)
   await page.waitForFunction(() => (window as any).__game.nearInteractable() === 'manifold_M1')
   const prompt = page.getByTestId('interact-prompt')
   await expect(prompt).toContainText('E: operar')
@@ -241,7 +248,7 @@ test('bajar de la camioneta nunca vuelve a colgar al jugador de la escalera (cam
 test('válvula con la camioneta al alcance: no se ofrece "E: operar" y E sube a la camioneta', async ({ page }) => {
   const v = TRAVERSAL.interactables.find((x) => x.id === 'manifold_M1')!
   await parkTruck(page, [v.position[0], 0, -8.0], -Math.PI / 2)
-  await place(page, [v.position[0], 0, v.position[2] + 0.2], 0)
+  await place(page, M1_SPOT(), 0)
   await page.waitForFunction(() => (window as any).__game.nearInteractable() === 'manifold_M1')
   const prompt = page.getByTestId('interact-prompt')
   await expect(prompt).toContainText('E subir a la camioneta') // E es de la camioneta y el aviso lo dice
@@ -250,4 +257,26 @@ test('válvula con la camioneta al alcance: no se ofrece "E: operar" y E sube a 
   await page.waitForFunction(() => (window as any).__game.getMode() === 'truck')
   await expect(prompt).toContainText('E bajar de la camioneta')
   expect(await g(page, 'valveState', 'manifold_M1')).toBeNull()
+})
+
+// QA D-10: saltar repetido contra la esquina mástil/baranda del piso de trabajo dejaba al jugador parado en el aire
+// (salto + autostep = 0,78 m sobre el piso) o flotando con el clip de salto.
+test('salto repetido contra una esquina: no trepa la esquina ni queda flotando, vuelve a apoyarse en el piso', async ({ page }) => {
+  await place(page, [-0.5, PT, -1.4], Math.PI / 2)
+  await g(page, 'setInput', { x: 0, z: 1, run: true })
+  let top = 0
+  for (let i = 0; i < 10; i++) {
+    await g(page, 'jump')
+    const tr = await sample(page, 'n >= 24', 30) // 0,4 s de simulación entre saltos
+    top = Math.max(top, ...tr.map((s) => s.p[1]))
+  }
+  await g(page, 'setInput', null)
+  const tr = await sample(page, 'n >= 90', 100) // 1,5 s de simulación sin teclas
+  top = Math.max(top, ...tr.map((s) => s.p[1]))
+  expect(top).toBeLessThan(PT + 0.6) // el ápice de un salto (≈ 0,49 m), nunca encima de la esquina
+  expect(await g(page, 'isGrounded')).toBe(true)
+  const y = (await pos(page))[1]
+  expect(y).toBeGreaterThan(PT - 0.06) // sigue sobre el piso de trabajo
+  expect(y).toBeLessThan(PT + 0.08)
+  expect(await g(page, 'currentClip')).not.toBe('jump')
 })

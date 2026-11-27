@@ -1,12 +1,12 @@
 // Superficies caminables, barandas y anclajes de recorrido medidos de los GLB (src/game/world/traversal.json,
 // generado por scripts/extract-traversal.mjs). Escenario ilustrativo, no as-built: ver docs/traversal-inventory.md.
-import data from './traversal.json'
+import data from './traversal.json' with { type: 'json' }
 
 export type Vec3 = [number, number, number]
 export type Traversal = 'ground' | 'stairs' | 'ladder' | 'platform'
 export type Evidence = { status: 'documentado' | 'ilustrativo'; ref: string }
 // Caja de colisión con rotación opcional (Euler XYZ, radianes): rampas, escaleras y barandas inclinadas.
-export type BoxCollider = { id: string; center: Vec3; half: Vec3; rot?: Vec3 }
+export type BoxCollider = { id: string; center: Vec3; half: Vec3; rot?: Vec3; only?: 'stair' | 'truckBlock' }
 export type LadderVolume = { id: string; partId: string; bottom: Vec3; top: Vec3; facing: number }
 export type Interactable = {
   id: string
@@ -62,10 +62,23 @@ export function railCollider(id: string, a: readonly number[], b: readonly numbe
   return { id, center: f.mid.map((v, i) => v + (f.up[i] * height) / 2) as Vec3, half: [f.len / 2, height / 2, thickness / 2], rot: f.rot }
 }
 
+// Volumen bajo de cada escalera, solo para la camioneta (groups.ts): del pie al borde de la cubierta, a lo ancho de la
+// escalera y hasta la altura del pasamanos sobre la línea de narices en el pie (0,90 m, la de A1; ESTIMADA): queda dentro
+// de lo dibujado (escalera + pasamanos) y alcanza al chasis (0,6–1,2 m), que choca de frente en vez de subir la rampa.
+export const TRUCK_BLOCK_H = 0.9
+export function truckBlockCollider(s: Incline): BoxCollider {
+  const x0 = Math.min(s.bottom[0], s.top[0])
+  const x1 = Math.max(s.bottom[0], s.top[0])
+  const h = Math.min(TRUCK_BLOCK_H, Math.max(s.bottom[1], s.top[1]))
+  return { id: `${s.id}_camioneta`, center: [(x0 + x1) / 2, h / 2, s.bottom[2]], half: [(x1 - x0) / 2, h / 2, s.width / 2], only: 'truckBlock' }
+}
+
 export function walkableColliders(t: TraversalData = TRAVERSAL): BoxCollider[] {
   return [
     ...t.solids.map((s) => ({ id: s.id, center: s.center as Vec3, half: s.half as Vec3 })),
-    ...[...t.stairs, ...t.ramps].map((s) => inclineCollider(s.id, s.bottom, s.top, s.width)),
+    ...t.stairs.map((s) => ({ ...inclineCollider(s.id, s.bottom, s.top, s.width), only: 'stair' as const })),
+    ...t.stairs.map(truckBlockCollider),
+    ...t.ramps.map((s) => inclineCollider(s.id, s.bottom, s.top, s.width)),
     ...t.rails.map((r) => railCollider(r.id, r.a, r.b, r.height)),
   ]
 }

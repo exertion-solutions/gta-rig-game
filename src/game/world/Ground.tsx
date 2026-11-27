@@ -6,6 +6,7 @@ import { DRACO_PATH, rigUrl } from './assetUrl'
 import { buildColliders } from './colliders'
 import { LOCACION_BOUNDS as B, LOCACION_M, RIG_PARTS } from './frame'
 import { stripLines } from './stripLines'
+import { STAIR_GROUPS, TRUCK_BLOCK_GROUPS } from './groups'
 import { REPLACED_PARTS, walkableColliders } from './walkable'
 
 const FENCE_HALF_H = 20 // semi-altura del vallado invisible en el borde de la locación (20 => 40 m de alto)
@@ -68,7 +69,14 @@ export function WalkableColliders() {
   return (
     <RigidBody type="fixed" colliders={false}>
       {cs.map((c) => (
-        <CuboidCollider key={c.id} args={c.half} position={c.center} rotation={c.rot} />
+        <CuboidCollider
+          key={c.id}
+          args={c.half}
+          position={c.center}
+          rotation={c.rot}
+          // sin grupo explícito si no hace falta: collisionGroups={undefined} dejaba la caja sin colisión (grupo 0)
+          {...(c.only ? { collisionGroups: c.only === 'stair' ? STAIR_GROUPS : TRUCK_BLOCK_GROUPS } : {})}
+        />
       ))}
     </RigidBody>
   )

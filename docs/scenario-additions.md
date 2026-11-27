@@ -4,7 +4,7 @@
 (`public/models/rig10/`, intactos y verificados por `npm run check-assets`). Se agrega solo para poder recorrer el equipo.
 Sin marcas ni logos; no son barreras de seguridad, zonas de exclusión ni procedimientos.
 
-- Archivo: `public/models/scenario/additions.glb` (≈ 1.900 triángulos; presupuesto de la Task 18: ≤ 30.000).
+- Archivo: `public/models/scenario/additions.glb` (≈ 2.040 triángulos; presupuesto de la Task 18: ≤ 30.000).
 - Origen: `scripts/build-scenario.py` (Blender 5.3 sin interfaz:
   `blender -b --factory-startup --python scripts/build-scenario.py -- <crudo.glb>`), después
   `npx gltf-transform meshopt <crudo.glb> public/models/scenario/additions.glb`.
@@ -52,6 +52,32 @@ del equipo.
 | Colisión | ninguna propia: el modo escalera (Task 18B) usa el `LadderVolume` `mastil_escalera` | — |
 
 Limitación visible: la plancha del piso de enganche del GLB es continua, sin abertura; los largueros llegan a su borde trasero.
+
+## A4. Baranda del frente +X del piso de enganche (Task 19b, QA D-06)
+
+El frente +X de la plancha (el lado opuesto al mástil) solo tiene parantes en el GLB: con W apretada el jugador salía del
+piso de enganche y caía 17 m. Se agrega una baranda ilustrativa que une las dos barandas laterales del GLB.
+
+| Dato | Valor | Origen |
+| --- | --- | --- |
+| Borde de la plancha | x = 1,82, y = 20,65 (`sk575_enganche_grating`) | MEDIDA |
+| Extremos | z = −1,20 y z = +1,24 (las barandas laterales del GLB) | MEDIDA |
+| Altura del pasamanos | 1,11 m sobre la plancha (igual que las laterales, pasamanos a y 21,73) | MEDIDA |
+| Existencia en el frente | el GLB solo trae parantes; ninguna fuente la ubica | ESTIMADA |
+| Posición | 0,05 m afuera del borde (x = 1,87), para no achicar la plancha | ESTIMADA |
+| Intermedio / parantes | a la mitad de la altura; 3 parantes (extremos y centro) | ESTIMADA |
+| Colisión | caja delgada (0,05 m) del piso al pasamanos, sobre la misma línea (`enganche_baranda_frente`) | coherente con lo dibujado |
+
+No es una barrera de seguridad ni un control: es escenario ilustrativo para que el borde se lea igual que los laterales.
+`scripts/extract-traversal.mjs` falla si el anclaje no está en el borde medido, no une las laterales o no tiene su altura.
+
+## Escaleras y camioneta (Task 19b, QA D-09; sin geometría nueva)
+
+La colisión de cada escalera es una rampa por la línea de narices, pensada para el jugador. La camioneta la trepaba y
+quedaba encaramada a ≈ 26°. Ahora la rampa es solo del jugador (grupos de colisión, `src/game/world/groups.ts`) y la
+camioneta choca contra el volumen bajo de la escalera: del pie al borde de la cubierta, a lo ancho de la escalera y hasta
+0,90 m (la altura del pasamanos de A1 sobre la línea de narices, ESTIMADA para las escaleras de las piletas). Queda dentro
+de lo dibujado (escalera + pasamanos); el jugador y la cámara no lo ven.
 
 ## No se agregó
 

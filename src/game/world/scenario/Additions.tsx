@@ -6,7 +6,8 @@ import { exposeGame } from '../../dev'
 import { assetUrl } from '../assetUrl'
 
 // Escenario ilustrativo añadido por el juego, no as-built (docs/scenario-additions.md): escalera de la pasarela,
-// baranda de la rampa de la V y escalera vertical al piso de enganche. 3 mallas (una por material).
+// baranda de la rampa de la V, escalera vertical al piso de enganche y baranda del frente +X del piso de enganche (A4).
+// 3 mallas (una por material).
 const URL = assetUrl('models/scenario/additions.glb')
 useGLTF.preload(URL)
 

@@ -7,11 +7,12 @@ import { exposeGame } from '../dev'
 import { useMissionStore } from '../missions/store'
 import { eBelongsToTruck } from '../vehicle/enterExit'
 import { LOCACION_BOUNDS } from '../world/frame'
+import { PLAYER_GROUPS } from '../world/groups'
 import { nearestInteractable, useValveStore } from '../world/interactables'
 import { INTERACTABLES, LADDERS, MAX_MEASURED_SLOPE_DEG, type LadderVolume } from '../world/walkable'
 import { WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from './climb'
 import { stepVertical, type VState } from './jump'
-import { PLAYER_RADIUS, RESPAWN, STEP_MAX, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
+import { PLAYER_RADIUS, RESPAWN, STEP_MAX, atLimit, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
 import { CharacterModel } from './CharacterModel'
 import { keys, onKeysCleared } from './keys'
 import { teleportTo, usePlayerStore } from './store'
@@ -134,7 +135,7 @@ export function Player() {
         // Cualquier cambio de modo suelta la escalera: al bajar de la camioneta nunca vuelve a quedar colgado.
         climb.current = null
         playerAction.climbing = false
-        if (s.climbing) usePlayerStore.setState({ climbing: false })
+        if (s.climbing || s.atLimit) usePlayerStore.setState({ climbing: false, atLimit: false })
         const rb = body.current
         if (!rb) return
         if (s.mode === 'truck') return rb.setEnabled(false)
@@ -223,13 +224,31 @@ export function Player() {
     const { vx, vz } = stepMovement(input, yaw, dt)
     vs.current = stepVertical(vs.current, grounded.current, jump, dt)
     if (vs.current.airMs === Infinity && vs.current.vy > 0) playerAction.airborne = true
-    c.computeColliderMovement(rb.collider(0), { x: vx * dt, y: vs.current.vy * dt, z: vz * dt })
+    // QA D-10: en el aire, el autostep del controlador "subía" por la esquina mástil/baranda (salto + escalón = 0,78 m) y
+    // el jugador quedaba parado en el aire o flotando con el clip de salto. Autostep y pegado al suelo solo apoyado.
+    if (grounded.current && vs.current.vy <= 0) {
+      c.enableAutostep(STEP_MAX, 0.1, false)
+      c.enableSnapToGround(0.3)
+    } else {
+      c.disableAutostep()
+      c.disableSnapToGround()
+    }
+    const want = { x: vx * dt, y: vs.current.vy * dt, z: vz * dt }
+    c.computeColliderMovement(rb.collider(0), want, undefined, PLAYER_GROUPS)
+    let m = { ...c.computedMovement() }
     grounded.current = c.computedGrounded()
+    // Contra una esquina el empuje lateral también trababa la caída: si no bajó, se reintenta solo en vertical.
+    if (!grounded.current && want.y < 0 && m.y > want.y / 2 && (want.x || want.z)) {
+      c.computeColliderMovement(rb.collider(0), { x: 0, y: want.y, z: 0 }, undefined, PLAYER_GROUPS)
+      m = { ...c.computedMovement() }
+      grounded.current = c.computedGrounded()
+    }
+    // Subiendo y frenado por algo encima: se corta la subida (sin quedar pegado al techo o a la arista).
+    if (want.y > 0 && m.y < want.y / 2) vs.current = { ...vs.current, vy: 0 }
     if (grounded.current && vs.current.vy < 0) {
       vs.current = { ...vs.current, vy: 0 }
       playerAction.airborne = false
     }
-    const m = c.computedMovement()
     playerSpeed.current = Math.hypot(m.x, m.z) / dt
     const t = rb.translation()
     const next = { x: t.x + m.x, y: t.y + m.y, z: t.z + m.z }
@@ -244,6 +263,9 @@ export function Player() {
       return
     }
     safe.current = trackSafe(safe.current, pos, grounded.current, LOCACION_BOUNDS)
+    // QA D-11: el vallado no se ve; si se empuja contra él, el HUD lo dice (sin distancias)
+    const limit = (input.x !== 0 || input.z !== 0) && atLimit(pos, PLAYER_RADIUS + 0.05, LOCACION_BOUNDS)
+    if (usePlayerStore.getState().atLimit !== limit) usePlayerStore.setState({ atLimit: limit })
     rb.setNextKinematicTranslation(next)
     usePlayerStore.setState({ position: pos })
   })
@@ -258,7 +280,7 @@ export function Player() {
       colliders={false}
       position={[RESPAWN[0], RESPAWN[1] + FOOT + 0.02, RESPAWN[2]]}
     >
-      <CapsuleCollider args={[HALF, PLAYER_RADIUS]} />
+      <CapsuleCollider args={[HALF, PLAYER_RADIUS]} collisionGroups={PLAYER_GROUPS} />
       <CharacterModel footY={FOOT} />
     </RigidBody>
   )

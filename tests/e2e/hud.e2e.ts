@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test'
 import { settle, waitFrames, waitSteps } from './wait'
 
 const FORBIDDEN = /aprobad|habilitad|certificad/i
-const ACUM: [number, number, number] = [-20.5, 0, 4.6]
+// frente al acumulador, fuera de sus cajas de colisión (QA D-07): la camioneta también entra ahí
+const ACUM: [number, number, number] = [-20.5, 0, 0.5]
 const g = <T>(page: Page, fn: string, ...a: unknown[]) => page.evaluate(([f, args]) => (window as any).__game[f as string](...(args as unknown[])) as T, [fn, a] as const)
 
 test.beforeEach(async ({ page }) => {

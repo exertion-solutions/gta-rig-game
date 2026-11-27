@@ -128,3 +128,38 @@ test('A gira a la izquierda: el rumbo aumenta al avanzar con steer +1', async ({
   expect(t.heading).toBeGreaterThan(0.2)
   expect(t.position[0]).toBeLessThan(-10.5) // yaw 0 mira a -Z; girar a la izquierda lo lleva hacia -X
 })
+
+// QA D-09: de frente contra la escalera de una pileta, la camioneta trepaba la rampa de colisión del jugador y quedaba
+// encaramada a 26° sin poder avanzar. Ahora choca de frente contra el volumen de la escalera, queda plana y retrocede.
+test('contra la escalera de una pileta: se frena plana (no se encarama) y sale en reversa', async ({ page }) => {
+  const stair = { footX: -12.998, z: -20.7 } // pileta1_escalera (traversal.json)
+  await page.evaluate(([z]) => {
+    const g = (window as any).__game
+    g.teleportTruck([-24, 0, z], -Math.PI / 2) // mira a +X, hacia la escalera
+    g.teleport([-24, 0, z - 2.5])
+  }, [stair.z] as const)
+  await truckParked(page, -24, stair.z)
+  await settle(page)
+  await page.evaluate(() => (window as any).__game.teleport((window as any).__game.getTruck().position))
+  await page.keyboard.press('KeyE')
+  expect(await mode(page)).toBe('truck')
+  await drive(page, { throttle: 1, steer: 0, brake: false })
+  let top = 0
+  let last = await truck(page)
+  let still = 0
+  let maxIncl = 0
+  for (let i = 0; still < 4 && i < 100; i++) {
+    await waitSteps(page, 15, 'truckSteps')
+    last = await truck(page)
+    top = Math.max(top, last.speed)
+    maxIncl = Math.max(maxIncl, last.inclination)
+    still = top > 3 && Math.abs(last.speed) < 0.2 ? still + 1 : 0
+  }
+  expect(top).toBeGreaterThan(3)
+  expect(maxIncl).toBeLessThan(10) // no se encaramó (antes ≈ 26°)
+  expect(last.position[0] + 2.3).toBeLessThan(stair.footX + 0.3) // el frente quedó en el pie de la escalera
+  expect(last.position[0] + 2.3).toBeGreaterThan(stair.footX - 1.0)
+  await drive(page, { throttle: -1, steer: 0, brake: false })
+  await page.waitForFunction(() => (window as any).__game.getTruck().speed < -1, null, { timeout: 60_000 })
+  await drive(page, null)
+})

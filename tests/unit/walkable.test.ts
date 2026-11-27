@@ -17,6 +17,7 @@ import {
   walkableColliders,
   type BoxCollider,
 } from '../../src/game/world/walkable'
+import { PLAYER_GROUPS, STAIR_GROUPS, TRUCK_BLOCK_GROUPS, TRUCK_GROUPS } from '../../src/game/world/groups'
 
 // Punto local (en unidades de semieje) -> mundo, con la rotación del collider.
 function toWorld(c: BoxCollider, local: number[]) {
@@ -110,5 +111,30 @@ describe('buildColliders con piezas reemplazadas', () => {
   it('no genera la caja completa de mástil, BOP ni piletas (las cubren las cajas medidas)', () => {
     const parts: LoadedPart[] = RIG_PARTS.map((p) => ({ id: p.id, role: p.role, bounds: new THREE.Box3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1)) }))
     expect(buildColliders(parts, REPLACED_PARTS).map((c) => c.id)).toEqual(['sk575_carrier'])
+  })
+})
+
+// QA D-09: la camioneta trepaba la rampa de colisión de una escalera y quedaba encaramada. La rampa es solo del jugador;
+// la camioneta choca contra el volumen bajo de la escalera, dentro de su huella.
+describe('escaleras: rampa para el jugador, volumen bajo para la camioneta', () => {
+  const cs = walkableColliders()
+  for (const s of TRAVERSAL.stairs)
+    it(`${s.id}`, () => {
+      expect(cs.find((c) => c.id === s.id)?.only).toBe('stair')
+      const b = cs.find((c) => c.id === `${s.id}_camioneta`)!
+      expect(b.only).toBe('truckBlock')
+      expect(b.center[0] - b.half[0]).toBeCloseTo(Math.min(s.bottom[0], s.top[0]), 3)
+      expect(b.center[0] + b.half[0]).toBeCloseTo(Math.max(s.bottom[0], s.top[0]), 3)
+      expect(b.half[2]).toBeCloseTo(s.width / 2, 3)
+      expect(b.center[1] + b.half[1]).toBeLessThanOrEqual(0.9 + 1e-9)
+      expect(b.center[1] - b.half[1]).toBeCloseTo(0, 6)
+    })
+  it('grupos: la rampa no filtra a la camioneta, el volumen solo filtra a la camioneta', () => {
+    const test = (a: number, b: number) => ((a >>> 16) & b & 0xffff) !== 0 && ((b >>> 16) & a & 0xffff) !== 0
+    expect(test(STAIR_GROUPS, PLAYER_GROUPS)).toBe(true)
+    expect(test(STAIR_GROUPS, TRUCK_GROUPS)).toBe(false)
+    expect(test(TRUCK_BLOCK_GROUPS, TRUCK_GROUPS)).toBe(true)
+    expect(test(TRUCK_BLOCK_GROUPS, PLAYER_GROUPS)).toBe(false)
+    expect(test(PLAYER_GROUPS, TRUCK_GROUPS)).toBe(true)
   })
 })

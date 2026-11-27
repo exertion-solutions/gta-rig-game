@@ -9,6 +9,9 @@ export const LOCACION_BOUNDS = { minX: -45, maxX: 33.5, minZ: -30.5, maxZ: 30.5 
 export type RigRole = 'collide' | 'scenery' | 'walkable'
 
 // 'scenery' = sin colisión (incluye vientos y tiros). El carrier puede ganar hull más adelante.
+// Bomba, acumulador y manifold: 'collide' con cajas medidas en traversal.json (no su bbox: el del acumulador trae nodos
+// auxiliares en el origen y el del manifold sus caños por toda la locación). El cuadro va sobre el carrier, dentro de
+// su caja. Ver docs/traversal-inventory.md.
 const part = (name: string, role: RigRole) => ({
   id: `sk575_${name}`,
   glb: `sk575_${name}.glb`,
@@ -22,10 +25,10 @@ export const RIG_PARTS: readonly { id: string; glb: string; role: RigRole }[] = 
   part('carrier', 'collide'),
   part('planchada', 'walkable'),
   part('piso', 'walkable'),
-  part('acumulador', 'scenery'),
-  part('manifold', 'scenery'),
+  part('acumulador', 'collide'),
+  part('manifold', 'collide'),
   part('llave', 'scenery'),
-  part('bomba', 'scenery'),
+  part('bomba', 'collide'),
   part('cuadro', 'scenery'),
   part('izaje', 'scenery'),
   part('aparejo', 'scenery'),

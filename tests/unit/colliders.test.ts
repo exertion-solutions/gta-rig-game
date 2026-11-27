@@ -24,7 +24,7 @@ describe('colliders', () => {
     const ids = buildColliders(loaded()).map((c) => c.id)
     expect(ids).not.toContain('sk575_vientos')
     expect(ids).not.toContain('sk575_tiros')
-    expect(ids.sort()).toEqual(['sk575_bop', 'sk575_carrier', 'sk575_mastil', 'sk575_piletas'])
+    expect(ids.sort()).toEqual(['sk575_acumulador', 'sk575_bomba', 'sk575_bop', 'sk575_carrier', 'sk575_manifold', 'sk575_mastil', 'sk575_piletas'])
     // aun con role 'collide' forzado, vientos/tiros se omiten
     const forced = loaded().map((p) => ({ ...p, role: 'collide' as const }))
     const f = buildColliders(forced).map((c) => c.id)

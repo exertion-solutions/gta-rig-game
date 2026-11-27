@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { LOCACION_BOUNDS } from '../../src/game/world/frame'
-import { RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, clampToBounds, needsRespawn, respawnPoint, stepMovement, trackSafe } from '../../src/game/player/movement'
+import { RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, atLimit, clampToBounds, needsRespawn, respawnPoint, stepMovement, trackSafe } from '../../src/game/player/movement'
 
 describe('movement', () => {
   it('stepMovement sin input devuelve 0', () => {
@@ -76,5 +76,16 @@ describe('movement', () => {
     expect(STEP_MAX).toBeGreaterThanOrEqual(0.26)
     expect(0.175).toBeLessThanOrEqual(STEP_MAX)
     expect(1.05).toBeGreaterThan(STEP_MAX)
+  })
+})
+
+describe('atLimit (aviso del vallado, QA D-11)', () => {
+  const B = { minX: -45, maxX: 33.5, minZ: -30.5, maxZ: 30.5 }
+  it('cerca de cualquier lado sí, adentro no', () => {
+    expect(atLimit([33.1, 0, 0], 0.4, B)).toBe(true)
+    expect(atLimit([0, 0, -30.2], 0.4, B)).toBe(true)
+    expect(atLimit([-44.7, 0, 5], 0.4, B)).toBe(true)
+    expect(atLimit([32.9, 0, 0], 0.4, B)).toBe(false)
+    expect(atLimit([0, 0, 0], 0.4, B)).toBe(false)
   })
 })

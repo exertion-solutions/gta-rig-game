@@ -35,6 +35,10 @@ export function needsRespawn(p: Vec3, b: Bounds): boolean {
   return p[1] < FALL_LIMIT_Y || c[0] !== p[0] || c[2] !== p[2]
 }
 
+/** Contra el vallado invisible del borde de la locación (a `margin` o menos de algún lado). Sin cifras en pantalla. */
+export const atLimit = (p: Vec3, margin: number, b: Bounds) =>
+  p[0] <= b.minX + margin || p[0] >= b.maxX - margin || p[2] <= b.minZ + margin || p[2] >= b.maxZ - margin
+
 /** Último punto firme: se actualiza solo con el jugador de pie (grounded) y dentro del vallado. */
 export const trackSafe = (safe: Vec3, p: Vec3, grounded: boolean, b: Bounds): Vec3 => (grounded && !needsRespawn(p, b) ? p : safe)
 /** Adónde reubicar (último punto firme) o null si no hace falta. */

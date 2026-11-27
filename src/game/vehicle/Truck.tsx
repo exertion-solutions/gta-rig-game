@@ -2,10 +2,11 @@ import { useFrame } from '@react-three/fiber'
 import { CuboidCollider, RigidBody, useBeforePhysicsStep, useRapier, type RapierRigidBody } from '@react-three/rapier'
 import { useEffect, useMemo, useRef } from 'react'
 import { exposeGame } from '../dev'
-import { PLAYER_RADIUS, needsRespawn, type Vec3 } from '../player/movement'
+import { PLAYER_RADIUS, atLimit, needsRespawn, type Vec3 } from '../player/movement'
 import { keys } from '../player/keys'
 import { TRUCK_SPAWN, TRUCK_SPAWN_HEADING, teleportTo, usePlayerStore } from '../player/store'
 import { LOCACION_BOUNDS } from '../world/frame'
+import { PLAYER_GROUPS, TRUCK_GROUPS } from '../world/groups'
 import { toggleMode } from './enterExit'
 import { TRUCK, WHEEL_POINTS, buildTruckModel, driveCommand, inclinationDeg, tiltTimer } from './truckModel'
 
@@ -69,7 +70,7 @@ export function Truck() {
   useEffect(() => {
     const isFree = (p: Vec3) =>
       !needsRespawn(p, LOCACION_BOUNDS) &&
-      !world.intersectionWithShape({ x: p[0], y: p[1] + 0.9, z: p[2] }, { x: 0, y: 0, z: 0, w: 1 }, new rapier.Ball(PLAYER_RADIUS), rapier.QueryFilterFlags.EXCLUDE_SENSORS)
+      !world.intersectionWithShape({ x: p[0], y: p[1] + 0.9, z: p[2] }, { x: 0, y: 0, z: 0, w: 1 }, new rapier.Ball(PLAYER_RADIUS), rapier.QueryFilterFlags.EXCLUDE_SENSORS, PLAYER_GROUPS)
     const down = (e: KeyboardEvent) => {
       if (e.code === 'KeyE' && !e.repeat) toggleMode(isFree)
     }
@@ -124,13 +125,14 @@ export function Truck() {
     const v = rb.linvel()
     const speed = v.x * f[0] + v.y * f[1] + v.z * f[2]
     // a pie: estacionada (freno puesto)
-    const cmd = driveCommand(mode === 'truck' ? readDrive() : { throttle: 0, steer: 0, brake: true }, speed)
+    const drive = mode === 'truck' ? readDrive() : { throttle: 0, steer: 0, brake: true }
+    const cmd = driveCommand(drive, speed)
     for (let i = 0; i < WHEEL_POINTS.length; i++) {
       c.setWheelEngineForce(i, ENGINE_SIGN * cmd.engine)
       c.setWheelBrake(i, cmd.brake)
       if (i < 2) c.setWheelSteering(i, STEER_SIGN * cmd.steer)
     }
-    c.updateVehicle(FIXED_DT, rapier.QueryFilterFlags.EXCLUDE_SENSORS)
+    c.updateVehicle(FIXED_DT, rapier.QueryFilterFlags.EXCLUDE_SENSORS, TRUCK_GROUPS)
 
     const t = rb.translation()
     const ground: Vec3 = [t.x, t.y - TRUCK.rideHeight, t.z]
@@ -141,7 +143,10 @@ export function Truck() {
       return
     }
     usePlayerStore.setState({ truck: { position: ground, heading: headingOf(q) } })
-    if (mode === 'truck') usePlayerStore.setState({ position: ground })
+    if (mode === 'truck') {
+      const limit = drive.throttle !== 0 && atLimit(ground, TRUCK.halfLength + 0.5, LOCACION_BOUNDS) // QA D-11
+      usePlayerStore.setState(usePlayerStore.getState().atLimit !== limit ? { position: ground, atLimit: limit } : { position: ground })
+    }
   })
 
   // Ruedas: altura de suspensión, giro y dirección (cosmético).
@@ -170,8 +175,8 @@ export function Truck() {
       linearDamping={0.05}
       angularDamping={0.5}
     >
-      <CuboidCollider args={[TRUCK.halfWidth, 0.3, TRUCK.halfLength]} position={[0, 0.1, 0]} mass={TRUCK.mass} />
-      <CuboidCollider args={[0.95, 0.4, 0.75]} position={[0, 0.65, -1.0]} density={0} />
+      <CuboidCollider args={[TRUCK.halfWidth, 0.3, TRUCK.halfLength]} position={[0, 0.1, 0]} mass={TRUCK.mass} collisionGroups={TRUCK_GROUPS} />
+      <CuboidCollider args={[0.95, 0.4, 0.75]} position={[0, 0.65, -1.0]} density={0} collisionGroups={TRUCK_GROUPS} />
       <primitive object={model.group} />
     </RigidBody>
   )

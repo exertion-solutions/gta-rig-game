@@ -7,14 +7,18 @@
   "public/models/rig10/sk575_mastil.glb": "f5a4d76337e0bcb4dce2eebbb679d3b98ec0cb422e831f049c20a583691ba04c",
   "public/models/rig10/sk575_planchada.glb": "c1e1de82a22b6a92ff063aee7951aed64384402c7521eac0d2b891cefe9803be",
   "public/models/rig10/sk575_piletas.glb": "7d756a8d789a7879baffcc953665c6192995a4c23a0b2806f4190bb6b57ed139",
-  "public/models/scenario/additions.glb": "5ba53574a8da2999598851675be0c0e07793489b3d9115d2bff69245b661fc7b",
-  "public/models/rig10/sk575_manifold.glb": "09a1c91697ab8484333ba5f87907af4da3a365a5d62a4d70c0f9c53a3082f03d",
-  "public/models/rig10/sk575_acumulador.glb": "d4e41807987d8b4bf0ef474fb32f49607cf1866eb705852b7663a9015cf6de70"
+  "public/models/scenario/additions.glb": "14affcd40b642fc223da8f202851751924f42f16d46eb32b666295a8c01e8862",
+  "public/models/rig10/sk575_bomba.glb": "155893d9fff7e20a3506354d8790f1e05f2580587ff02be8ba88733ae3e129bc",
+  "public/models/rig10/sk575_acumulador.glb": "d4e41807987d8b4bf0ef474fb32f49607cf1866eb705852b7663a9015cf6de70",
+  "public/models/rig10/sk575_manifold.glb": "09a1c91697ab8484333ba5f87907af4da3a365a5d62a4d70c0f9c53a3082f03d"
  },
  "replaces": [
   "sk575_mastil",
   "sk575_bop",
-  "sk575_piletas"
+  "sk575_piletas",
+  "sk575_bomba",
+  "sk575_acumulador",
+  "sk575_manifold"
  ],
  "stateNote": "sin state: ninguna fuente documenta estados de las válvulas; el estado existe solo como registro propio del jugador al operar (ilustrativo, no simula flujo ni presión)",
  "platforms": [
@@ -135,6 +139,23 @@
    "evidence": {
     "status": "documentado",
     "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PIL-2 (barandas)"
+   }
+  },
+  {
+   "id": "manifold_patin",
+   "partId": "sk575_manifold",
+   "y": 0.19,
+   "min": [
+    4.296,
+    -11.887
+   ],
+   "max": [
+    8.004,
+    -10.487
+   ],
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "GLB sk575_manifold (patín de reja)"
    }
   }
  ],
@@ -682,6 +703,614 @@
     0.293,
     0.05
    ]
+  },
+  {
+   "id": "bomba_cuerpo",
+   "partId": "sk575_bomba",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -16.2,
+    1.406,
+    -15.5
+   ],
+   "half": [
+    3.04,
+    1.406,
+    1.14
+   ]
+  },
+  {
+   "id": "acumulador_equipo0",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -24.51,
+    0.325,
+    5.303
+   ],
+   "half": [
+    0.01,
+    0.325,
+    0.061
+   ]
+  },
+  {
+   "id": "acumulador_equipo1",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -23.55,
+    0.984,
+    5.239
+   ],
+   "half": [
+    0.95,
+    0.984,
+    0.239
+   ]
+  },
+  {
+   "id": "acumulador_equipo2",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -22.55,
+    0.982,
+    4.686
+   ],
+   "half": [
+    0.05,
+    0.982,
+    0.772
+   ]
+  },
+  {
+   "id": "acumulador_equipo3",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -22.45,
+    0.542,
+    4.624
+   ],
+   "half": [
+    0.05,
+    0.542,
+    0.721
+   ]
+  },
+  {
+   "id": "acumulador_equipo4",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -22.3,
+    0.878,
+    4.67
+   ],
+   "half": [
+    0.1,
+    0.878,
+    0.795
+   ]
+  },
+  {
+   "id": "acumulador_equipo5",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -22.1,
+    0.878,
+    4.528
+   ],
+   "half": [
+    0.1,
+    0.878,
+    0.937
+   ]
+  },
+  {
+   "id": "acumulador_equipo6",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -21.95,
+    0.762,
+    4.528
+   ],
+   "half": [
+    0.05,
+    0.762,
+    0.937
+   ]
+  },
+  {
+   "id": "acumulador_equipo7",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -21.55,
+    0.83,
+    4.505
+   ],
+   "half": [
+    0.35,
+    0.83,
+    0.965
+   ]
+  },
+  {
+   "id": "acumulador_equipo8",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -21.15,
+    0.784,
+    4.503
+   ],
+   "half": [
+    0.05,
+    0.784,
+    0.962
+   ]
+  },
+  {
+   "id": "acumulador_equipo9",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -21.05,
+    0.784,
+    4.59
+   ],
+   "half": [
+    0.05,
+    0.784,
+    1.05
+   ]
+  },
+  {
+   "id": "acumulador_equipo10",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -20.95,
+    0.743,
+    4.602
+   ],
+   "half": [
+    0.05,
+    0.743,
+    1.058
+   ]
+  },
+  {
+   "id": "acumulador_equipo11",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -20.85,
+    0.546,
+    4.626
+   ],
+   "half": [
+    0.05,
+    0.546,
+    1.034
+   ]
+  },
+  {
+   "id": "acumulador_equipo12",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -20.75,
+    0.538,
+    4.782
+   ],
+   "half": [
+    0.05,
+    0.538,
+    0.878
+   ]
+  },
+  {
+   "id": "acumulador_equipo13",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -20.65,
+    0.538,
+    4.755
+   ],
+   "half": [
+    0.05,
+    0.538,
+    0.905
+   ]
+  },
+  {
+   "id": "acumulador_equipo14",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -20.45,
+    0.481,
+    4.745
+   ],
+   "half": [
+    0.15,
+    0.481,
+    0.915
+   ]
+  },
+  {
+   "id": "acumulador_equipo15",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -20.15,
+    0.481,
+    4.675
+   ],
+   "half": [
+    0.15,
+    0.481,
+    0.965
+   ]
+  },
+  {
+   "id": "acumulador_equipo16",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -19.95,
+    0.4,
+    4.675
+   ],
+   "half": [
+    0.05,
+    0.4,
+    0.965
+   ]
+  },
+  {
+   "id": "acumulador_equipo17",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -19.85,
+    0.337,
+    4.775
+   ],
+   "half": [
+    0.05,
+    0.337,
+    1.065
+   ]
+  },
+  {
+   "id": "acumulador_equipo18",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -19.75,
+    0.343,
+    4.148
+   ],
+   "half": [
+    0.05,
+    0.343,
+    0.437
+   ]
+  },
+  {
+   "id": "acumulador_equipo19",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -19.6,
+    0.947,
+    4.758
+   ],
+   "half": [
+    0.1,
+    0.947,
+    0.928
+   ]
+  },
+  {
+   "id": "acumulador_equipo20",
+   "partId": "sk575_acumulador",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    -19.45,
+    0.945,
+    4.7
+   ],
+   "half": [
+    0.05,
+    0.945,
+    0.85
+   ]
+  },
+  {
+   "id": "manifold_patin",
+   "partId": "sk575_manifold",
+   "kind": "walkable",
+   "origin": "glb",
+   "center": [
+    6.15,
+    0.095,
+    -11.187
+   ],
+   "half": [
+    1.854,
+    0.095,
+    0.7
+   ]
+  },
+  {
+   "id": "manifold_volante_M6",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    4.524,
+    0.63,
+    -11.3
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M12",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    4.524,
+    0.63,
+    -12.429
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M4",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    5.032,
+    0.63,
+    -10.4
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M2",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    5.591,
+    0.63,
+    -10.4
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M9",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    6.15,
+    0.63,
+    -10
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M7",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    6.15,
+    0.63,
+    -10.95
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M8",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    6.15,
+    0.63,
+    -11.55
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M1",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    6.709,
+    0.63,
+    -10.4
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M3",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    7.268,
+    0.63,
+    -10.4
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M5",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    7.777,
+    0.63,
+    -11.3
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M10",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    7.928,
+    0.63,
+    -11.979
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_volante_M11",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    7.777,
+    0.63,
+    -12.429
+   ],
+   "half": [
+    0.24,
+    0.63,
+    0.24
+   ]
+  },
+  {
+   "id": "manifold_poste0",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    4.25,
+    0.144,
+    -11.95
+   ],
+   "half": [
+    0.05,
+    0.144,
+    0.15
+   ]
+  },
+  {
+   "id": "manifold_poste1",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    4.45,
+    0.575,
+    -10.4
+   ],
+   "half": [
+    0.25,
+    0.575,
+    0.2
+   ]
+  },
+  {
+   "id": "manifold_poste2",
+   "partId": "sk575_manifold",
+   "kind": "solid",
+   "origin": "glb",
+   "center": [
+    7.85,
+    0.567,
+    -10.4
+   ],
+   "half": [
+    0.25,
+    0.567,
+    0.2
+   ]
   }
  ],
  "rails": [
@@ -1083,6 +1712,26 @@
    "evidence": {
     "status": "documentado",
     "ref": "vendor/visor/drops.json (Libro DROPS 2024, RCCO): PT-4, PLA-2 (existencia); medidas estimadas"
+   }
+  },
+  {
+   "id": "enganche_baranda_frente",
+   "partId": "sk575_mastil",
+   "origin": "adicion",
+   "a": [
+    1.87,
+    20.651,
+    -1.2
+   ],
+   "b": [
+    1.87,
+    20.651,
+    1.24
+   ],
+   "height": 1.11,
+   "evidence": {
+    "status": "ilustrativo",
+    "ref": "docs/scenario-additions.md (A4); el GLB solo tiene parantes en el frente +X"
    }
   }
  ],

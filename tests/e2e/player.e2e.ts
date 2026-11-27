@@ -92,15 +92,30 @@ const CASES = [
   { id: 'sk575_piletas', from: (): Pos => [28, 0, -28.9], yaw: YAW.toMinusX, stop: (b: Box) => b.max[0] + PLAYER_RADIUS, axis: 0, region: slab(0, -28.9) },
   // BOP por el lado +X de la subestructura (abierto); el lado ±Z lo cierran los pórticos del piso
   { id: 'sk575_bop', from: (): Pos => [4.6, 0, 0], yaw: YAW.toMinusX, stop: (b: Box) => b.max[0] + PLAYER_RADIUS, axis: 0, region: slab(0, 0) },
+  // QA D-07: se caminaban por dentro. Bomba por su cara +X; acumulador por la cara -Z (la de las válvulas);
+  // manifold contra el volante M4 desde el norte (sus caños azules, bajos, no colisionan: docs/traversal-inventory.md).
+  { id: 'sk575_bomba', from: (): Pos => [-9, 0, -14.75], yaw: YAW.toMinusX, stop: (b: Box) => b.max[0] + PLAYER_RADIUS, axis: 0, region: slab(0, -14.75) }, // z libre de la escalera de la pileta
+  { id: 'sk575_acumulador', from: (): Pos => [-23, 0, -1], yaw: YAW.toPlusZ, stop: (b: Box) => b.min[2] - PLAYER_RADIUS, axis: 2, region: slab(2, -23) },
+  { id: 'sk575_acumulador', from: (): Pos => [-21.5, 0, -1], yaw: YAW.toPlusZ, stop: (b: Box) => b.min[2] - PLAYER_RADIUS, axis: 2, region: slab(2, -21.5) }, // frente de las válvulas
+  { id: 'sk575_manifold', from: (): Pos => [5.032, 0, -6], yaw: YAW.toMinusZ, stop: (b: Box) => b.max[2] + PLAYER_RADIUS, axis: 2, region: [[4.68, 1.1, -10.8], [5.38, 1.8, -9]] as [number[], number[]] },
 ]
 for (const c of CASES) {
-  test(`${c.id}: se frena en su cara renderizada`, async ({ page }) => {
+  test(`${c.id}: se frena en su cara renderizada (${c.from({ min: [0, 0, 0], max: [0, 0, 0] }).map((v) => v.toFixed(1))})`, async ({ page }) => {
     const b = (c.region ? await boundsIn(page, c.id, c.region) : await rendered(page, c.id))!
     await place(page, c.from(b), c.yaw)
     const end = await walk(page)
     expect(Math.abs(end[c.axis] - c.stop(b))).toBeLessThan(TOL)
   })
 }
+
+test('el cuadro (sobre el carrier) está dentro de la caja de colisión del carrier', async ({ page }) => {
+  const c = (await boundsIn(page, 'sk575_cuadro', [[-20, 1.3, -5], [5, 3.0, 5]]))! // sin el cable que sube a la corona
+  const k = (await rendered(page, 'sk575_carrier'))! // la caja del carrier = su bbox dibujado (buildColliders)
+  for (const i of [0, 1, 2]) {
+    expect(c.min[i]).toBeGreaterThan(k.min[i] - TOL)
+    expect(c.max[i]).toBeLessThan(k.max[i] + TOL)
+  }
+})
 
 test('planchada fuera de la pasarela: se cruza a nivel del suelo (y=0)', async ({ page }) => {
   const pl = (await rendered(page, 'sk575_planchada'))!
@@ -112,6 +127,29 @@ test('planchada fuera de la pasarela: se cruza a nivel del suelo (y=0)', async (
   const end = await walk(page, (p) => p[0] > pl.max[0] + 1)
   expect(end[0]).toBeGreaterThan(pl.max[0] + 0.5)
   expect(Math.abs(end[1])).toBeLessThan(0.1) // los caballetes no tienen colisión; la pasarela (z ±1) no está en este camino
+})
+
+// QA D-06: el frente +X del piso de enganche estaba abierto (caída de 17 m). La baranda añadida (A4) frena al jugador en
+// su cara dibujada y se queda arriba.
+test('piso de enganche: la baranda del frente +X frena en su cara dibujada y no se cae', async ({ page }) => {
+  const PE = 20.651
+  const r = (await boundsIn(page, 'escenario_adiciones', [[1.7, PE + 0.05, -0.9], [2.1, PE + 1.3, 0.9]]))!
+  await place(page, [1.0, PE, 0.3], YAW.toPlusX)
+  const end = await walk(page)
+  expect(Math.abs(end[0] - (r.min[0] - PLAYER_RADIUS))).toBeLessThan(TOL)
+  expect(Math.abs(end[1] - PE)).toBeLessThan(0.06)
+})
+
+// QA D-11: el vallado del borde es invisible; empujar contra él muestra "Límite de la locación" (sin distancias).
+test('contra el borde de la locación aparece el aviso y se va al alejarse', async ({ page }) => {
+  await place(page, [30, 0, 10], YAW.toPlusX)
+  await expect(page.getByTestId('hud-limit')).toHaveCount(0)
+  await page.evaluate(() => (window as any).__game.setInput({ x: 0, z: 1, run: true }))
+  await expect(page.getByTestId('hud-limit')).toHaveText('Límite de la locación')
+  expect(await page.getByTestId('hud-limit').innerText()).not.toMatch(/\d/)
+  await page.evaluate(() => (window as any).__game.setYaw(Math.PI / 2)) // da media vuelta
+  await expect(page.getByTestId('hud-limit')).toHaveCount(0)
+  await page.evaluate(() => (window as any).__game.setInput(null))
 })
 
 test('si cae o sale del vallado reaparece en el Acceso (RESPAWN)', async ({ page }) => {

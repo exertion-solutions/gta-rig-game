@@ -421,6 +421,51 @@ export async function generate() {
       expect(f != null && p[0] - f > 0.05 && p[0] - f < 0.35, `adiciones: la escalera vertical no está frente a la cara del mástil (x=${p[0]}, cara=${f})`)
     }
     ladders.push({ id: 'mastil_escalera', partId: 'sk575_mastil', bottom: v3(lb.p), top: v3(lt.p), facing: r3(lb.x.facing), rungs: lt.x.rungs, origin: 'adicion', evidence: ev('ilustrativo', 'docs/scenario-additions.md (A3); el GLB no tiene escalera de acceso al piso de enganche') })
+    // A4: baranda del frente +X del piso de enganche; debe seguir el borde medido de la plancha y las barandas laterales.
+    const pr = anchor('anchor_rail_enganche')
+    const side = rails.filter((x) => x.id.startsWith('enganche_baranda'))
+    expect(pr.p[0] - board.x1 >= 0 && pr.p[0] - board.x1 < 0.1, `adiciones: la baranda del piso de enganche no está en su borde +X (x=${pr.p[0]}, borde=${board.x1})`)
+    expect(Math.abs(pr.p[1] - board.y) < 0.03, 'adiciones: la baranda del piso de enganche no arranca en la plancha medida')
+    expect(side.length === 2 && Math.abs(pr.x.z0 - Math.min(...side.map((x) => x.a[2]))) < 0.05 && Math.abs(pr.x.z1 - Math.max(...side.map((x) => x.a[2]))) < 0.05, 'adiciones: la baranda del frente no une las barandas laterales medidas')
+    expect(side.every((x) => Math.abs(x.height - pr.x.railHeight) < 0.03), 'adiciones: la baranda del frente no tiene la altura de las laterales')
+    rails.push({ id: 'enganche_baranda_frente', partId: 'sk575_mastil', origin: 'adicion', a: v3([pr.p[0], board.y, pr.x.z0]), b: v3([pr.p[0], board.y, pr.x.z1]), height: r3(pr.x.railHeight), evidence: ev('ilustrativo', 'docs/scenario-additions.md (A4); el GLB solo tiene parantes en el frente +X') })
+  }
+
+  // ================= EQUIPOS A NIVEL DEL SUELO: bomba, acumulador, manifold (QA D-07: no tenían colisión) =================
+  // Cajas medidas de los GLB, sin tapar el acceso a las válvulas (E): la bomba es un bloque; el acumulador es su bloque de
+  // equipos (las válvulas asoman por su cara -Z y se operan desde afuera; el patín de reja a +X queda libre). El manifold,
+  // más abajo (necesita las posiciones de los volantes).
+  // Los caños azules del manifold (cabezales a 0,5–1,0 m dentro del patín y líneas por el piso de la locación) no
+  // colisionan: con ellos sólidos las válvulas interiores (M7, M8) quedaban encerradas, sin lugar desde donde operarlas.
+  {
+    const bomba = await load(RIG + 'sk575_bomba.glb')
+    const b = aabb(bomba.tris, () => true, -1, 99)
+    solids.push(solid('bomba_cuerpo', 'sk575_bomba', 'solid', [b.min[0], 0, b.min[2]], b.max))
+    const acum = await load(RIG + 'sk575_acumulador.glb')
+    // equipos sobre el patín (y > 0,25: el bastidor rojo de 0,33 m se pisa con el autostep), en franjas de 0,1 m a lo
+    // largo de X con su extensión en Z y su altura: el frente no es plano (las válvulas asoman en z 3,6; los botellones
+    // empiezan en z 5,0) y una sola caja dejaba 1,5 m de pared invisible.
+    const pts = samples(acum.tris, has('sk575_acum_'), 0.25, 2.0, 0.04)
+    const W = 0.1 // = resolución de muestreo: la caja no se aparta de lo dibujado más que eso (< TOL de la suite)
+    const cols = new Map()
+    for (const q of pts) {
+      const k = Math.floor(q[0] / W)
+      const c = cols.get(k) ?? cols.set(k, { z0: 1e9, z1: -1e9, y: 0 }).get(k)
+      Object.assign(c, { z0: Math.min(c.z0, q[2]), z1: Math.max(c.z1, q[2]), y: Math.max(c.y, q[1]) })
+    }
+    const ks = [...cols.keys()].sort((a, b) => a - b)
+    expect(ks.length > 4 && ks.every((k) => k * W < -19 && cols.get(k).z0 > 3.4), 'acumulador: equipos fuera de la huella esperada')
+    const xs = pts.reduce((m, q) => [Math.min(m[0], q[0]), Math.max(m[1], q[0])], [1e9, -1e9])
+    // franjas vecinas casi iguales (±5 cm) se unen: menos cajas, misma forma
+    const runs = []
+    for (const k of ks) {
+      const c = cols.get(k)
+      const r = runs[runs.length - 1]
+      if (r && r.k1 === k - 1 && Math.abs(r.z0 - c.z0) < 0.05 && Math.abs(r.z1 - c.z1) < 0.05 && Math.abs(r.y - c.y) < 0.05)
+        Object.assign(r, { k1: k, z0: Math.min(r.z0, c.z0), z1: Math.max(r.z1, c.z1), y: Math.max(r.y, c.y) })
+      else runs.push({ k0: k, k1: k, ...c })
+    }
+    runs.forEach((r, i) => solids.push(solid(`acumulador_equipo${i}`, 'sk575_acumulador', 'solid', [Math.max(r.k0 * W, xs[0]), 0, r.z0], [Math.min((r.k1 + 1) * W, xs[1]), r.y, r.z1])))
   }
 
   // ================= VÁLVULAS =================
@@ -459,11 +504,29 @@ export async function generate() {
     }
   }
 
+  // Manifold (QA D-07): patín de reja caminable y una caja por volante (aro medido Ø 0,42 m + caño: radio 0,24), del suelo
+  // al volante; los demás postes (actuador rojo, válvula sin rótulo, esquineros del patín) con su huella medida.
+  // El paso entre volantes queda libre: así se llega a operar cada uno (tests/unit/valveReach.test.ts).
+  {
+    const man = await load(RIG + 'sk575_manifold.glb')
+    const skid = flats(man.tris, has('sk575_manifold_grating'), 0.1, 0.25).sort((x, y) => y.A - x.A)[0]
+    expect(skid && skid.A > 3, 'manifold: no se encontró el patín de reja')
+    platforms.push({ id: 'manifold_patin', partId: 'sk575_manifold', y: r3(skid.y), min: v3([skid.x0, skid.z0]), max: v3([skid.x1, skid.z1]), evidence: ev('ilustrativo', 'GLB sk575_manifold (patín de reja)') })
+    solids.push(solid('manifold_patin', 'sk575_manifold', 'walkable', [skid.x0, 0, skid.z0], [skid.x1, skid.y, skid.z1]))
+    const R = 0.24
+    const wheels = interactables.filter((v) => v.partId === 'sk575_manifold')
+    for (const w of wheels) solids.push(solid(`manifold_volante_${w.id.split('_')[1]}`, 'sk575_manifold', 'solid', [w.position[0] - R, 0, w.position[2] - R], [w.position[0] + R, w.position[1] + 0.02, w.position[2] + R]))
+    const inWheel = (p) => wheels.some((w) => p.x0 < w.position[0] + R && p.x1 > w.position[0] - R && p.z0 < w.position[2] + R && p.z1 > w.position[2] - R)
+    const body = and(not(has('sk575_manifold_azul')), not(has('sk575_manifold_grating')))
+    const posts = blobs(samples(man.tris, body, 0.25, 1.18, 0.04), 0.1).filter((p) => (p.x1 - p.x0) * (p.z1 - p.z0) > 0.02 && !inWheel(p))
+    posts.sort((p, q) => p.x0 - q.x0 || p.z0 - q.z0).forEach((p, k) => solids.push(solid(`manifold_poste${k}`, 'sk575_manifold', 'solid', [p.x0, 0, p.z0], [p.x1, p.ymax, p.z1])))
+  }
+
   const out = {
     label: 'escenario ilustrativo añadido por el juego, no as-built',
     generatedBy: 'scripts/extract-traversal.mjs',
     sources,
-    replaces: ['sk575_mastil', 'sk575_bop', 'sk575_piletas'],
+    replaces: ['sk575_mastil', 'sk575_bop', 'sk575_piletas', 'sk575_bomba', 'sk575_acumulador', 'sk575_manifold'],
     stateNote: 'sin state: ninguna fuente documenta estados de las válvulas; el estado existe solo como registro propio del jugador al operar (ilustrativo, no simula flujo ni presión)',
     platforms,
     solids,

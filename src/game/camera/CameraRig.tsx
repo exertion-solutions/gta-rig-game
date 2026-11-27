@@ -5,6 +5,7 @@ import { exposeGame } from '../dev'
 import { playerBody } from '../player/Player'
 import { usePlayerStore } from '../player/store'
 import { truckBody } from '../vehicle/Truck'
+import { PLAYER_GROUPS } from '../world/groups'
 import type { Vec3 } from '../player/movement'
 import { advancePivot, computeCameraTarget, resolveCameraCollision } from './followCamera'
 
@@ -39,7 +40,7 @@ export function FollowCamera() {
           distance,
           true,
           rapier.QueryFilterFlags.EXCLUDE_SENSORS,
-          undefined,
+          PLAYER_GROUPS, // no ve los volúmenes solo-camioneta de las escaleras
           undefined,
           (driving ? truckBody.current : playerBody.current) ?? undefined,
         )

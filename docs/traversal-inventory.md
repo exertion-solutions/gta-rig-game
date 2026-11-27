@@ -61,6 +61,30 @@ Detalle y medidas en `docs/scenario-additions.md`:
 - No se agregan volantes: el manifold ya tiene M1–M12 con volante en el GLB. Son parte de una malla fusionada, así que la
   Task 18B no puede girarlos sin una copia superpuesta.
 
+## Colisión de los equipos a nivel del suelo (Task 19b, QA D-07)
+
+Antes eran escenografía sin colisión (se los atravesaba a pie y en camioneta). Cajas medidas por
+`scripts/extract-traversal.mjs` (nunca el bbox de la pieza: el del acumulador incluye nodos auxiliares en el origen y el del
+manifold sus caños por toda la locación):
+
+| Pieza | Colisión | Por qué así |
+| --- | --- | --- |
+| `sk575_bomba` | una caja: x −19,24…−13,16, z −16,64…−14,36, hasta y 2,81 | bloque sin nada transitable ni válvulas |
+| `sk575_acumulador` | franjas de 0,1 m a lo largo de X sobre el patín (y > 0,25), cada una con su extensión en Z y su altura (21 cajas tras unir franjas iguales) | el frente no es plano: válvulas en z 3,6, botellones desde z 5,0; las 6 válvulas se operan desde su cara −Z; el patín de reja de +X queda libre |
+| `sk575_manifold` | patín de reja caminable (y 0,19); una caja por volante (aro medido Ø 0,42 m + caño: radio 0,24) del suelo al volante; actuador rojo, válvula sin rótulo y esquineros del patín con su huella | los cabezales y caños azules (0,5–1,0 m) **no** colisionan: sólidos encierran M7 y M8 y no queda lugar desde donde operarlas. Límite visible: las piernas atraviesan esos caños bajos |
+| `sk575_cuadro` | sin caja propia: va sobre el carrier y queda dentro de su caja (verificado en `tests/e2e/player.e2e.ts`); el cable a la corona no colisiona, como los vientos | — |
+
+`tests/unit/valveReach.test.ts` verifica que las 18 válvulas siguen teniendo un lugar de pie libre desde donde E las opera, y
+`tests/e2e/player.e2e.ts` que el jugador se frena en la cara dibujada de bomba, acumulador y manifold (holgura `TOL`).
+
+## Bandas de altura para contar llegadas (Task 19b, QA D-08)
+
+Una llegada cuenta en el sector más cercano cuyo radio y piso contienen al jugador. Piso de trabajo y piso de enganche:
+bandas de ± (3,606 − 2,639) / 2 alrededor de su altura medida. Nivel del suelo: de pie sobre el suelo o sobre una cubierta
+medida del nivel del suelo (pasarela 1,05, piletas 2,05, trip tank 2,64, patín del manifold 0,19) **dentro de su huella**,
+con holgura = la contrahuella mayor medida (0,26). Antes era una banda única hasta 3,12 m y la rampa de la V (1,09 → 3,62)
+contaba como suelo para el BOP y el mástil.
+
 ## Recorridos habilitados (colisión coherente con lo que se ve)
 
 - Suelo → escalera A1 → pasarela (y 1,05) → rampa de la V (24,8°) → piso de trabajo (y 3,606). Probado en e2e.
