@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { clampPitch, computeCameraTarget, PITCH_MAX, PITCH_MIN, resolveCameraCollision, smoothStep } from '../../src/game/camera/followCamera'
+import { characterOpacity, clampPitch, computeCameraTarget, FADE_END, FADE_START, PITCH_MAX, PITCH_MIN, resolveCameraCollision, smoothDistance, smoothStep } from '../../src/game/camera/followCamera'
 import type { Vec3 } from '../../src/game/player/movement'
 
 const close = (a: Vec3, b: Vec3, tol = 1e-6) => a.forEach((v, i) => expect(Math.abs(v - b[i])).toBeLessThan(tol))
@@ -72,5 +72,25 @@ describe('advancePivot (reinicio del pivote tras teletransporte)', () => {
     const b = advancePivot(a, [-35, 0, 0], 1, 12, 1 / 60)
     close(b.pivot, [-35, 0, 0])
     expect(b.seq).toBe(1)
+  })
+})
+
+describe('followCamera: desvanecer personaje y suavizar acercamiento', () => {
+  it('characterOpacity: 1 lejos, 0 pegado, monótona entre FADE_START y FADE_END', () => {
+    expect(characterOpacity(5)).toBe(1)
+    expect(characterOpacity(FADE_START)).toBe(1)
+    expect(characterOpacity(FADE_END)).toBe(0)
+    expect(characterOpacity(0.3)).toBe(0)
+    const mid = characterOpacity((FADE_START + FADE_END) / 2)
+    expect(mid).toBeGreaterThan(0)
+    expect(mid).toBeLessThan(1)
+    expect(characterOpacity(0.9)).toBeGreaterThan(characterOpacity(0.8))
+  })
+
+  it('smoothDistance: se acerca de golpe (no atraviesa) y se aleja suavemente', () => {
+    expect(smoothDistance(5, 0.4, 8, 0.016)).toBe(0.4)
+    const out = smoothDistance(0.4, 5, 8, 0.016)
+    expect(out).toBeGreaterThan(0.4)
+    expect(out).toBeLessThan(5)
   })
 })

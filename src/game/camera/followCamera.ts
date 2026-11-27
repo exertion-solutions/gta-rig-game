@@ -36,3 +36,17 @@ export function advancePivot(prev: { pivot: Vec3; seq: number } | null, goal: Ve
   if (!prev || prev.seq !== seq) return { pivot: goal, seq }
   return { pivot: smoothStep(prev.pivot, goal, k, dt), seq }
 }
+
+// Con la cámara pegada a la espalda (obstáculo detrás) el personaje llena la pantalla: se desvanece entre FADE_START y FADE_END (m).
+export const FADE_START = 1.2
+export const FADE_END = 0.6
+export function characterOpacity(dist: number): number {
+  const t = Math.max(0, Math.min(1, (dist - FADE_END) / (FADE_START - FADE_END)))
+  return t * t * (3 - 2 * t)
+}
+
+// Distancia de la cámara: se acerca de golpe (no atraviesa geometría) y se aleja con suavizado (sin sacudidas al rozar un obstáculo).
+export function smoothDistance(current: number, target: number, k: number, dt: number): number {
+  if (target <= current) return target
+  return current + (target - current) * (1 - Math.exp(-k * dt))
+}

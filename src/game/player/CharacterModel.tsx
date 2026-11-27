@@ -2,6 +2,8 @@ import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
+import { cameraDistance } from '../camera/cameraDistance'
+import { characterOpacity } from '../camera/followCamera'
 import { exposeGame } from '../dev'
 import { assetUrl, DRACO_PATH } from '../world/assetUrl'
 import { nextLandUntil, pickClip, type Clip } from './characterAnim'
@@ -34,6 +36,7 @@ export function CharacterModel({ footY }: { footY: number }) {
   const visible = usePlayerStore((s) => s.mode === 'foot')
   const clip = useRef<Clip | null>(null)
   const speed = useRef(0)
+  const fade = useRef(1)
   const air = useRef({ was: false, landUntil: 0 })
 
   useEffect(() => {
@@ -62,6 +65,22 @@ export function CharacterModel({ footY }: { footY: number }) {
     const { yaw, mode } = usePlayerStore.getState()
     speed.current += (playerSpeed.current - speed.current) * (1 - Math.exp(-SPEED_K * Math.min(delta, 0.1)))
     if (root.current) root.current.rotation.y = yaw + FACING
+
+    // cámara pegada a un obstáculo: desvanece el modelo (la sombra no se toca: el material de profundidad ignora opacity)
+    const op = characterOpacity(cameraDistance.current)
+    if (op !== fade.current) {
+      fade.current = op
+      scene.traverse((o) => {
+        const m = (o as THREE.Mesh).isMesh ? (o as THREE.Mesh).material : null
+        for (const mat of Array.isArray(m) ? m : m ? [m] : []) {
+          const wasT = mat.transparent
+          mat.opacity = op
+          mat.transparent = op < 1
+          mat.depthWrite = op >= 1
+          if (wasT !== mat.transparent) mat.needsUpdate = true
+        }
+      })
+    }
 
     const now = performance.now()
     air.current.landUntil = nextLandUntil(air.current.was, playerAction.airborne, now, air.current.landUntil)
