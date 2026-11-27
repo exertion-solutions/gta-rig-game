@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { exposeGame } from '../dev'
 import { assetUrl, DRACO_PATH } from '../world/assetUrl'
-import { pickClip, type Clip } from './characterAnim'
-import { CLIMB_KEYS, JUMP_KEYS, poseClip } from './poseClips'
+import { nextLandUntil, pickClip, type Clip } from './characterAnim'
+import { CLIMB_KEYS, JUMP_KEYS, LAND_KEYS, poseClip } from './poseClips'
 import { playerAction, playerSpeed } from './telemetry'
 import { usePlayerStore } from './store'
 
@@ -14,7 +14,7 @@ const URL = assetUrl('models/character/worker.glb')
 useGLTF.preload(URL, DRACO_PATH)
 
 const FADE = 0.2 // s de crossfade entre clips
-const JUMP_FADE = 0.08 // entrada al salto: corta, para que se vea el impulso agachado
+const JUMP_FADE = 0.08 // entrada al salto y al aterrizaje: corta, para que se vea el agachado
 const SPEED_K = 10 // 1/s, suavizado de la rapidez (transiciones sin parpadeo de clip)
 // velocidad (m/s) a la que cada clip pisa sin patinar: avance original del clip Rocketbox / su duración
 const NATURAL_SPEED: Partial<Record<Clip, number>> = { walk: 1.01, run: 2.88 }
@@ -28,12 +28,13 @@ export function CharacterModel({ footY }: { footY: number }) {
   const clips = useMemo(() => {
     const idle = animations.find((c) => c.name === 'idle')
     if (!idle) return animations
-    return [...animations, poseClip('jump', scene, idle, JUMP_KEYS), poseClip('climb', scene, idle, CLIMB_KEYS)]
+    return [...animations, poseClip('jump', scene, idle, JUMP_KEYS), poseClip('land', scene, idle, LAND_KEYS), poseClip('climb', scene, idle, CLIMB_KEYS)]
   }, [animations, scene])
   const { actions } = useAnimations(clips, root)
   const visible = usePlayerStore((s) => s.mode === 'foot')
   const clip = useRef<Clip | null>(null)
   const speed = useRef(0)
+  const air = useRef({ was: false, landUntil: 0 })
 
   useEffect(() => {
     scene.traverse((o) => {
@@ -56,7 +57,15 @@ export function CharacterModel({ footY }: { footY: number }) {
     speed.current += (playerSpeed.current - speed.current) * (1 - Math.exp(-SPEED_K * Math.min(delta, 0.1)))
     if (root.current) root.current.rotation.y = yaw + FACING
 
-    const act = { climbing: playerAction.climbing, airborne: playerAction.airborne, operating: performance.now() < playerAction.operatingUntil }
+    const now = performance.now()
+    air.current.landUntil = nextLandUntil(air.current.was, playerAction.airborne, now, air.current.landUntil)
+    air.current.was = playerAction.airborne
+    const act = {
+      climbing: playerAction.climbing,
+      airborne: playerAction.airborne,
+      landing: now < air.current.landUntil,
+      operating: now < playerAction.operatingUntil,
+    }
     const next = pickClip(speed.current, mode, act)
     const a = actions[next]
     if (!a) return
@@ -64,18 +73,19 @@ export function CharacterModel({ footY }: { footY: number }) {
     // (no isRunning: con timeScale 0, el trepar detenido, daría false y reiniciaría el clip en cada frame)
     if (next !== clip.current || !a.isScheduled()) {
       const prev = clip.current && clip.current !== next && actions[clip.current]
-      const fade = next === 'jump' ? JUMP_FADE : FADE
-      if (next === 'jump') {
+      const once = next === 'jump' || next === 'land'
+      const fade = once ? JUMP_FADE : FADE
+      if (once) {
         a.setLoop(THREE.LoopOnce, 1)
-        a.clampWhenFinished = true // queda agachado (aterrizaje) hasta que el fundido de salida lo lleve al clip siguiente
+        a.clampWhenFinished = true // salto: queda en pose de caída si el vuelo dura más; aterrizaje: termina casi en idle
       }
       a.reset().fadeIn(fade).play()
       if (prev) prev.fadeOut(fade)
       clip.current = next
     }
-    const natural = NATURAL_SPEED[next]
+    const natural = NATURAL_SPEED[next] // trepar: climbDir, bajando el ciclo va al revés
     a.timeScale =
-      next === 'climb' ? (playerAction.climbMoving ? 1 : 0) : natural ? THREE.MathUtils.clamp(speed.current / natural, 0.6, 1.8) : 1
+      next === 'climb' ? playerAction.climbDir : natural ? THREE.MathUtils.clamp(speed.current / natural, 0.6, 1.8) : 1
   })
 
   return (

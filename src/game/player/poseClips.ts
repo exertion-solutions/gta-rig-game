@@ -20,7 +20,9 @@ const arms = (up: number, fore: number) => ({
 })
 
 // Salto ≈ 0,63 s de vuelo (v 3,1 m/s, ápice 0,49 m): impulso agachado con brazos atrás, extensión con brazos arriba,
-// piernas recogidas en el ápice (0,32 s), preparación y aterrizaje amortiguado (agachado) justo al tocar el suelo.
+// piernas recogidas en el ápice (0,32 s) y pose de caída, en la que queda (clamp) si el vuelo dura más. El agachado
+// de aterrizaje es otro clip ('land'), que arranca recién al tocar el suelo.
+const FALL = { Bip01_L_Thigh: -30, Bip01_L_Calf: 40, Bip01_R_Thigh: -25, Bip01_R_Calf: 35, Bip01_Spine1: 8, ...arms(-45, -25) }
 export const JUMP_KEYS: PoseKey[] = [
   { t: 0, ...crouch(10, { Bip01_Spine1: 8, ...arms(20, -10) }) },
   { t: 0.07, ...crouch(28, { Bip01_Spine1: 18, ...arms(40, -15) }) },
@@ -32,8 +34,13 @@ export const JUMP_KEYS: PoseKey[] = [
       Bip01_Spine1: 12, ...arms(-70, -45),
     },
   },
-  { t: 0.52, rx: { Bip01_L_Thigh: -30, Bip01_L_Calf: 40, Bip01_R_Thigh: -25, Bip01_R_Calf: 35, Bip01_Spine1: 8, ...arms(-45, -25) } },
-  { t: 0.64, ...crouch(25, { Bip01_Spine1: 15, ...arms(-30, -30) }) },
+  { t: 0.52, rx: FALL },
+]
+// Aterrizaje amortiguado (LAND_MS = 300 ms): de la pose de caída al agachado y de vuelta casi a idle.
+export const LAND_KEYS: PoseKey[] = [
+  { t: 0, rx: FALL },
+  { t: 0.08, ...crouch(25, { Bip01_Spine1: 15, ...arms(-30, -30) }) },
+  { t: 0.3, ...crouch(4, { Bip01_Spine1: 3, ...arms(-5, -10) }) },
 ]
 
 // Trepar mano sobre mano: brazo alto y pierna opuesta alta, alternando. Ciclo 0,6 s ≈ 0,7 m a CLIMB_SPEED 1,2 m/s.

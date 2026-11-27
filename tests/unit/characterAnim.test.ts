@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pickClip } from '../../src/game/player/characterAnim'
+import { LAND_MS, nextLandUntil, pickClip } from '../../src/game/player/characterAnim'
 import { RUN_SPEED, WALK_SPEED } from '../../src/game/player/movement'
 
 describe('pickClip', () => {
@@ -18,4 +18,21 @@ describe('pickClip', () => {
   it('operando una valvula => operate', () => expect(pickClip(WALK_SPEED, 'foot', { operating: true })).toBe('operate'))
   it('en el aire tras saltar => jump', () => expect(pickClip(RUN_SPEED, 'foot', { airborne: true })).toBe('jump'))
   it('en la camioneta sigue idle aunque haya accion', () => expect(pickClip(0, 'truck', { climbing: true })).toBe('idle'))
+  it("aterrizando => land; en el aire gana 'jump'", () => {
+    expect(pickClip(0, 'foot', { landing: true })).toBe('land')
+    expect(pickClip(0, 'foot', { airborne: true, landing: true })).toBe('jump')
+  })
+  it('vuelo largo (2 s): jump todo el vuelo, land solo al tocar el suelo y por LAND_MS', () => {
+    let was = false
+    let until = 0
+    const clipAt = (now: number, airborne: boolean) => {
+      until = nextLandUntil(was, airborne, now, until)
+      was = airborne
+      return pickClip(0, 'foot', { airborne, landing: now < until })
+    }
+    for (let t = 0; t < 2000; t += 16) expect(clipAt(t, true)).toBe('jump')
+    expect(clipAt(2000, false)).toBe('land')
+    expect(clipAt(2000 + LAND_MS - 1, false)).toBe('land')
+    expect(clipAt(2000 + LAND_MS, false)).toBe('idle')
+  })
 })
