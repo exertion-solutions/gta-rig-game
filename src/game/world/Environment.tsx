@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
 import { exposeGame } from '../dev'
-import { QUALITY_PROFILE, parseQualityParam, reportFrame, useQualityStore } from '../quality'
+import { QUALITY_PROFILE, parseQualityParam, pickInitialQuality, reportFrame, seedQuality, useQualityStore } from '../quality'
 import { useSettings } from '../settings/store'
 import { assetUrl } from './assetUrl'
 import { exactHour, lightingAt, newLighting } from './DayNight'
@@ -146,6 +146,15 @@ export function Environment() {
     if (wanted === 'auto') st.setAuto(true)
     else st.set(wanted)
   }, [wanted])
+
+  // Nivel de arranque según la GPU (integrada o desconocida = Media). En automatización no: los e2e miden desde Alta.
+  // Va después del efecto de ajustes: con un nivel fijo (auto apagada) seedQuality no hace nada.
+  useEffect(() => {
+    if (navigator.webdriver) return
+    const c = gl.getContext()
+    const ext = c.getExtension('WEBGL_debug_renderer_info')
+    seedQuality(pickInitialQuality(String(c.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : c.RENDERER))))
+  }, [gl])
 
   useEffect(() => {
     setDpr(Math.min(window.devicePixelRatio || 1, QUALITY_PROFILE[quality].dpr))

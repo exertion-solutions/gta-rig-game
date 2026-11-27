@@ -34,6 +34,7 @@ agachado ~0,8 m/s, camioneta ~12 m/s tras 2,4 s de acelerador y se detiene al fr
 - Camioneta: modelo procedural con cabina, caja, vidrios, luces, llantas, suspensión visual, giro según la velocidad y faros de noche.
 - Cámara: el personaje se desvanece cuando la cámara queda pegada a un obstáculo y el alejamiento se suaviza (cierra QA-5).
 - Compartible: modo foto (P), clip de hasta 10 s (R), tarjeta de misión completada y enlace `?mision=`.
+- Robustez: la calidad automática arranca según la GPU (integrada o desconocida = Media; RTX, GTX o Radeon RX = Alta), baja de nivel en ~30 cuadros si cae de 30 FPS, y un error en el posproceso o en la escena ya no deja la pantalla en blanco (`ErrorBoundary`: el posproceso se apaga solo; si falla la escena hay aviso y botón para reintentar en calidad baja). Tests: `tests/unit/robustez.test.ts`. Límite: el aviso de la escena no se probó provocando un fallo real de WebGL.
 - Documentación: README con controles, mando, modo foto y clip, parámetros de URL y estructura del repo.
 
 ## Compartible (sin publicar)
@@ -55,7 +56,7 @@ agachado ~0,8 m/s, camioneta ~12 m/s tras 2,4 s de acelerador y se detiene al fr
 
 ## Límites conocidos
 
-- Todo se midió con renderizado por software: los FPS y tiempos no representan una GPU real. Falta probar en un equipo con GPU.
+- Los e2e corren con renderizado por software. FPS con GPU real (Iris Xe, headless): ver `docs/perf.md`. Falta probar a ojo en una ventana visible y con GPU dedicada.
 - Gamepad: solo la lógica de mapeo (unitaria); no se probó con un mando físico.
 - Foto y clip salen con el tamaño del canvas; no hay selector de resolución.
 - Descarga de la tarjeta y copia del enlace dependen de permisos del navegador (portapapeles).

@@ -7,6 +7,16 @@ export type Quality = 'high' | 'medium' | 'low'
 const ORDER: Quality[] = ['low', 'medium', 'high']
 export const DOWN_MS = 20 // baja si el promedio supera esto
 export const UP_MS = 10 // sube solo si el promedio queda por debajo de esto (margen amplio)
+const FAST_MS = 33 // por debajo de 30 FPS es injugable...
+const FAST_N = 30 // ...y con esta cantidad de cuadros seguidos se baja sin esperar la ventana
+
+/**
+ * Nivel de arranque según el string del renderer (WEBGL_debug_renderer_info). Solo una GPU dedicada de gama media o
+ * alta arranca en Alta; integradas, móviles, software o desconocidas arrancan en Media y la automática ajusta después.
+ */
+export function pickInitialQuality(renderer: string | null | undefined): Quality {
+  return /\b(RTX|GTX|Radeon RX)\b/i.test(renderer ?? '') ? 'high' : 'medium'
+}
 
 export function pickQuality(avgFrameMs: number, current: Quality): Quality {
   const i = ORDER.indexOf(current)
@@ -30,6 +40,7 @@ export function createGovernor(initial: Quality, opts: { window?: number; warmup
   let auto = true
   let sum = 0
   let n = 0
+  let slow = 0 // cuadros seguidos por debajo de 30 FPS
   const banned = new Set<Quality>()
   return {
     get quality() {
@@ -47,12 +58,24 @@ export function createGovernor(initial: Quality, opts: { window?: number; warmup
       auto = false
       sum = n = 0
     },
+    /** Nivel de arranque (por GPU): cambia el nivel sin tocar la automática. */
+    seed(q: Quality) {
+      quality = q
+      sum = n = slow = 0
+    },
     /** Un cuadro de `ms` milisegundos. Devuelve el nivel nuevo si cambió, o null. */
     push(ms: number): Quality | null {
       if (!auto) return null
       if (warmup > 0) {
         warmup--
         return null
+      }
+      slow = ms > FAST_MS ? slow + 1 : 0
+      if (slow >= FAST_N && quality !== 'low') {
+        banned.add(quality)
+        quality = ORDER[ORDER.indexOf(quality) - 1]
+        sum = n = slow = 0
+        return quality
       }
       sum += Math.min(ms, 250) // una pausa de pestaña no cuenta como 10 s de lentitud
       if (++n < WINDOW) return null
@@ -98,6 +121,13 @@ export const useQualityStore = create<QualityState>((set) => ({
     set({ auto: v })
   },
 }))
+
+/** Nivel de arranque según la GPU. No pisa un nivel fijado a mano (URL o ajustes). */
+export function seedQuality(q: Quality) {
+  if (!governor.auto) return
+  governor.seed(q)
+  useQualityStore.setState({ quality: q })
+}
 
 /** Un cuadro medido (lo llama QualityMonitor): actualiza el store si la degradación automática cambió de nivel. */
 export function reportFrame(ms: number) {

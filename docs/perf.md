@@ -25,8 +25,19 @@ Mismos números a las 0 h y a las 12 h (la noche no agrega luces: las luminarias
 Datos de los GLB (offline, sin líneas): 184 primitivas de triángulos y 678.362 triángulos en las 16 piezas; el
 acumulador sola traía 63 nodos.
 
-**FPS en hardware real: sin medir.** No hay una medición con GPU en este registro; el objetivo de 60 FPS en escritorio
-queda pendiente de verificar a mano (por ejemplo con `r3f-perf`, ya en dependencias).
+**FPS en hardware real (2026-11-27, Intel Iris Xe, Chromium headless con `--use-angle=d3d11`, sin vsync, 1280 × 720,
+DPR 1, encuadre inicial, 5 s por corrida):**
+
+| Calidad | FPS | Draw calls | Triángulos |
+| --- | ---: | ---: | ---: |
+| Alta con posproceso (`?post=1`) | 76 | 241 | 967.305 |
+| Alta sin posproceso | 115 a 118 | 224 | 967.288 |
+| Media | 123 | 224 | 967.288 |
+| Baja | 162 | 158 | 711.171 |
+
+Media no es más lenta que Alta: una medición anterior (Media 11,9 FPS) no se reprodujo en dos corridas alternadas.
+Límites: headless usa DPR 1, así que el tope de DPR de cada nivel no entra en la medida; no se midió en una ventana
+visible ni con una GPU dedicada.
 
 ## Decisiones
 

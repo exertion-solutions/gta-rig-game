@@ -20,6 +20,7 @@ import { InteractPrompt } from '../ui/InteractPrompt'
 import { SceneProbes, ScenarioAdditions } from '../game/world/scenario/Additions'
 import { useHudStore } from '../ui/hudStore'
 import { useProgress } from '@react-three/drei'
+import { ErrorBoundary } from './ErrorBoundary'
 import { useLoadStore } from './loadStore'
 import { parseMissionParam, resolveMissionId } from '../ui/share'
 
@@ -89,9 +90,11 @@ export default function Scene() {
           <SectorReporter />
           <ObjectiveMarker />
         </Suspense>
-        <Suspense fallback={null}>
-          <Post />
-        </Suspense>
+        <ErrorBoundary name="Post">
+          <Suspense fallback={null}>
+            <Post />
+          </Suspense>
+        </ErrorBoundary>
       </Canvas>
       <Suspense fallback={null}>
         <Hud />
