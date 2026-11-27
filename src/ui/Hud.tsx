@@ -2,6 +2,8 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import { getSectors } from '../game/data/sectors'
 import { useMissionStore } from '../game/missions/store'
 import { clearKeys } from '../game/player/keys'
+import { useAudioStore } from '../audio/mix'
+import { MuteButton, RadioSubtitle } from './AudioControls'
 import { Ficha } from './Ficha'
 import { useHudStore } from './hudStore'
 import { Legend } from './Legend'
@@ -22,7 +24,8 @@ function useHotkeys() {
       const hud = useHudStore.getState()
       if (e.code === 'KeyM' && !e.repeat) {
         hud.setPanel(!hud.panelOpen)
-      } else if (e.code === 'KeyF' && !e.repeat && !hud.panelOpen) hud.setFicha(!hud.fichaOpen)
+      } else if (e.code === 'KeyN' && !e.repeat) useAudioStore.getState().toggleMute()
+      else if (e.code === 'KeyF' && !e.repeat && !hud.panelOpen) hud.setFicha(!hud.fichaOpen)
       else if (e.code === 'Escape' && hud.panelOpen) hud.setPanel(false)
       else if (e.code === 'Escape' && hud.fichaOpen) hud.setFicha(false)
       else if (hud.panelOpen && GAME_KEYS.has(e.code)) e.stopPropagation()
@@ -126,6 +129,7 @@ export function Hud() {
               <p className="text-sm text-slate-200">Sin misión activa. Abrí las misiones con M.</p>
             )}
           </div>
+          <RadioSubtitle />
           <div className={`${card} hidden min-h-0 overflow-hidden px-3 py-2 sm:block`} data-testid="hud-visited">
             <p className={label} data-testid="hud-visited-count">
               {view.label} · {view.ids.length}/{view.total}
@@ -158,6 +162,7 @@ export function Hud() {
         >
           Misiones <kbd className="ml-1 rounded bg-white/15 px-1 font-mono text-xs">M</kbd>
         </button>
+        <MuteButton />
         <div className="min-h-0 w-full flex-1">
           {showFicha && (
             <div className="pointer-events-auto h-full overflow-y-auto" data-testid="hud-ficha">

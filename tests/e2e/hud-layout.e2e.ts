@@ -11,7 +11,9 @@ const VIEWPORTS = [
   [768, 1024],
   [390, 844],
 ] as const
-const IDS = ['radar', 'hud-mission', 'hud-visited', 'legend', 'hud-ficha', 'open-missions', 'hud-sector', 'hud-limit', 'interact-prompt']
+const IDS = ['radar', 'hud-mission', 'hud-visited', 'legend', 'hud-ficha', 'open-missions', 'audio-mute', 'hud-radio', 'hud-sector', 'hud-limit', 'interact-prompt']
+// subtítulo de radio del largo máximo (radio.ts corta en 150 caracteres)
+const LONG_SUBTITLE = 'Texto de prueba del subtítulo de la radio con el largo máximo que admite el corte por oraciones, para medir el lugar que ocupa en pantalla sin taparse.'.slice(0, 150)
 const SKY = '#9fc3e8'
 type Rect = { id: string; x: number; y: number; w: number; h: number }
 
@@ -115,7 +117,11 @@ for (const [vw, vh] of VIEWPORTS)
     await audit(page, vw, vh, 'reposo')
 
     // m3: el objetivo 2 trae el texto largo de la zona (~400 caracteres); se recorta con "ver más"
+    // radio congelada: el subtítulo queda en pantalla durante toda la medición (sin depender del reloj)
+    await g(page, 'holdRadio', true)
     await g(page, 'startMission', 'm3-mapa-de-zonas')
+    await expect(page.getByTestId('hud-radio')).toBeVisible()
+    await g(page, 'showSubtitle', LONG_SUBTITLE)
     await g(page, 'teleport', [-10, 0, 20])
     await page.waitForFunction(() => (window as any).__game.getAtSector() === null)
     await g(page, 'teleport', [-3, 0, 3.5])

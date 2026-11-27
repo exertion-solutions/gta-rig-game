@@ -1,5 +1,8 @@
 import { Canvas } from '@react-three/fiber'
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { startAudio } from '../audio'
+import { holdRadio, useRadioStore } from '../audio/radioPlayer'
+import { useAudioStore } from '../audio/mix'
 import { getSectors } from '../game/data/sectors'
 import { exposeGame } from '../game/dev'
 import { loadMissionDefs } from '../game/missions'
@@ -22,6 +25,7 @@ export function App() {
   const [physicsReady, setPhysicsReady] = useState(false)
   useEffect(() => {
     let live = true
+    startAudio()
     void loadMissionDefs().then((defs) => {
       if (!live) return
       useMissionStore.getState().init(defs, { sectors: getSectors(), interactables: INTERACTABLES })
@@ -30,6 +34,10 @@ export function App() {
       startMission: (id: string) => useMissionStore.getState().start(id),
       getMission: () => useMissionStore.getState().mission,
       getAtSector: () => useHudStore.getState().atSector,
+      getSubtitle: () => useRadioStore.getState().subtitle,
+      holdRadio,
+      showSubtitle: (subtitle: string) => useRadioStore.setState({ subtitle }), // con holdRadio(true): fija un texto
+      getMix: () => useAudioStore.getState().mix,
     })
     return () => {
       live = false

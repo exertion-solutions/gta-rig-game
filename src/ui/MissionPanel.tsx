@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMissionStore } from '../game/missions/store'
 import type { MarkValue, MissionState, Objective } from '../game/missions/types'
 import { useHudStore } from './hudStore'
+import { AudioSettings } from './AudioControls'
 import { Legend } from './Legend'
 
 const btn = 'rounded border border-white/20 bg-white/5 px-3 py-1.5 text-sm hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400'
@@ -208,6 +209,7 @@ export function MissionPanel() {
             </div>
           </section>
         )}
+        <AudioSettings />
         <div className="flex justify-end">
           <Legend />
         </div>
