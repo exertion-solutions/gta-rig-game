@@ -10,11 +10,10 @@ import { LOCACION_BOUNDS as B } from './frame'
 // Environment.tsx (usan lightingAt). De noche se encienden (emissive) las luminarias de la torre (sk575_mastil_luz).
 // De noche el sol queda bajo (elevación 0,15) y tenue: hace de luna y sigue proyectando sombra.
 const START_HOUR = 10 // media mañana
-const HOURS_PER_SECOND = 1 / 60 // 1 hora de juego por minuto real: un día dura 24 min
+const HOURS_PER_SECOND = 1 / 180 // 1 hora de juego cada 3 minutos reales: un día dura 72 min (de las 10 al atardecer, 24 min)
 const LAMP_MATERIAL = 'sk575_mastil_luz'
 const CENTER = new THREE.Vector3((B.minX + B.maxX) / 2, 0, 0)
 const SUN_DISTANCE = 80
-const STORAGE_KEY = 'gta-rig-game:hora'
 
 /** Sombra del sol (requisito de la tarea; e2e la lee del renderer). Canvas: shadows="percentage" = PCFShadowMap. */
 export const SHADOW = { mapSize: 2048, half: 40, type: THREE.PCFShadowMap } // ±40 m cubre la locación (78,5 × 61 m)
@@ -22,31 +21,16 @@ export const SHADOW = { mapSize: 2048, half: 40, type: THREE.PCFShadowMap } // �
 const wrap = (h: number) => ((h % 24) + 24) % 24
 const minuteOf = (h: number) => Math.floor(h * 60) / 60
 
-function loadHour() {
-  try {
-    const v = Number(localStorage.getItem(STORAGE_KEY))
-    return localStorage.getItem(STORAGE_KEY) !== null && Number.isFinite(v) ? wrap(v) : START_HOUR
-  } catch {
-    return START_HOUR // sin localStorage (modo privado, bloqueado): arranca a media mañana
-  }
-}
-function saveHour(h: number) {
-  try {
-    localStorage.setItem(STORAGE_KEY, h.toFixed(3))
-  } catch {
-    /* sin persistencia: no es crítico */
-  }
-}
-
 // Hora exacta por cuadro fuera de React; el store solo guarda el minuto de juego (≈ 1 cambio por segundo real), así
 // quien use useTimeOfDay no se re-renderiza a 60 Hz.
-let exact = loadHour()
+// Cada sesión arranca a media mañana. Antes la hora se guardaba y se retomaba: quien había dejado el juego al
+// atardecer volvía a entrar y se le hacía de noche a los pocos segundos.
+let exact = START_HOUR
 type TimeState = { hour: number; setHour(h: number): void }
 export const useTime = create<TimeState>((set) => ({
   hour: minuteOf(exact),
   setHour: (h) => {
     exact = wrap(h)
-    saveHour(exact)
     set({ hour: minuteOf(exact) })
   },
 }))
@@ -56,14 +40,12 @@ export const exactHour = () => exact
 
 /** Avanza el reloj `dt` segundos reales. Solo toca el store cuando cambia el minuto de juego. */
 export function advanceClock(dt: number) {
-  const prevHour = Math.floor(exact)
   exact = wrap(exact + Math.min(dt, 0.1) * HOURS_PER_SECOND)
   const m = minuteOf(exact)
   if (m !== useTime.getState().hour) useTime.setState({ hour: m })
-  if (Math.floor(exact) !== prevHour) saveHour(exact)
 }
 
-/** Hora del día (0–24, al minuto de juego) y cómo fijarla. Se guarda en localStorage (si está disponible). */
+/** Hora del día (0–24, al minuto de juego) y cómo fijarla. No se guarda entre sesiones. */
 export function useTimeOfDay(): TimeState {
   const hour = useTime((s) => s.hour)
   const setHour = useTime((s) => s.setHour)

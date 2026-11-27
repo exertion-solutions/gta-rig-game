@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { SHADOW, advanceClock, exactHour, lightingAt, useTime } from '../../src/game/world/DayNight'
 import { mergeByMaterial } from '../../src/game/world/mergeByMaterial'
 
@@ -37,7 +37,14 @@ describe('reloj', () => {
     for (let i = 0; i < 60; i++) advanceClock(1 / 60)
     off()
     expect(notified).toBeLessThanOrEqual(2)
-    expect(exactHour()).toBeCloseTo(10 + 1 / 60, 6) // 1 s real = 1 min de juego
+    expect(exactHour()).toBeCloseTo(10 + 1 / 180, 6) // 3 s reales = 1 min de juego (día de 72 min)
+  })
+  it('cada sesión arranca a media mañana, sin retomar una hora guardada', async () => {
+    vi.resetModules()
+    vi.stubGlobal('localStorage', { getItem: () => '19.5', setItem: () => {} })
+    const fresh = await import('../../src/game/world/DayNight')
+    expect(fresh.exactHour()).toBe(10)
+    vi.unstubAllGlobals()
   })
   it('setHour normaliza a 0–24', () => {
     useTime.getState().setHour(-1)
