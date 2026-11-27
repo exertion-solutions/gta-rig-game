@@ -11,27 +11,31 @@ function toFloat(src: THREE.BufferGeometry, m: THREE.Matrix4) {
     g.setAttribute(name, new THREE.BufferAttribute(out, a.itemSize))
   }
   const n = src.attributes.position.count
-  g.setIndex(src.index ? Array.from(src.index.array) : [...Array(n).keys()])
+  const index = src.index ? Uint32Array.from(src.index.array) : Uint32Array.from({ length: n }, (_, i) => i)
+  g.setIndex(new THREE.BufferAttribute(index, 1))
   return g.applyMatrix4(m)
 }
 
 /**
  * Une las mallas de `root` que comparten material en una sola (un draw call por material y no por nodo). Solo vale
- * para piezas estáticas. Si un grupo no se puede unir (atributos distintos) queda como estaba. Devuelve cuántas mallas
- * quitó.
+ * para piezas estáticas: no toca mallas con esqueleto, morph targets ni espejadas (determinante < 0: el bake perdería
+ * el giro del winding). Si un grupo no se puede unir (atributos distintos) queda como estaba. Devuelve las geometrías
+ * nuevas (quien llama las libera al desmontar; las originales son de la caché de useGLTF y no se tocan).
  */
-export function mergeByMaterial(root: THREE.Object3D): number {
+export function mergeByMaterial(root: THREE.Object3D): THREE.BufferGeometry[] {
   root.updateMatrixWorld(true)
   const inv = root.matrixWorld.clone().invert()
   const groups = new Map<THREE.Material, THREE.Mesh[]>()
   root.traverse((o) => {
     const m = o as THREE.Mesh
     if (!m.isMesh || Array.isArray(m.material) || (m as THREE.InstancedMesh).isInstancedMesh) return
+    if ((m as THREE.SkinnedMesh).isSkinnedMesh || m.morphTargetInfluences?.length || Object.keys(m.geometry.morphAttributes).length) return
+    if (m.matrixWorld.determinant() < 0) return
     const list = groups.get(m.material) ?? []
     list.push(m)
     groups.set(m.material, list)
   })
-  let removed = 0
+  const created: THREE.BufferGeometry[] = []
   for (const [material, meshes] of groups) {
     if (meshes.length < 2) continue
     const merged = mergeGeometries(meshes.map((m) => toFloat(m.geometry, inv.clone().multiply(m.matrixWorld))))
@@ -40,7 +44,7 @@ export function mergeByMaterial(root: THREE.Object3D): number {
     const mesh = new THREE.Mesh(merged, material)
     mesh.name = material.name
     root.add(mesh)
-    removed += meshes.length - 1
+    created.push(merged)
   }
-  return removed
+  return created
 }
