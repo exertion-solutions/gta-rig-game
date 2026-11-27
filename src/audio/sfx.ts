@@ -1,3 +1,4 @@
+import { assetUrl } from '../game/world/assetUrl'
 import { busGain, useAudioStore } from './mix'
 import { engineParams } from './params'
 
@@ -87,6 +88,7 @@ function tone(f0: number, f1: number, dur: number, gain: number, type: Oscillato
 /** Ambiente leve de locación: viento (ruido en bucle por un pasabajos). */
 function startAmbient() {
   if (!ctx || !noise || !ambBus) return
+  const c = ctx
   const src = ctx.createBufferSource()
   src.buffer = noise
   src.loop = true
@@ -97,6 +99,27 @@ function startAmbient() {
   g.gain.value = 0.25
   src.connect(f).connect(g).connect(ambBus)
   src.start()
+  loadAmbientLoop(c, src)
+}
+
+/** Viento y rig lejano generados con ffmpeg (public/audio/ambient): reemplaza al viento procedural cuando se decodifica; si falla, sigue el procedural. */
+async function loadAmbientLoop(c: AudioContext, wind: AudioBufferSourceNode) {
+  try {
+    const r = await fetch(assetUrl('audio/ambient/rig-lejano.mp3'))
+    if (!r.ok) return
+    const buffer = await c.decodeAudioData(await r.arrayBuffer())
+    if (c !== ctx || !ambBus) return
+    const src = c.createBufferSource()
+    src.buffer = buffer
+    src.loop = true
+    const g = c.createGain()
+    g.gain.value = 0.7 // el volumen real lo fija el bus ambiente (maestro x ambiente, mute)
+    src.connect(g).connect(ambBus)
+    src.start()
+    wind.stop()
+  } catch {
+    /* sin archivo o sin códec: queda el viento procedural */
+  }
 }
 
 export const sfx = {

@@ -234,11 +234,11 @@ Cadena de modelado para las adiciones al escenario: (1) dimensionar y modelar pi
 **Interfaces:**
 - Produces: `scripts/gen-voice.mjs` lee los textos de `briefing` y `ficha` y genera un mp3 por línea con ElevenLabs (voz en español elegida con `creative_list_voices`; la clave solo desde `.env`, nunca commiteada) y escribe `public/audio/voice/manifest.json` con hash del texto; `playLine(id: string): Promise<void>`; `lineIds(): string[]`; `sfx.engine(speed: number)` y `sfx.step()`.
 
-- [ ] **Step 1: Test** `todas las líneas de misión tienen un archivo en el manifest` y `cambiar un texto invalida su hash en el manifest`.
-- [ ] **Step 2: Correr; esperar FAIL.**
-- [ ] **Step 3: Implementar el script y el reproductor; generar las voces una vez y commitear los mp3 sin la clave.**
-- [ ] **Step 4: Correr tests; esperar PASS.**
-- [ ] **Step 5: Commit `feat: radio con voz y sonido`.**
+- [x] **Step 1: Test** `todas las líneas de misión tienen un archivo en el manifest` y `cambiar un texto invalida su hash en el manifest`.
+- [x] **Step 2: Correr; esperar FAIL.**
+- [x] **Step 3: Implementar el script y el reproductor.** Cambio de enfoque (sin servicios de pago ni nube): voz local Windows SAPI (Microsoft Sabina Desktop, es-MX) + ffmpeg con filtro de radio, `npm run gen-voice`; los .mp3 NO se commitean (licencia de la voz del sistema pendiente de confirmar, ver `NOTICE.md`): se generan en `predev`/`prebuild`; el manifest (id, archivo, duración, texto, sha256) sí. Ambiente de viento y rig lejano generado con ffmpeg (`public/audio/ambient/rig-lejano.mp3`).
+- [x] **Step 4: Correr tests; esperar PASS.**
+- [x] **Step 5: Commit `feat: radio con voz y sonido`.**
 
 ### Task 12: Día/noche y rendimiento
 

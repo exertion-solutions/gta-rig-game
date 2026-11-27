@@ -1,3 +1,214 @@
 {
-  "lines": {}
+  "generator": "scripts/gen-voice.mjs",
+  "voice": "Microsoft Sabina Desktop (es-MX), Windows SAPI + ffmpeg",
+  "lines": {
+    "radio/inicio": {
+      "id": "radio/inicio",
+      "file": "radio_inicio.mp3",
+      "hash": "eb828f9b",
+      "text": "Instructor en línea. Te paso la consigna.",
+      "duration": 4.81,
+      "sha256": "8a75e00b500838e3340c2e30053c3137048bb2e2ebd963923800ac98ae2a3833"
+    },
+    "radio/completada": {
+      "id": "radio/completada",
+      "file": "radio_completada.mp3",
+      "hash": "7e824ac4",
+      "text": "Misión completada. Tu registro queda en el panel de misiones.",
+      "duration": 6.06,
+      "sha256": "be305c5df46ee495f9d2d154f2cff6e7aa051330bd79a21eb9ffd638b176d266"
+    },
+    "m1-reconocimiento/briefing": {
+      "id": "m1-reconocimiento/briefing",
+      "file": "m1_reconocimiento_briefing.mp3",
+      "hash": "c5ff0645",
+      "text": "Llegá al Acceso de la locación desde afuera, a pie o en la camioneta (E), y después recorré los otros 13 sectores en el orden que quieras: 14 en total. El punto de partida no cuenta como llegada: si empezás en el Acceso, salí y volvé a entrar.",
+      "duration": 19.05,
+      "sha256": "a354830a9f7d8b718bf4df22299568f496e872f22ad7003fc648a9f5101af47f"
+    },
+    "m1-reconocimiento/m1-recorrido": {
+      "id": "m1-reconocimiento/m1-recorrido",
+      "file": "m1_reconocimiento_m1_recorrido.mp3",
+      "hash": "2e8edfee",
+      "text": "Visitá los otros 13 sectores",
+      "duration": 3.58,
+      "sha256": "23610ada6d7f282fda9d580bdc366ca5ca20091348ede1091338f2c1c110f149"
+    },
+    "m2-que-hace-cada-sector/briefing": {
+      "id": "m2-que-hace-cada-sector/briefing",
+      "file": "m2_que_hace_cada_sector_briefing.mp3",
+      "hash": "d0cd61f9",
+      "text": "Emparejá la función con el sector: 8 preguntas. Una respuesta distinta de la referencia no frena la misión; al final ves cuántas coinciden (referencia de repaso: 6 de 8). Es un registro propio, no una evaluación.",
+      "duration": 18.6,
+      "sha256": "71643d4ff84bbebfa385382502f9892d090363f8160cb743df02a7747aa09c03"
+    },
+    "m2-que-hace-cada-sector/m2-q2": {
+      "id": "m2-que-hace-cada-sector/m2-q2",
+      "file": "m2_que_hace_cada_sector_m2_q2.mp3",
+      "hash": "9075422f",
+      "text": "¿A qué sector corresponde esta función? Conjunto de válvulas y chokes que controla y deriva el retorno del pozo durante una maniobra de control.",
+      "duration": 10.96,
+      "sha256": "f848a4dedc8817728172f8f80c8d6c67c7a7e5088d7693a94e362af1f40b8cb5"
+    },
+    "m2-que-hace-cada-sector/m2-q3": {
+      "id": "m2-que-hace-cada-sector/m2-q3",
+      "file": "m2_que_hace_cada_sector_m2_q3.mp3",
+      "hash": "cbbc3c7a",
+      "text": "¿A qué sector corresponde esta función? Preventor de reventones instalado en boca de pozo: cierra el pozo ante un influjo y permite controlarlo.",
+      "duration": 11.36,
+      "sha256": "58701198dcc99b8ef3feccce845e6c1fe38025180163d144783cda2117e64aa5"
+    },
+    "m2-que-hace-cada-sector/m2-q4": {
+      "id": "m2-que-hace-cada-sector/m2-q4",
+      "file": "m2_que_hace_cada_sector_m2_q4.mp3",
+      "hash": "360f47a4",
+      "text": "¿A qué sector corresponde esta función? Plataforma sobre la boca de pozo donde la cuadrilla maniobra la tubería con cuñas, llaves y elevador.",
+      "duration": 11.22,
+      "sha256": "df62106b7e1c0c9ebed33e97514db04f0ebab9709621d9d3c7d0497f2e4a0464"
+    },
+    "m2-que-hace-cada-sector/m2-q5": {
+      "id": "m2-que-hace-cada-sector/m2-q5",
+      "file": "m2_que_hace_cada_sector_m2_q5.mp3",
+      "hash": "8ae84919",
+      "text": "¿A qué sector corresponde esta función? Llave hidráulica de tubing para enroscar y desenroscar uniones con torque controlado.",
+      "duration": 9.65,
+      "sha256": "a57945f3c8e6259a8e4c892595abb755727c00d6bba0f2250d0d52f4b7dcc08c"
+    },
+    "m2-que-hace-cada-sector/m2-q6": {
+      "id": "m2-que-hace-cada-sector/m2-q6",
+      "file": "m2_que_hace_cada_sector_m2_q6.mp3",
+      "hash": "35949cd6",
+      "text": "¿A qué sector corresponde esta función? Plataforma del enganchador en el mástil, desde donde se estiban y entregan los tiros de tubería.",
+      "duration": 10.56,
+      "sha256": "c46299b0f05698d7d079cc0f86222b2afb519494733882abe98f23bc9af99390"
+    },
+    "m2-que-hace-cada-sector/m2-q7": {
+      "id": "m2-que-hace-cada-sector/m2-q7",
+      "file": "m2_que_hace_cada_sector_m2_q7.mp3",
+      "hash": "5e3e0c1b",
+      "text": "¿A qué sector corresponde esta función? Puesto del maquinista: comando del malacate y del aparejo, frenos y control de las maniobras de izaje.",
+      "duration": 11.51,
+      "sha256": "7368803df1c0127914e0efee0ba22c1f141d58a2eba97c111c9c470157d3567b"
+    },
+    "m2-que-hace-cada-sector/m2-q8": {
+      "id": "m2-que-hace-cada-sector/m2-q8",
+      "file": "m2_que_hace_cada_sector_m2_q8.mp3",
+      "hash": "c8dbbf9e",
+      "text": "¿A qué sector corresponde esta función? Rampa y caballetes donde se estiba la tubería y desde donde sube al piso de trabajo.",
+      "duration": 9.79,
+      "sha256": "c749bd2acfb7be5bcfbfc2b13a1b423ba62e3b1b3f1e7e37f73b053fb095cdaa"
+    },
+    "m3-mapa-de-zonas/briefing": {
+      "id": "m3-mapa-de-zonas/briefing",
+      "file": "m3_mapa_de_zonas_briefing.mp3",
+      "hash": "c105e7d8",
+      "text": "Recorré los sectores y leé cómo el layout A2 clasifica cada área. Es lectura del dato, con su fuente; no es una medida de distancia.",
+      "duration": 11.18,
+      "sha256": "50c082945722e9d4ffd1db0ec09f67a54d7f7d82248753091ddd45720abd6845"
+    },
+    "m3-mapa-de-zonas/m3-enganche": {
+      "id": "m3-mapa-de-zonas/m3-enganche",
+      "file": "m3_mapa_de_zonas_m3_enganche.mp3",
+      "hash": "e89478f6",
+      "text": "Subí por la escalera vertical a Piso de enganche. Piso de Enganche: Zona A2: Alto (clasificación cualitativa del área, sin dimensión). (fuente proc-drops-a2 · Procedimiento).",
+      "duration": 16.14,
+      "sha256": "90e11ff03858eb0ebb21c8857be2aba6bc97fd44beebc7cbc937fbac22888fd1"
+    },
+    "m3-mapa-de-zonas/m3-boca-pozo": {
+      "id": "m3-mapa-de-zonas/m3-boca-pozo",
+      "file": "m3_mapa_de_zonas_m3_boca_pozo.mp3",
+      "hash": "c6e84857",
+      "text": "Visitá BOP. Área de Boca de Pozo: Zona A2: Medio (clasificación cualitativa del área, sin dimensión). (fuente proc-drops-a2 · Procedimiento). Fuente en conflicto: Layout A2 Medio (fuente proc-drops-a2 · Pendiente de validación) vs RCCO Alto (fuente proc-drops-a3 · Procedimiento).",
+      "duration": 27.61,
+      "sha256": "8e6f3ba39ace9de14c6c3e82b37a32af516f479b81a92e7f73ccef3ada807104"
+    },
+    "m3-mapa-de-zonas/m3-subestructura": {
+      "id": "m3-mapa-de-zonas/m3-subestructura",
+      "file": "m3_mapa_de_zonas_m3_subestructura.mp3",
+      "hash": "dcb4112c",
+      "text": "Visitá Carrier, cabina y motor. Subestructura y Carrier: Zona A2: Medio (clasificación cualitativa del área, sin dimensión). (fuente proc-drops-a2 · Procedimiento). Fuente en conflicto: Layout A2 Medio (fuente proc-drops-a2 · Pendiente de validación) vs Procedimiento 6.3.5 Bajo (fuente proc-drops · Procedimiento). Casilla de Maquinista: Zona A2: Medio (clasificación cualitativa del área, sin dimensión). (fuente proc-drops-a2 · Procedimiento).",
+      "duration": 42.45,
+      "sha256": "87a0f19abe1794e138bbc5c5af87a538391afbe848c0caef44043c80ab6d3f14"
+    },
+    "m3-mapa-de-zonas/m3-piletas": {
+      "id": "m3-mapa-de-zonas/m3-piletas",
+      "file": "m3_mapa_de_zonas_m3_piletas.mp3",
+      "hash": "e27720e0",
+      "text": "Visitá Piletas y trip tank. Piletas · Bombas · Generador · Depósito · Trailer Campamento: Zona A2: Bajo (clasificación cualitativa del área, sin dimensión). (fuente proc-drops-a2 · Procedimiento).",
+      "duration": 17.54,
+      "sha256": "537f925b94370910c5492aed8d5b985079e91f8bbc759a56853b2a83381329ee"
+    },
+    "m4-retencion-en-altura/briefing": {
+      "id": "m4-retencion-en-altura/briefing",
+      "file": "m4_retencion_en_altura_briefing.mp3",
+      "hash": "96717192",
+      "text": "En el piso de enganche, leé la retención primaria y la secundaria de dos puntos del Libro DROPS y marcá OK, NOK o N/A. Queda como registro propio en este navegador; nadie lo evalúa.",
+      "duration": 14.22,
+      "sha256": "8709ec80f8654d4afd662dbe53445248763919bb2168804c8839b131d7530566"
+    },
+    "m4-retencion-en-altura/m4-PE-3": {
+      "id": "m4-retencion-en-altura/m4-PE-3",
+      "file": "m4_retencion_en_altura_m4_PE_3.mp3",
+      "hash": "17e59041",
+      "text": "Leé PE-3 · Pirosalva. Primaria: Elemento original abulanado con 7 bulones. Secundaria: No requerida. (fuente libro-drops-2024, pág. 7 · Procedimiento). Marcá OK, NOK o N/A: es tu registro propio.",
+      "duration": 21.82,
+      "sha256": "0544ff0eacedaf2b99630144dc990e2c6201450b7c5418cfc83c76ee0193f9aa"
+    },
+    "m4-retencion-en-altura/m4-PE-4": {
+      "id": "m4-retencion-en-altura/m4-PE-4",
+      "file": "m4_retencion_en_altura_m4_PE_4.mp3",
+      "hash": "84e1bfd0",
+      "text": "Leé PE-4 · Rejilla de material desplegable. Primaria: Abulonada con seguros y tuerca autofrenante o tuercas con chaveta partida y arandelas Norlock. Secundaria: No requerida. (fuente libro-drops-2024, pág. 8 · Procedimiento). Marcá OK, NOK o N/A: es tu registro propio.",
+      "duration": 26.05,
+      "sha256": "ca7accfbf78e57834a383ff59583b7964629615ebf04079db5a195e0dcf0b9bc"
+    },
+    "m5-secundaria-requerida/briefing": {
+      "id": "m5-secundaria-requerida/briefing",
+      "file": "m5_secundaria_requerida_briefing.mp3",
+      "hash": "04b7a77f",
+      "text": "Compará cuatro puntos del Libro DROPS y fijate en cuáles el dato indica secundaria requerida. Es lectura de la tabla, no un juicio.",
+      "duration": 10.41,
+      "sha256": "f6e0ae04ef35335165cba751acf802c0d5696697e3ef32b582f507d4c9ebc553"
+    },
+    "m5-secundaria-requerida/m5-comparar": {
+      "id": "m5-secundaria-requerida/m5-comparar",
+      "file": "m5_secundaria_requerida_m5_comparar.mp3",
+      "hash": "3cd41904",
+      "text": "Leé: BP-4 · Eslinga de sujeción y anclaje: secundaria «Eslinga De seguridad de 1/2\"» (fuente libro-drops-2024, pág. 15 · Procedimiento) | DCO-3 · Depósito de purga: secundaria «Eslingas de seguridad de 3mm» (fuente libro-drops-2024, pág. 4 · Procedimiento) | PE-3 · Pirosalva: secundaria «No requerida» (fuente libro-drops-2024, pág. 7 · Procedimiento) | PE-4 · Rejilla de material desplegable: secundaria «No requerida» (fuente libro-drops-2024, pág. 8 · Procedimiento). ¿En cuáles el dato marca secundaria requerida? Marcá todas las que correspondan.",
+      "duration": 51,
+      "sha256": "00647bb0e10033335b122c41c4eb80f3efc29acda6b3f6fc7e45c52d61f9c17b"
+    },
+    "m6-zona-sin-clasificar/briefing": {
+      "id": "m6-zona-sin-clasificar/briefing",
+      "file": "m6_zona_sin_clasificar_briefing.mp3",
+      "hash": "4c24706f",
+      "text": "Dos áreas del Libro DROPS no figuran clasificadas en el layout A2. Encontralas: sin clasificar no equivale a ninguna de las tres zonas del layout.",
+      "duration": 11.54,
+      "sha256": "972286e84a28015ece21a28ea588f408d6fa2a2cf6d1511e1bd99ad87455bdf6"
+    },
+    "m6-zona-sin-clasificar/m6-poste-llave": {
+      "id": "m6-zona-sin-clasificar/m6-poste-llave",
+      "file": "m6_zona_sin_clasificar_m6_poste_llave.mp3",
+      "hash": "e0e91a73",
+      "text": "Sobre el piso, andá hasta Llave hidráulica (PRL-1 a PRL-3). Poste de retenida de llave hidráulica: No clasificada en layout A2. (fuente proc-drops-a2 · Procedimiento)",
+      "duration": 16.54,
+      "sha256": "04cd563bf8a66e7ba4d0205ec18e21e936495a7c4dd0c0deaf63dc49c8ff8cc2"
+    },
+    "m7-orden-del-montaje/briefing": {
+      "id": "m7-orden-del-montaje/briefing",
+      "file": "m7_orden_del_montaje_briefing.mp3",
+      "hash": "48ff5312",
+      "text": "Ordená los 8 pasos de la secuencia típica de montaje de un equipo. Pendiente de validación: es una secuencia aportada por el usuario, no el procedimiento de la empresa ni un requisito. Sin tiempos.",
+      "duration": 16,
+      "sha256": "188b3be391396bf86c9e50f9ccb8e98d2cfd1a12be8e8ba3c8da264a483ef592"
+    },
+    "m8-fuente-en-conflicto/briefing": {
+      "id": "m8-fuente-en-conflicto/briefing",
+      "file": "m8_fuente_en_conflicto_briefing.mp3",
+      "hash": "2a5f2dca",
+      "text": "Dos fuentes dan cifras distintas para los anclajes de vientos. Vas a ver las dos, con su fuente; no se resuelve cuál vale.",
+      "duration": 10.34,
+      "sha256": "09b433612758e20d7936766fd60da03566e8277ab30cb782ab1001af90cf1c38"
+    }
+  }
 }
