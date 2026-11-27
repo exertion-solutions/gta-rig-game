@@ -9,9 +9,14 @@ const range = (sector: string) => {
   const ids = ficha(sector).points.map((p) => p.id)
   return ids.length ? `${ids[0]} a ${ids[ids.length - 1]}` : 'sin puntos'
 }
+// Cómo se llega en el juego: escalera de la pasarela y rampa de la planchada hasta el piso; la llave está sobre el piso.
+const GO: Record<string, () => string> = {
+  'piso-trabajo': () => `Subí a ${sectorName('piso-trabajo')} por la escalera de la pasarela y la rampa de la planchada`,
+  llave: () => `Sobre el piso, andá hasta ${sectorName('llave')}`,
+}
 const text = (s: (typeof STOPS)[number]) => {
   const z = findZone(s.sector, s.section)
-  return `Encontrá ${sectorName(s.sector)} (${range(s.sector)}). ${z?.sectionLabel ?? ''}: ${z?.text ?? 'dato ausente'} (${z ? cite(z) : ''})`
+  return `${GO[s.sector]()} (${range(s.sector)}). ${z?.sectionLabel ?? ''}: ${z?.text ?? 'dato ausente'} (${z ? cite(z) : ''})`
 }
 
 export const m6: MissionDef = {

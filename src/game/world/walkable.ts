@@ -15,7 +15,8 @@ export type Interactable = {
   position: Vec3
   label: string
   sourceId: string
-  state: 'open' | 'closed' // estado inicial de juego (ilustrativo, sin fuente)
+  // Sin fuente que documente estados: no hay estado hasta que el jugador opera (registro propio, ver interactables.ts).
+  state?: 'open' | 'closed'
 }
 type Incline = { id: string; bottom: number[]; top: number[]; width: number; slopeDeg: number }
 type Rail = { id: string; a: number[]; b: number[]; height: number }
@@ -75,3 +76,19 @@ export const LADDERS: readonly LadderVolume[] = TRAVERSAL.ladders
 export const INTERACTABLES: readonly Interactable[] = TRAVERSAL.interactables
 // Pendiente máxima medida entre escaleras y rampas (para el autostep/pendiente del controlador, Task 18B).
 export const MAX_MEASURED_SLOPE_DEG = Math.max(...[...TRAVERSAL.stairs, ...TRAVERSAL.ramps].map((s) => s.slopeDeg))
+
+// Bandas verticales de cada piso para contar una llegada (sectorsAt). Derivadas solo de alturas medidas:
+// media banda = la mitad del menor salto entre niveles caminables = (piso de trabajo − cubierta más alta del nivel del
+// suelo) / 2 = (3,606 − 2,639) / 2. Nivel del suelo = todo lo que queda por debajo de la banda del piso de trabajo
+// (suelo, pasarela 1,05, cubiertas de piletas 2,05/2,64). Entre bandas (p. ej. a mitad de la escalera vertical) no cuenta.
+const platformY = (id: string) => TRAVERSAL.platforms.find((p) => p.id === id)!.y
+const PT_Y = platformY('piso_trabajo')
+const PE_Y = platformY('piso_enganche')
+const GROUND_TOP = Math.max(...TRAVERSAL.platforms.map((p) => p.y).filter((y) => y < PT_Y))
+export const LEVEL_HALF_BAND = (PT_Y - GROUND_TOP) / 2
+export const FLOOR_BANDS = {
+  terreno: [-Infinity, PT_Y - LEVEL_HALF_BAND],
+  pisoTrabajo: [PT_Y - LEVEL_HALF_BAND, PT_Y + LEVEL_HALF_BAND],
+  pisoEnganche: [PE_Y - LEVEL_HALF_BAND, PE_Y + LEVEL_HALF_BAND],
+} as const satisfies Record<string, readonly [number, number]>
+export const onFloor = (y: number, floor: keyof typeof FLOOR_BANDS) => y >= FLOOR_BANDS[floor][0] && y < FLOOR_BANDS[floor][1]

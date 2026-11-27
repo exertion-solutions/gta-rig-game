@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEngine, sectorsAt } from '../../src/game/missions/engine'
+import { objectiveTargets } from '../../src/game/missions/targets'
+import { FLOOR_BANDS } from '../../src/game/world/walkable'
 import { STORAGE_KEY, loadLog, useMissionStore } from '../../src/game/missions/store'
 import type { Sector } from '../../src/game/data/sectors'
 import type { GameData, MissionDef, Objective } from '../../src/game/missions/types'
@@ -101,6 +103,80 @@ describe('llegada con varios sectores en la misma planta', () => {
     expect(e.state().visited).toEqual(['c'])
     e.report({ type: 'at', sectorId: 'b', inside: ['b', 'a'] })
     expect(e.state().status).toBe('completed')
+  })
+})
+
+describe('sectorsAt con altura: un piso elevado cuenta solo en su banda vertical', () => {
+  const at = (id: string, x: number, y: number, floor: Sector['floor']): Sector => ({ id, name: id, position: [x, y, 0], floor }) as Sector
+  const s = [at('suelo', 0.5, 0, 'terreno'), at('pt', 0, 3.606, 'pisoTrabajo'), at('pe', 0, 20.651, 'pisoEnganche')]
+  it('bandas derivadas de las alturas medidas (traversal.json)', () => {
+    expect(FLOOR_BANDS.pisoTrabajo[0]).toBeGreaterThan(2.639) // cubierta más alta del nivel del suelo (trip tank)
+    expect(FLOOR_BANDS.pisoTrabajo[0]).toBeLessThan(3.606)
+    expect(FLOOR_BANDS.pisoEnganche[0]).toBeLessThan(20.651)
+    expect(FLOOR_BANDS.pisoEnganche[1]).toBeGreaterThan(20.651)
+  })
+  it('de pie en el suelo debajo de los pisos solo cuenta el sector del suelo', () => expect(sectorsAt([0, 0, 0], s)).toEqual(['suelo']))
+  it('sobre una cubierta de pileta (2,64) sigue siendo nivel del suelo', () => expect(sectorsAt([0, 2.639, 0], s)).toEqual(['suelo']))
+  it('en el piso de trabajo cuenta el piso de trabajo, no el suelo', () => expect(sectorsAt([0, 3.606, 0], s)).toEqual(['pt']))
+  it('en el piso de enganche cuenta solo el piso de enganche', () => expect(sectorsAt([0, 20.651, 0], s)).toEqual(['pe']))
+  it('a mitad de la escalera vertical no cuenta ninguno', () => expect(sectorsAt([0, 12, 0], s)).toEqual([]))
+})
+
+describe('sin cascada: con solo el sector más cercano, un objetivo nuevo pide llegar a su propio sector', () => {
+  beforeEach(() => vi.restoreAllMocks())
+  it('al avanzar, re-informar el mismo sector no completa el objetivo siguiente aunque compartan radio', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const e = createEngine([mission('m', { id: '1', kind: 'reach', text: 't', sectorId: 'a' }, { id: '2', kind: 'reach', text: 't', sectorId: 'b' })], data)
+    e.start('m')
+    e.report({ type: 'at', sectorId: 'c' })
+    e.report({ type: 'at', sectorId: 'a' })
+    expect(e.state().objectiveIndex).toBe(1)
+    e.report({ type: 'at', sectorId: 'a' }) // el reporter re-informa tras avanzar
+    expect(e.state().objectiveIndex).toBe(1)
+    e.report({ type: 'at', sectorId: 'b' })
+    expect(e.state().status).toBe('completed')
+  })
+})
+
+describe('objetivo interact', () => {
+  beforeEach(() => vi.restoreAllMocks())
+  const vdata: GameData = { ...data, interactables: [{ id: 'v1', position: [0, 1, 0] }, { id: 'v2', position: [1, 1, 0] }] }
+  const one = (o: Objective) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const e = createEngine([mission('m', o)], vdata)
+    e.start('m')
+    return e
+  }
+  it('avanza al operar la válvula pedida y guarda el estado como registro propio', () => {
+    const e = one({ id: 'i', kind: 'interact', text: 'Operá', targetId: 'v1' })
+    e.report({ type: 'interact', targetId: 'v1', state: 'closed' })
+    expect(e.state().status).toBe('completed')
+    expect(e.state().results.i).toEqual({ kind: 'interact', targetId: 'v1', state: 'closed' })
+  })
+  it('ignora otras válvulas', () => {
+    const e = one({ id: 'i', kind: 'interact', text: 'Operá', targetId: 'v1' })
+    e.report({ type: 'interact', targetId: 'v2', state: 'open' })
+    expect(e.state().status).toBe('active')
+    expect(e.state().objectiveIndex).toBe(0)
+  })
+  it('respeta desiredState cuando existe', () => {
+    const e = one({ id: 'i', kind: 'interact', text: 'Operá', targetId: 'v1', desiredState: 'open' })
+    e.report({ type: 'interact', targetId: 'v1', state: 'closed' })
+    expect(e.state().status).toBe('active')
+    e.report({ type: 'interact', targetId: 'v1', state: 'open' })
+    expect(e.state().status).toBe('completed')
+  })
+  it('targetId desconocido (o sin interactuables en los datos) => misión omitida', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const e = createEngine([mission('x', { id: 'i', kind: 'interact', text: 't', targetId: 'nope' })], vdata)
+    expect(e.available).toEqual([])
+    expect(e.omitted[0].reason).toMatch(/nope/)
+    expect(createEngine([mission('y', { id: 'i', kind: 'interact', text: 't', targetId: 'v1' })], data).available).toEqual([])
+  })
+  it('objectiveTargets apunta a la posición de la válvula', () => {
+    const def = mission('m', { id: 'i', kind: 'interact', text: 't', targetId: 'v2' })
+    const st = { ...createEngine([], vdata).state(), status: 'active' as const, missionId: 'm' }
+    expect(objectiveTargets(def, st, vdata.sectors, vdata.interactables)).toEqual([[1, 1, 0]])
   })
 })
 

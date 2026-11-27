@@ -1,4 +1,5 @@
 import type { Sector, Vec3 } from '../data/sectors'
+import { onFloor } from '../world/walkable'
 import type { GameData, GameEvent, MissionDef, MissionState, Objective, Omitted } from './types'
 
 /** Radio de llegada (m): regla de interacción del juego. No se muestra en pantalla. */
@@ -16,10 +17,15 @@ const textsOf = (def: MissionDef): string[] => [
   ]),
 ]
 
-/** Sectores cuyo radio contiene (x,z), del más cercano al más lejano; ignora sectores sin posición documentada. */
+/**
+ * Sectores cuyo radio contiene (x,z) y cuyo piso contiene la altura del jugador (FLOOR_BANDS, derivadas de las alturas
+ * medidas), del más cercano al más lejano; ignora sectores sin posición documentada. Sin piso = nivel del suelo.
+ */
 export function sectorsAt(pos: Vec3, sectors: Sector[], radius = ARRIVAL_RADIUS): string[] {
   return sectors
-    .flatMap((s) => (s.position ? [{ id: s.id, d: Math.hypot(pos[0] - s.position[0], pos[2] - s.position[2]) }] : []))
+    .flatMap((s) =>
+      s.position && onFloor(pos[1], s.floor ?? 'terreno') ? [{ id: s.id, d: Math.hypot(pos[0] - s.position[0], pos[2] - s.position[2]) }] : [],
+    )
     .filter((x) => x.d <= radius)
     .sort((a, b) => a.d - b.d)
     .map((x) => x.id)
@@ -64,6 +70,8 @@ function problems(def: MissionDef, data: GameData): string[] {
       if (o.items.length === 0 || new Set(iids).size !== iids.length || !sameSet(iids, o.correctOrder) || new Set(o.correctOrder).size !== o.correctOrder.length)
         out.push(`order ${o.id}: correctOrder no coincide con items (no se puede completar)`)
     }
+    if (o.kind === 'interact' && !data.interactables?.some((x) => x.id === o.targetId))
+      out.push(`interactuable inexistente: ${o.targetId}`)
     for (const sid of sectorRefs(o)) {
       const s = data.sectors.find((x) => x.id === sid)
       if (!s) out.push(`sector inexistente: ${sid}`)
@@ -147,6 +155,12 @@ export function createEngine(defs: MissionDef[], data: GameData) {
           if (obj.sectorIds.every((id) => visited.includes(id))) advance()
           else set({ ...st, visited })
         }
+        return
+      }
+      if (ev.type === 'interact') {
+        // Registro propio: cualquier operación de la válvula pedida cuenta; desiredState solo si la fuente lo documenta.
+        if (obj.kind === 'interact' && ev.targetId === obj.targetId && (!obj.desiredState || ev.state === obj.desiredState))
+          advance({ results: { ...st.results, [obj.id]: { kind: 'interact', targetId: ev.targetId, state: ev.state } } })
         return
       }
       if (ev.objectiveId !== obj.id) return

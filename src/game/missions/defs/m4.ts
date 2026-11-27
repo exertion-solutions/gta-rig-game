@@ -1,5 +1,5 @@
 import type { MissionDef, ObjectiveResult } from '../types'
-import { cite, findPoint, noDot } from './common'
+import { cite, findPoint, noDot, sectorName } from './common'
 
 const IDS = ['PE-3', 'PE-4']
 const text = (id: string) => {
@@ -13,7 +13,7 @@ export const m4: MissionDef = {
   title: 'Retención en altura',
   briefing: 'En el piso de enganche, leé la retención primaria y la secundaria de dos puntos del Libro DROPS y marcá OK, NOK o N/A. Queda como registro propio en este navegador; nadie lo evalúa.',
   objectives: [
-    { id: 'm4-llegada', kind: 'reach', text: 'Visitá el piso de enganche', sectorId: 'piso-enganche' },
+    { id: 'm4-llegada', kind: 'reach', text: `Subí por la escalera vertical a ${sectorName('piso-enganche')}`, sectorId: 'piso-enganche' },
     ...IDS.map((id) => ({ id: `m4-${id}`, kind: 'mark' as const, text: text(id) })),
   ],
   requires: () => IDS.flatMap((id) => (findPoint(id)?.primary ? [] : [`punto DROPS ${id} ausente o sin retención primaria`])),

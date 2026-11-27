@@ -16,7 +16,7 @@
   "sk575_bop",
   "sk575_piletas"
  ],
- "stateNote": "state = estado inicial de juego (ilustrativo, sin fuente); no simula flujo ni presión",
+ "stateNote": "sin state: ninguna fuente documenta estados de las válvulas; el estado existe solo como registro propio del jugador al operar (ilustrativo, no simula flujo ni presión)",
  "platforms": [
   {
    "id": "piso_trabajo",
@@ -1266,7 +1266,6 @@
    ],
    "label": "Válvula M6 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1283,7 +1282,6 @@
    ],
    "label": "Válvula M12 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1300,7 +1298,6 @@
    ],
    "label": "Válvula M4 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1317,7 +1314,6 @@
    ],
    "label": "Válvula M2 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1334,7 +1330,6 @@
    ],
    "label": "Válvula M9 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1351,7 +1346,6 @@
    ],
    "label": "Válvula M7 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1368,7 +1362,6 @@
    ],
    "label": "Válvula M8 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1385,7 +1378,6 @@
    ],
    "label": "Válvula M1 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1402,7 +1394,6 @@
    ],
    "label": "Válvula M3 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1419,7 +1410,6 @@
    ],
    "label": "Válvula M5 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1436,7 +1426,6 @@
    ],
    "label": "Válvula M10 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1453,7 +1442,6 @@
    ],
    "label": "Válvula M11 del manifold de ahogo",
    "sourceId": "glb:sk575_manifold",
-   "state": "closed",
    "evidence": {
     "status": "documentado",
     "ref": "meta del GLB: \"Manifold de ahogo M1–M12\"; visor docs/references/well-control: \"válvulas con volante\", volantes Ø≈0,40 m (aproximado)"
@@ -1470,7 +1458,6 @@
    ],
    "label": "Acumulador: valvula 3vías bypass",
    "sourceId": "glb:sk575_acumulador",
-   "state": "closed",
    "evidence": {
     "status": "ilustrativo",
     "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
@@ -1487,7 +1474,6 @@
    ],
    "label": "Acumulador: valvula 4vías 1",
    "sourceId": "glb:sk575_acumulador",
-   "state": "closed",
    "evidence": {
     "status": "ilustrativo",
     "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
@@ -1504,7 +1490,6 @@
    ],
    "label": "Acumulador: valvula 4vías 2",
    "sourceId": "glb:sk575_acumulador",
-   "state": "closed",
    "evidence": {
     "status": "ilustrativo",
     "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
@@ -1521,7 +1506,6 @@
    ],
    "label": "Acumulador: valvula 4vías 3",
    "sourceId": "glb:sk575_acumulador",
-   "state": "closed",
    "evidence": {
     "status": "ilustrativo",
     "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
@@ -1538,7 +1522,6 @@
    ],
    "label": "Acumulador: valvula 4vías 4",
    "sourceId": "glb:sk575_acumulador",
-   "state": "closed",
    "evidence": {
     "status": "ilustrativo",
     "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"
@@ -1555,7 +1538,6 @@
    ],
    "label": "Acumulador: valvula 4vías 5",
    "sourceId": "glb:sk575_acumulador",
-   "state": "closed",
    "evidence": {
     "status": "ilustrativo",
     "ref": "meta del GLB: unidad de referencia CPC S/N 4650 (genérica, no es el equipo instalado)"

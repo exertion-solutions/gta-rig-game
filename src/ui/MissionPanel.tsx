@@ -84,6 +84,7 @@ function resultLine(st: MissionState, o: Objective) {
   const r = st.results[o.id]
   if (r?.kind === 'mark') return `Autorregistro: ${r.value}`
   if (r?.kind === 'choose') return r.correct ? 'Coincide con la referencia' : 'Para repasar con el procedimiento'
+  if (r?.kind === 'interact') return `Registro propio: ${r.state === 'open' ? 'abierta' : 'cerrada'} (ilustrativo)`
   return 'Cumplido'
 }
 

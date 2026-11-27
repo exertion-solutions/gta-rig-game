@@ -4,33 +4,31 @@ import * as THREE from 'three'
 import { getSectors } from '../data/sectors'
 import { usePlayerStore } from '../player/store'
 import { useHudStore } from '../../ui/hudStore'
+import { INTERACTABLES } from '../world/walkable'
 import { sectorsAt } from './engine'
 import { useMissionStore } from './store'
 import { objectiveTargets } from './targets'
 import type { MissionState } from './types'
 
-/** Cada frame: sectores en cuyo radio está el jugador (o la camioneta que conduce: su posición es la del jugador) -> motor de misiones. */
+/**
+ * Cada frame: el sector donde está el jugador (o la camioneta que conduce) -> HUD y motor de misiones.
+ * Solo se informa el MÁS CERCANO cuyo radio y banda de piso lo contienen (sectorsAt): varios sectores comparten planta
+ * (BOP, mástil, pisos, llave) y antes, informándolos todos y re-informando en bucle, llegar al centro completaba varios
+ * objetivos seguidos sin moverse. Ahora cada llegada pide ir al sector propio (el que muestra el HUD).
+ */
 export function SectorReporter() {
   const sectors = useMemo(getSectors, [])
-  const last = useRef<{ key: string | undefined; m: MissionState | null }>({ key: undefined, m: null })
+  const last = useRef<{ at: string | null | undefined; m: MissionState | null }>({ at: undefined, m: null })
   useFrame(() => {
-    const inside = sectorsAt(usePlayerStore.getState().position, sectors)
-    const key = inside.join('|')
+    const at = sectorsAt(usePlayerStore.getState().position, sectors)[0] ?? null
     const ms = useMissionStore.getState()
     const l = last.current
-    // Solo ante cambio de sectores o de estado de misión; al empezar/avanzar se re-informa para que el motor sepa dónde está el jugador.
-    if (key === l.key && ms.mission === l.m) return
-    if (key !== l.key) useHudStore.getState().setAt(inside[0] ?? null)
-    l.key = key
-    // Varios sectores comparten planta (mástil, pisos, BOP): tras avanzar se re-informa por si el siguiente objetivo ya se cumple.
-    let m = ms.mission
-    for (let i = 0; i < 20; i++) {
-      ms.report({ type: 'at', sectorId: inside[0] ?? null, inside })
-      const n = useMissionStore.getState().mission
-      if (n === m) break
-      m = n
-    }
-    l.m = m
+    // Solo ante cambio de sector o de estado de misión (al empezar/avanzar el motor necesita saber dónde está el jugador).
+    if (at === l.at && ms.mission === l.m) return
+    if (at !== l.at) useHudStore.getState().setAt(at)
+    l.at = at
+    ms.report({ type: 'at', sectorId: at })
+    l.m = useMissionStore.getState().mission
   })
   return null
 }
@@ -63,7 +61,7 @@ export function ObjectiveMarker() {
   const mission = useMissionStore((s) => s.mission)
   const available = useMissionStore((s) => s.available)
   const sectors = useMemo(getSectors, [])
-  const targets = objectiveTargets(available.find((d) => d.id === mission.missionId), mission, sectors)
+  const targets = objectiveTargets(available.find((d) => d.id === mission.missionId), mission, sectors, INTERACTABLES)
   return (
     <>
       {targets.map((p) => (

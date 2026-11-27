@@ -74,4 +74,6 @@ Detalle y medidas en `docs/scenario-additions.md`:
 - Posición y forma de la escalera de acceso al piso de enganche (el visor V2 la tenía; el GLB rig10 no).
 - Abertura o trampa en la plancha del piso de enganche para la escalera (la plancha del GLB es continua).
 - Estado (abierta/cerrada), función, secuencia y procedimiento de cualquier válvula; presiones; ruteo choke/kill (pendiente en el visor).
+  Por eso `traversal.json` **no trae `state`** en las válvulas (Task 18B): el estado solo existe como registro propio del
+  jugador cuando opera una (primera operación = abierta, convención del juego), sin simular flujo ni presión.
 - Distancias de seguridad, zonas de exclusión y puntos DROPS de ubicación precisa: no se agregan.

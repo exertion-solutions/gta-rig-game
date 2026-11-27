@@ -1,9 +1,13 @@
-import type { Sector } from '../data/sectors'
+import type { Sector, Vec3 } from '../data/sectors'
 
 /** Datos contra los que las misiones validan sus requisitos (Task 10 puede ampliar con más campos). */
 export interface GameData {
   sectors: Sector[]
+  /** Válvulas operables (traversal.json); sin ellas, una misión con objetivo `interact` se omite. */
+  interactables?: readonly { id: string; position: Vec3 }[]
 }
+
+export type ValveState = 'open' | 'closed'
 
 export type MarkValue = 'OK' | 'NOK' | 'N/A'
 
@@ -22,6 +26,8 @@ export type Objective =
   | (Base & { kind: 'order'; items: { id: string; text: string }[]; correctOrder: string[] })
   /** Autorregistro OK/NOK/N/A: se guarda lo que el jugador marca, sin evaluarlo. */
   | (Base & { kind: 'mark' })
+  /** Operar un interactuable (válvula). desiredState solo si una fuente lo documenta; si no, cualquier operación cuenta (registro propio). */
+  | (Base & { kind: 'interact'; targetId: string; desiredState?: ValveState })
 
 export type MissionDef = {
   id: string
@@ -45,11 +51,13 @@ export type GameEvent =
   | { type: 'choose'; objectiveId: string; picked: string[] }
   | { type: 'order'; objectiveId: string; order: string[] }
   | { type: 'mark'; objectiveId: string; value: MarkValue }
+  | { type: 'interact'; targetId: string; state: ValveState }
 
 export type ObjectiveResult =
   | { kind: 'choose'; correct: boolean }
   | { kind: 'order' }
   | { kind: 'mark'; value: MarkValue }
+  | { kind: 'interact'; targetId: string; state: ValveState }
 
 export type MissionState = {
   status: 'idle' | 'active' | 'completed'

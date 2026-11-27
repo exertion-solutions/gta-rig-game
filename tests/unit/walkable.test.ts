@@ -87,7 +87,7 @@ describe('traversal.json', () => {
     expect(INTERACTABLES.length).toBeGreaterThan(0)
     for (const v of TRAVERSAL.interactables) {
       expect(v.kind).toBe('valve')
-      expect(['open', 'closed']).toContain(v.state)
+      expect(v.state).toBeUndefined() // sin fuente: no hay estado hasta que el jugador opera (registro propio)
       expect(v.position).toHaveLength(3)
       expect(['documentado', 'ilustrativo']).toContain(v.evidence.status)
       expect(v.sourceId).toMatch(/^glb:sk575_/)

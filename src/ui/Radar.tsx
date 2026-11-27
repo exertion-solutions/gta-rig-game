@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { getSectors } from '../game/data/sectors'
 import { useMissionStore } from '../game/missions/store'
 import { objectiveTargets } from '../game/missions/targets'
+import { INTERACTABLES } from '../game/world/walkable'
 import { usePlayerStore } from '../game/player/store'
 import { useHudStore } from './hudStore'
 import { projectToRadar } from './radarProjection'
@@ -63,7 +64,7 @@ export function Radar() {
       }
 
       const pulse = 0.5 + 0.5 * Math.sin(t / 260)
-      for (const w of objectiveTargets(ms.available.find((d) => d.id === ms.mission.missionId), ms.mission, sectors)) {
+      for (const w of objectiveTargets(ms.available.find((d) => d.id === ms.mission.missionId), ms.mission, sectors, INTERACTABLES)) {
         const q = proj(w)
         g.save()
         g.translate(q.x, q.y)

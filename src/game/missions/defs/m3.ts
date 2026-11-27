@@ -10,6 +10,12 @@ const STOPS: { id: string; sector: string; sections: [string, string][] }[] = [
   { id: 'm3-piletas', sector: 'piletas', sections: [['piletas', 'bajo']] },
 ]
 
+// Cómo se llega (recorrido del juego): la corona no tiene acceso; el piso de enganche se alcanza por la escalera vertical.
+const GO: Record<string, () => string> = {
+  mastil: () => `Llegá al pie de ${sectorName('mastil')} (la corona no tiene acceso en el juego).`,
+  'piso-enganche': () => `Subí por la escalera vertical a ${sectorName('piso-enganche')}.`,
+}
+
 const lineOf = (sector: string, section: string) => {
   const z = findZone(sector, section)
   if (!z) return ''
@@ -26,7 +32,7 @@ export const m3: MissionDef = {
   objectives: STOPS.map((s) => ({
     id: s.id,
     kind: 'reach' as const,
-    text: `Visitá ${sectorName(s.sector)}. ${s.sections.map(([sec]) => lineOf(s.sector, sec)).join(' ')}`,
+    text: `${GO[s.sector]?.() ?? `Visitá ${sectorName(s.sector)}.`} ${s.sections.map(([sec]) => lineOf(s.sector, sec)).join(' ')}`,
     sectorId: s.sector,
   })),
   requires: () => {
