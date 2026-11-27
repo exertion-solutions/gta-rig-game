@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { clampPitch } from '../camera/followCamera'
 import { exposeGame } from '../dev'
 import { useMissionStore } from '../missions/store'
-import { canEnter } from '../vehicle/enterExit'
+import { eBelongsToTruck } from '../vehicle/enterExit'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { nearestInteractable, useValveStore } from '../world/interactables'
 import { INTERACTABLES, LADDERS, MAX_MEASURED_SLOPE_DEG, type LadderVolume } from '../world/walkable'
@@ -101,6 +101,7 @@ export function Player() {
         vs.current = { vy: 0, airMs: 0 }
         climb.current = null
         playerAction.climbing = false
+        usePlayerStore.setState({ climbing: false })
         teleportTo(p)
       },
       jump: () => void (pending.jump = true),
@@ -111,6 +112,9 @@ export function Player() {
       lastSafe: () => safe.current,
       valveState: (id: string) => useValveStore.getState().states[id] ?? null,
       nearInteractable: () => useValveStore.getState().near,
+      // inyección de falla (solo e2e): cambia el modo sin las reglas de toggleMode, para probar que bajar nunca re-cuelga
+      forceMode: (mode: 'foot' | 'truck') =>
+        usePlayerStore.setState((s) => ({ mode, position: mode === 'truck' ? s.truck.position : [s.truck.position[0] - 2.2, s.truck.position[1], s.truck.position[2]] })),
     })
     return () => {
       window.removeEventListener('keydown', down)
@@ -125,6 +129,10 @@ export function Player() {
     () =>
       usePlayerStore.subscribe((s, prev) => {
         if (s.mode === prev.mode) return
+        // Cualquier cambio de modo suelta la escalera: al bajar de la camioneta nunca vuelve a quedar colgado.
+        climb.current = null
+        playerAction.climbing = false
+        if (s.climbing) usePlayerStore.setState({ climbing: false })
         const rb = body.current
         if (!rb) return
         if (s.mode === 'truck') return rb.setEnabled(false)
@@ -148,7 +156,7 @@ export function Player() {
     steps++
     const dt = FIXED_DT
     const input = readInput()
-    const { yaw, position, truck } = usePlayerStore.getState()
+    const { yaw, position } = usePlayerStore.getState()
     const place = (p: Vec3) => {
       const t = { x: p[0], y: p[1] + FOOT, z: p[2] }
       rb.setTranslation(t, true)
@@ -170,6 +178,7 @@ export function Player() {
         const q = ladderRelease(cl.ladder, end)
         climb.current = null
         playerAction.climbing = false
+        usePlayerStore.setState({ climbing: false })
         vs.current = { vy: 0, airMs: 0 }
         grounded.current = true
         place(q)
@@ -189,14 +198,14 @@ export function Player() {
     const vstore = useValveStore.getState()
     if (vstore.near !== (valve?.id ?? null) || vstore.ladder !== (near?.end ?? null))
       useValveStore.setState({ near: valve?.id ?? null, ladder: near?.end ?? null })
-    const eFree = use && !canEnter(position, truck.position)
+    const eFree = use && !eBelongsToTruck(usePlayerStore.getState())
     const facing = near ? Math.cos(yaw - near.ladder.facing) > FACING_COS : false
     const walkOn = near?.end === 'bottom' && input.z > 0 && facing && !!ladderEndNear(position, LADDERS, WALK_ON_REACH)
     if (near && (eFree || walkOn)) {
       const lc = { ladder: near.ladder, p: near.end === 'top' ? 1 : 0 }
       climb.current = lc
       playerAction.climbing = true
-      usePlayerStore.setState({ yaw: near.ladder.facing })
+      usePlayerStore.setState({ yaw: near.ladder.facing, climbing: true })
       const q = ladderFeet(lc.ladder, lc.p)
       place(q)
       return void usePlayerStore.setState({ position: q })

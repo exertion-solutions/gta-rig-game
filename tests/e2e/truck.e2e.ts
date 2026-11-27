@@ -96,8 +96,11 @@ test('al volcarse >60° por 3 s vuelve al acceso', async ({ page }) => {
 test('al respawnear, la cámara no planea por el mapa', async ({ page }) => {
   await page.evaluate(() => (window as any).__game.teleport([30, 0, 20]))
   await page.waitForTimeout(800)
-  await page.evaluate(() => (window as any).__game.teleport([-35, 0, 0]))
-  await page.waitForTimeout(100) // 6 frames: con pivote suavizado aún estaría a decenas de metros
+  // 6 frames dibujados (no 100 ms: con la máquina cargada pasaban menos): con pivote suavizado aún estaría a decenas de metros
+  await page.evaluate(async () => {
+    ;(window as any).__game.teleport([-35, 0, 0])
+    for (let i = 0; i < 6; i++) await new Promise((r) => requestAnimationFrame(r))
+  })
   const c = await page.evaluate(() => (window as any).__game.getCamera() as Pos)
   expect(Math.hypot(c[0] + 35, c[2])).toBeLessThan(10)
 })
@@ -105,9 +108,13 @@ test('al respawnear, la cámara no planea por el mapa', async ({ page }) => {
 test('A gira a la izquierda: el rumbo aumenta al avanzar con steer +1', async ({ page }) => {
   await page.evaluate(() => (window as any).__game.teleportTruck([-10, 0, 20], 0))
   await page.evaluate(() => (window as any).__game.teleport([-10, 0, 21.5]))
-  await page.waitForTimeout(600)
+  await page.waitForFunction(() => {
+    const w = (window as any).__game
+    const p = w.getPosition()
+    return Math.hypot(p[0] + 10, p[2] - 21.5) < 0.2 && w.isGrounded() && Math.abs(w.getTruck().speed) < 0.05
+  })
   await page.keyboard.press('KeyE')
-  expect(await mode(page)).toBe('truck')
+  await page.waitForFunction(() => (window as any).__game.getMode() === 'truck')
   await drive(page, { throttle: 1, steer: 1, brake: false })
   await page.waitForTimeout(1500)
   const t = await truck(page)

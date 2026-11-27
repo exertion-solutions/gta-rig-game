@@ -1,17 +1,38 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it } from 'vitest'
-import { canEnter, exitSpot, toggleMode } from '../../src/game/vehicle/enterExit'
+import { ENTER_DY, canEnter, eBelongsToTruck, exitSpot, toggleMode } from '../../src/game/vehicle/enterExit'
 import { teleportTo, usePlayerStore } from '../../src/game/player/store'
 import type { Vec3 } from '../../src/game/player/movement'
 
 const reset = (player: Vec3, truck: Vec3) =>
-  usePlayerStore.setState({ mode: 'foot', position: player, teleportSeq: 0, truck: { position: truck, heading: 0 } })
+  usePlayerStore.setState({ mode: 'foot', climbing: false, position: player, teleportSeq: 0, truck: { position: truck, heading: 0 } })
 
 describe('canEnter', () => {
   it('es true dentro del radio y false fuera', () => {
     expect(canEnter([0, 0, 0], [2, 0, 0])).toBe(true)
     expect(canEnter([0, 0, 0], [2.6, 0, 0])).toBe(false)
     expect(canEnter([0, 0, 0], [3, 0, 0], 3.5)).toBe(true) // radio configurable
+  })
+  it('mide también la altura: misma planta pero 17 m arriba (piso de enganche) => false; misma altura => true', () => {
+    expect(canEnter([1, 20.651, 0], [1, 0, 0])).toBe(false)
+    expect(canEnter([1, 3.606, 0], [1, 0, 0])).toBe(false) // piso de trabajo
+    expect(canEnter([1, 0, 0], [1, 0, 0])).toBe(true)
+    expect(canEnter([1, ENTER_DY, 0], [1, 0, 0])).toBe(true)
+  })
+  it('colgado de una escalera, E no es de la camioneta y toggleMode no sube', () => {
+    usePlayerStore.setState({ mode: 'foot', climbing: true, position: [0, 0.5, 0], truck: { position: [1, 0, 0], heading: 0 } })
+    expect(eBelongsToTruck(usePlayerStore.getState())).toBe(false)
+    expect(toggleMode()).toBe(false)
+    expect(usePlayerStore.getState().mode).toBe('foot')
+    usePlayerStore.setState({ climbing: false })
+    expect(eBelongsToTruck(usePlayerStore.getState())).toBe(true)
+    expect(toggleMode()).toBe(true)
+    expect(usePlayerStore.getState().mode).toBe('truck')
+  })
+  it('desde el piso de enganche con la camioneta abajo en planta no sube', () => {
+    usePlayerStore.setState({ mode: 'foot', climbing: false, position: [1, 20.651, 0], truck: { position: [1, 0, 0.5], heading: 0 } })
+    expect(toggleMode()).toBe(false)
+    expect(usePlayerStore.getState().mode).toBe('foot')
   })
 })
 

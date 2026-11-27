@@ -176,3 +176,60 @@ test('losas finas sin CCD: saltar sobre la plancha del piso de enganche (0,08 m)
   expect(end[2]).toBeLessThan(rail.a[2]) // no cruzó la baranda
   expect(end[1]).toBeGreaterThan(1) // sigue sobre la rampa, no cayó debajo
 })
+
+// E tiene un solo dueño: la camioneta solo si está al alcance en planta Y en altura (canEnter) y el jugador no trepa.
+async function parkTruck(page: Page, p: Pos, heading: number) {
+  await g(page, 'teleportTruck', p, heading)
+  await page.waitForFunction(([x, z]) => {
+    const t = (window as any).__game.getTruck()
+    return Math.hypot(t.position[0] - x, t.position[2] - z) < 0.3 && Math.abs(t.speed) < 0.05
+  }, [p[0], p[2]] as const, { timeout: 20_000 })
+}
+
+test('E con la camioneta abajo en planta: desde el piso de enganche baja por la escalera, no sube a la camioneta', async ({ page }) => {
+  const top: Pos = [LADDER.top[0] + 0.75 * Math.sin(LADDER.facing), PE, LADDER.top[2] + 0.75 * Math.cos(LADDER.facing)]
+  await parkTruck(page, [3.0, 0, -1.0], 0)
+  const t = (await g<{ position: Pos }>(page, 'getTruck')).position
+  expect(Math.hypot(t[0] - top[0], t[2] - top[2])).toBeLessThan(2.5) // al alcance en planta (la regla vieja subía)
+  await place(page, top, LADDER.facing + Math.PI)
+  await expect(page.getByTestId('interact-prompt')).toContainText('bajar por la escalera')
+  await page.keyboard.press('KeyE')
+  await page.waitForFunction(() => (window as any).__game.climbState()?.progress === 1)
+  expect(await g(page, 'getMode')).toBe('foot')
+  // colgado: el aviso pasa a W/S y E sigue sin ser de la camioneta
+  await expect(page.getByTestId('interact-prompt')).toContainText('W/S subir o bajar')
+  await page.keyboard.press('KeyE') // en el extremo de arriba E lo vuelve a soltar sobre la plancha
+  await page.waitForFunction(() => (window as any).__game.climbState() === null)
+  expect(await g(page, 'getMode')).toBe('foot')
+  expect(Math.abs((await pos(page))[1] - PE)).toBeLessThan(0.06)
+})
+
+test('bajar de la camioneta nunca vuelve a colgar al jugador de la escalera (cambio de modo forzado mientras trepa)', async ({ page }) => {
+  await parkTruck(page, [3.0, 0, -1.0], 0)
+  const bottom: Pos = [LADDER.bottom[0] + 0.4 * Math.sin(LADDER.facing), PT, LADDER.bottom[2] + 0.4 * Math.cos(LADDER.facing)]
+  await place(page, bottom, LADDER.facing)
+  await page.keyboard.press('KeyE')
+  await page.waitForFunction(() => (window as any).__game.climbState() !== null)
+  await g(page, 'setInput', { x: 0, z: 1, run: false })
+  await page.waitForFunction(() => (window as any).__game.getPosition()[1] > 6)
+  await g(page, 'setInput', null)
+  await g(page, 'forceMode', 'truck')
+  await page.waitForFunction(() => (window as any).__game.getMode() === 'truck')
+  await g(page, 'forceMode', 'foot')
+  await page.waitForFunction(() => (window as any).__game.getMode() === 'foot')
+  const n = await g<number>(page, 'steps')
+  await page.waitForFunction((k) => (window as any).__game.steps() > k + 30, n)
+  expect(await g(page, 'climbState')).toBeNull()
+  expect((await pos(page))[1]).toBeLessThan(2) // quedó junto a la camioneta, no en la escalera
+})
+
+test('válvula con la camioneta al alcance: no se ofrece "E: operar" y E sube a la camioneta', async ({ page }) => {
+  const v = TRAVERSAL.interactables.find((x) => x.id === 'manifold_M1')!
+  await parkTruck(page, [v.position[0], 0, -8.0], -Math.PI / 2)
+  await place(page, [v.position[0], 0, v.position[2] + 0.2], 0)
+  await page.waitForFunction(() => (window as any).__game.nearInteractable() === 'manifold_M1')
+  await expect(page.getByTestId('interact-prompt')).toHaveCount(0)
+  await page.keyboard.press('KeyE')
+  await page.waitForFunction(() => (window as any).__game.getMode() === 'truck')
+  expect(await g(page, 'valveState', 'manifold_M1')).toBeNull()
+})
