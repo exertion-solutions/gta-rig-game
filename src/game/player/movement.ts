@@ -5,7 +5,6 @@ export type Bounds = { minX: number; maxX: number; minZ: number; maxZ: number }
 export const WALK_SPEED = 1.4
 export const RUN_SPEED = 4.5
 export const PLAYER_RADIUS = 0.35
-export const EYE_HEIGHT = 1.7
 
 // Reaparición en el Acceso real (camPos del viewpoint "acceso" del visor), ver data/sectors.ts.
 export const RESPAWN: Vec3 = ACCESO_POSITION
@@ -44,4 +43,3 @@ export const respawnPoint = (p: Vec3, safe: Vec3, b: Bounds): Vec3 | null => (ne
 // Autostep del controlador (valor de juego): cubre la contrahuella mayor medida (0,26 m, trip tank; docs/traversal-inventory.md);
 // las escaleras se recorren como rampas por su línea de narices, el autostep es para bordes chicos.
 export const STEP_MAX = 0.3
-export const canStepUp = (height: number, maxStep = STEP_MAX) => height <= maxStep

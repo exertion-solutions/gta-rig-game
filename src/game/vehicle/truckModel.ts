@@ -52,15 +52,6 @@ export function inclinationDeg(q: { x: number; y: number; z: number; w: number }
 // Segundos seguidos con inclinación > límite; se reinicia al enderezarse.
 export const tiltTimer = (t: number, incl: number, dt: number) => (incl > TRUCK.tiltLimitDeg ? t + dt : 0)
 
-export function countTriangles(root: THREE.Object3D) {
-  let n = 0
-  root.traverse((o) => {
-    const g = (o as THREE.Mesh).geometry as THREE.BufferGeometry | undefined
-    if (g) n += (g.index ? g.index.count : g.attributes.position.count) / 3
-  })
-  return n
-}
-
 const mat = (color: string) => new THREE.MeshStandardMaterial({ color, roughness: 0.7 })
 const box = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) => {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m)

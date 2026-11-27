@@ -3,10 +3,11 @@ import { useThree } from '@react-three/fiber'
 import { useEffect } from 'react'
 import * as THREE from 'three'
 import { exposeGame } from '../../dev'
+import { assetUrl } from '../assetUrl'
 
 // Escenario ilustrativo añadido por el juego, no as-built (docs/scenario-additions.md): escalera de la pasarela,
 // baranda de la rampa de la V y escalera vertical al piso de enganche. 3 mallas (una por material).
-const URL = `${import.meta.env.BASE_URL}models/scenario/additions.glb`
+const URL = assetUrl('models/scenario/additions.glb')
 useGLTF.preload(URL)
 
 export function ScenarioAdditions() {

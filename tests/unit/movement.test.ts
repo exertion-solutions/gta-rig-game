@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { LOCACION_BOUNDS } from '../../src/game/world/frame'
-import { RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, canStepUp, clampToBounds, needsRespawn, respawnPoint, stepMovement, trackSafe } from '../../src/game/player/movement'
+import { RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, clampToBounds, needsRespawn, respawnPoint, stepMovement, trackSafe } from '../../src/game/player/movement'
 
 describe('movement', () => {
   it('stepMovement sin input devuelve 0', () => {
@@ -72,11 +72,9 @@ describe('movement', () => {
     expect(respawnPoint([0, 20.651, 0], safe, LOCACION_BOUNDS)).toBeNull()
   })
 
-  it('canStepUp: escalones hasta STEP_MAX (>= la contrahuella mayor medida, 0,26 m); la pasarela (1,05) no', () => {
+  it('STEP_MAX (autostep): cubre las contrahuellas medidas (0,26 y 0,175 m); la pasarela (1,05) no', () => {
     expect(STEP_MAX).toBeGreaterThanOrEqual(0.26)
-    expect(canStepUp(0.26, STEP_MAX)).toBe(true)
-    expect(canStepUp(0.175, STEP_MAX)).toBe(true)
-    expect(canStepUp(1.05, STEP_MAX)).toBe(false)
-    expect(canStepUp(STEP_MAX + 0.01, STEP_MAX)).toBe(false)
+    expect(0.175).toBeLessThanOrEqual(STEP_MAX)
+    expect(1.05).toBeGreaterThan(STEP_MAX)
   })
 })

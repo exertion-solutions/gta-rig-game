@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ARRIVAL_RADIUS, createEngine, sectorAt } from '../../src/game/missions/engine'
+import { ARRIVAL_RADIUS, createEngine, sectorsAt } from '../../src/game/missions/engine'
 import type { GameData, MissionDef } from '../../src/game/missions/types'
 import { STORAGE_KEY, useMissionStore } from '../../src/game/missions/store'
 import type { Sector } from '../../src/game/data/sectors'
@@ -109,9 +109,9 @@ describe('motor de misiones', () => {
     expect(JSON.stringify(e.state())).not.toMatch(/aprobad|habilitad|certificad/i)
   })
 
-  it('sectorAt devuelve el sector más cercano dentro del radio', () => {
-    expect(sectorAt([1, 0, 1], data.sectors)).toBe('acceso')
-    expect(sectorAt([20, 0, ARRIVAL_RADIUS + 1], data.sectors)).toBeNull()
+  it('sectorsAt: el primero es el sector más cercano dentro del radio', () => {
+    expect(sectorsAt([1, 0, 1], data.sectors)[0]).toBe('acceso')
+    expect(sectorsAt([20, 0, ARRIVAL_RADIUS + 1], data.sectors)).toEqual([])
   })
 })
 

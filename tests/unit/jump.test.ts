@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { GRAVITY, JUMP, jumpApex, stepVertical, type VState } from '../../src/game/player/jump'
+import { GRAVITY, JUMP, stepVertical, type VState } from '../../src/game/player/jump'
+
+const jumpApex = (v: number) => (v * v) / (2 * GRAVITY) // oráculo: ápice balístico
 import { STEP_MAX } from '../../src/game/player/movement'
 
 const DT = 1 / 60

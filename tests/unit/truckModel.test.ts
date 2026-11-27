@@ -1,6 +1,16 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { buildTruckModel, countTriangles, driveCommand, inclinationDeg, tiltTimer, TRUCK } from '../../src/game/vehicle/truckModel'
+import type * as THREE from 'three'
+import { buildTruckModel, driveCommand, inclinationDeg, tiltTimer, TRUCK } from '../../src/game/vehicle/truckModel'
+
+function countTriangles(root: THREE.Object3D) {
+  let n = 0
+  root.traverse((o) => {
+    const g = (o as THREE.Mesh).geometry as THREE.BufferGeometry | undefined
+    if (g) n += (g.index ? g.index.count : g.attributes.position.count) / 3
+  })
+  return n
+}
 
 const qx = (a: number) => ({ x: Math.sin(a / 2), y: 0, z: 0, w: Math.cos(a / 2) })
 

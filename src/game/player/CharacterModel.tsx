@@ -3,13 +3,13 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { exposeGame } from '../dev'
+import { assetUrl, DRACO_PATH } from '../world/assetUrl'
 import { pickClip, type Clip } from './characterAnim'
 import { playerAction, playerSpeed } from './Player'
 import { usePlayerStore } from './store'
 
 // Trabajador Microsoft Rocketbox (MIT), ver NOTICE.md y scripts/build-character.py. Meshopt: decoder que agrega drei.
-const URL = `${import.meta.env.BASE_URL}models/character/worker.glb`
-const DRACO_PATH = `${import.meta.env.BASE_URL}decoders/draco/`
+const URL = assetUrl('models/character/worker.glb')
 useGLTF.preload(URL, DRACO_PATH)
 
 const FADE = 0.2 // s de crossfade entre clips

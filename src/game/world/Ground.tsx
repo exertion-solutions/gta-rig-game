@@ -2,6 +2,7 @@ import { useGLTF } from '@react-three/drei'
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier'
 import { useMemo, type ReactNode } from 'react'
 import * as THREE from 'three'
+import { DRACO_PATH, rigUrl } from './assetUrl'
 import { buildColliders } from './colliders'
 import { LOCACION_BOUNDS as B, LOCACION_M, RIG_PARTS } from './frame'
 import { stripLines } from './stripLines'
@@ -32,13 +33,10 @@ export function Ground() {
   )
 }
 
-const url = (glb: string) => `${import.meta.env.BASE_URL}models/rig10/${glb}`
-const DRACO_PATH = `${import.meta.env.BASE_URL}decoders/draco/`
-
 // Cajas fijas por componente 'collide', a partir de los límites de cada GLB (sin líneas). Mástil, BOP y piletas no:
 // su bbox completo tapaba el piso de trabajo y las cubiertas; los cubren las cajas medidas de WalkableColliders.
 export function RigColliders() {
-  const parts = RIG_PARTS.filter((p) => p.role === 'collide').map((p) => ({ p, gltf: useGLTF(url(p.glb), DRACO_PATH) }))
+  const parts = RIG_PARTS.filter((p) => p.role === 'collide').map((p) => ({ p, gltf: useGLTF(rigUrl(p.glb), DRACO_PATH) }))
   const descs = useMemo(
     () =>
       buildColliders(

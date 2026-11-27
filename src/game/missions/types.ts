@@ -42,7 +42,7 @@ export type MissionDef = {
 
 /**
  * Eventos del juego hacia el motor.
- * - `at`: sector cuyo radio de llegada contiene hoy al jugador (null = ninguno); ver sectorAt().
+ * - `at`: sector cuyo radio de llegada contiene hoy al jugador (null = ninguno); ver sectorsAt() (el primero).
  *   Regla anti-spawn: una llegada cuenta solo si el jugador estuvo fuera de ese radio al menos una vez desde
  *   el inicio de la misión (o desde la última vez que esa llegada contó). El spawn en el Acceso no cuenta.
  */

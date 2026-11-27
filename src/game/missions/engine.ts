@@ -31,10 +31,6 @@ export function sectorsAt(pos: Vec3, sectors: Sector[], radius = ARRIVAL_RADIUS)
     .map((x) => x.id)
 }
 
-/** Sector más cercano cuyo radio contiene (x,z) (null = ninguno). */
-export const sectorAt = (pos: Vec3, sectors: Sector[], radius = ARRIVAL_RADIUS): string | null =>
-  sectorsAt(pos, sectors, radius)[0] ?? null
-
 export const idleState = (): MissionState => ({
   status: 'idle', missionId: null, objectiveIndex: 0, visited: [], results: {}, feedback: null,
 })
