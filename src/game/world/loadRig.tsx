@@ -1,5 +1,6 @@
 import { useGLTF } from '@react-three/drei'
-import { useEffect, useMemo } from 'react'
+import { Suspense, useEffect, useMemo } from 'react'
+import { useLoadStore } from '../../app/loadStore'
 import { DRACO_PATH, rigUrl } from './assetUrl'
 import { RIG_PARTS } from './frame'
 import { mergeByMaterial } from './mergeByMaterial'
@@ -7,7 +8,8 @@ import { stripLines } from './stripLines'
 
 // Decoders Draco locales (public/decoders/draco), sin CDN. Meshopt lo agrega drei por defecto.
 
-RIG_PARTS.forEach((p) => useGLTF.preload(rigUrl(p.glb), DRACO_PATH))
+// Las piezas 'scenery' (solo visuales, sin colisión) no bloquean el "Jugar": se montan y cargan tras la primera carga.
+RIG_PARTS.filter((p) => p.role !== 'scenery').forEach((p) => useGLTF.preload(rigUrl(p.glb), DRACO_PATH))
 
 // Proyectan sombra solo las piezas grandes (≈ 230 k triángulos): con todas, el pase de sombras duplicaba los ≈ 690 k del
 // equipo y el cuadro pasaba de 1 M (docs/perf.md). El resto (acumulador, llave, manifold, bomba, BOP…) solo la recibe.
@@ -31,10 +33,14 @@ function Part({ glb }: { glb: string }) {
 }
 
 export function RigScene() {
+  const settled = useLoadStore((s) => s.settled)
   return (
     <group>
-      {RIG_PARTS.map((p) => (
-        <Part key={p.id} glb={p.glb} />
+      {RIG_PARTS.filter((p) => settled || p.role !== 'scenery').map((p) => (
+        // Suspense propio: al cargar una pieza tardía no se oculta el resto de la escena.
+        <Suspense key={p.id} fallback={null}>
+          <Part glb={p.glb} />
+        </Suspense>
       ))}
     </group>
   )
