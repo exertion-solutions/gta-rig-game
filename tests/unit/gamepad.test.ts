@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { mapGamepad } from '../../src/game/input/gamepad'
+import { mapGamepad, padEdges } from '../../src/game/input/gamepad'
 
 const btn = (...on: number[]) => Array.from({ length: 16 }, (_, i) => ({ pressed: on.includes(i) }))
 const pad = (axes: number[], buttons = btn()) => ({ axes, buttons })
@@ -38,5 +38,18 @@ describe('mapGamepad', () => {
   it('tolera un mando con menos ejes y botones', () => {
     expect(() => mapGamepad({ axes: [], buttons: [] })).not.toThrow()
     expect(mapGamepad({ axes: [], buttons: [] }).jump).toBe(false)
+  })
+})
+
+describe('padEdges (flancos del mando)', () => {
+  const raw = (jump: boolean, interact = false) => mapGamepad(pad([0, 0, 0, 0], btn(...(jump ? [0] : []), ...(interact ? [2] : []))))
+  it('dispara solo al pasar de suelto a apretado; sostenido no repite', () => {
+    expect(padEdges({ jump: false, interact: false }, raw(true, true))).toEqual({ jump: true, interact: true })
+    expect(padEdges({ jump: true, interact: true }, raw(true, true))).toEqual({ jump: false, interact: false })
+  })
+  it('sin mando: sin flancos', () => expect(padEdges({ jump: false, interact: false }, null)).toEqual({ jump: false, interact: false }))
+  it('A sostenida con un menú abierto: si prev sigue el mando crudo, al cerrar no es pulsación nueva', () => {
+    const prev = { jump: raw(true).jump, interact: false } // paso con menú: se registra el crudo aunque no se dispare
+    expect(padEdges(prev, raw(true)).jump).toBe(false)
   })
 })

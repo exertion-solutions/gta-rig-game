@@ -23,6 +23,12 @@ export function mapGamepad(pad: PadLike, deadzone = DEADZONE): PadInput {
   }
 }
 
+/** Flancos de subida de los botones de acción. `prev` debe venir del mando CRUDO de cada paso (también con un menú abierto o en la camioneta): si no, un botón sostenido contaba como pulsación nueva al volver. */
+export const padEdges = (prev: { jump: boolean; interact: boolean }, raw: PadInput | null) => ({
+  jump: !!raw?.jump && !prev.jump,
+  interact: !!raw?.interact && !prev.interact,
+})
+
 /** Primer mando conectado (navigator.getGamepads puede no existir o lanzar), o null. */
 export function readPad(): PadInput | null {
   try {

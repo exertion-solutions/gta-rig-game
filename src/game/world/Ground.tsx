@@ -2,6 +2,7 @@ import { useGLTF } from '@react-three/drei'
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier'
 import { useMemo, type ReactNode } from 'react'
 import * as THREE from 'three'
+import { useHudStore } from '../../ui/hudStore'
 import { DRACO_PATH, rigUrl } from './assetUrl'
 import { buildColliders } from './colliders'
 import { useGroundMaterial } from './GroundMaterial'
@@ -15,7 +16,13 @@ const mx = (B.minX + B.maxX) / 2
 const T = 0.5
 
 export function PhysicsWorld({ children }: { children: ReactNode }) {
-  return <Physics gravity={[0, -9.81, 0]}>{children}</Physics>
+  // Con el menú de pausa abierto Rapier no avanza (la camioneta no sigue rodando); solo lectura del hudStore.
+  const paused = useHudStore((s) => s.pauseOpen)
+  return (
+    <Physics gravity={[0, -9.81, 0]} paused={paused}>
+      {children}
+    </Physics>
+  )
 }
 
 export function Ground() {

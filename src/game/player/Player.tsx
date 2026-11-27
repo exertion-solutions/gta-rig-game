@@ -3,7 +3,7 @@ import { CapsuleCollider, RigidBody, useBeforePhysicsStep, useRapier, type Rapie
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { clampPitch } from '../camera/followCamera'
-import { readPad, type PadInput } from '../input/gamepad'
+import { padEdges, readPad, type PadInput } from '../input/gamepad'
 import { uiBlocking } from '../../ui/hudStore'
 import { exposeGame } from '../dev'
 import { useMissionStore } from '../missions/store'
@@ -172,23 +172,28 @@ export function Player() {
     const c = ctl.current
     if (!rb || !c || usePlayerStore.getState().mode === 'truck') {
       pending.jump = pending.use = false
+      const r = readPad() // el mando crudo sigue marcando prev: A sostenida en la camioneta no salta al bajar
+      padPrev.jump = !!r?.jump
+      padPrev.interact = !!r?.interact
       if (usePlayerStore.getState().crouching) usePlayerStore.setState({ crouching: false })
       return void (playerSpeed.current = 0)
     }
     steps++
     const dt = FIXED_DT
-    const pad = uiBlocking() ? null : readPad()
+    const raw = readPad()
+    const pad = uiBlocking() ? null : raw
+    const edge = padEdges(padPrev, pad)
     if (pad) {
-      if (pad.jump && !padPrev.jump) pending.jump = true
-      if (pad.interact && !padPrev.interact) pending.use = true
+      if (edge.jump) pending.jump = true
+      if (edge.interact) pending.use = true
       if (pad.look.x || pad.look.y) {
         const { mouseSensitivity, invertY } = useSettings.getState().settings
         const d = lookDelta(pad.look.x, pad.look.y, mouseSensitivity, invertY, LOOK_RATE * dt)
         usePlayerStore.setState((s) => ({ yaw: s.yaw + d.yaw, pitch: clampPitch(s.pitch + d.pitch) }))
       }
     }
-    padPrev.jump = !!pad?.jump
-    padPrev.interact = !!pad?.interact
+    padPrev.jump = !!raw?.jump
+    padPrev.interact = !!raw?.interact
     // Agacharse (C o Ctrl izq., mantener): solo apoyado y fuera de la escalera. Baja velocidad y cámara; el collider no cambia
     // (una cápsula más baja arriesga clavarse al pararse bajo un caño o plataforma; se documenta como límite).
     const crouch = (keys.has('KeyC') || keys.has('ControlLeft')) && grounded.current && canCrouch({ mode: 'foot', climbing: !!climb.current })
