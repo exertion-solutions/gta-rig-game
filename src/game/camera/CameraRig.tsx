@@ -14,6 +14,7 @@ const DISTANCE = 5
 const TRUCK_DISTANCE = 8
 const TRUCK_PIVOT_HEIGHT = 2
 const PIVOT_HEIGHT = 1.5 // punto que la cámara mira (hombros/cabeza)
+const CROUCH_PIVOT_HEIGHT = 1.05 // agachado (la cámara baja; el pivote se suaviza con advancePivot)
 const MARGIN = 0.3
 const SMOOTH_K = 12 // 1/s; el factor real es 1 - exp(-K*dt)
 const MAX_DT = 0.1 // tras una pausa de pestaña no salta de golpe
@@ -40,10 +41,10 @@ export function FollowCamera() {
   }, [camera])
 
   useFrame((_, delta) => {
-    const { position, yaw, pitch, mode, teleportSeq } = usePlayerStore.getState()
+    const { position, yaw, pitch, mode, teleportSeq, crouching } = usePlayerStore.getState()
     const driving = mode === 'truck'
     const distance = driving ? TRUCK_DISTANCE : DISTANCE
-    const goal: Vec3 = [position[0], position[1] + (driving ? TRUCK_PIVOT_HEIGHT : PIVOT_HEIGHT), position[2]]
+    const goal: Vec3 = [position[0], position[1] + (driving ? TRUCK_PIVOT_HEIGHT : crouching ? CROUCH_PIVOT_HEIGHT : PIVOT_HEIGHT), position[2]]
     // El store avanza a 60 Hz (paso fijo); el suavizado por dt reparte el movimiento entre frames a cualquier fps.
     const p = (pivot.current = advancePivot(pivot.current, goal, teleportSeq, SMOOTH_K, Math.min(delta, MAX_DT))).pivot
     const pos = resolveCameraCollision(

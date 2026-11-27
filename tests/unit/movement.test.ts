@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { LOCACION_BOUNDS } from '../../src/game/world/frame'
-import { RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, atLimit, clampToBounds, needsRespawn, respawnPoint, stepMovement, trackSafe } from '../../src/game/player/movement'
+import { CROUCH_FACTOR, RESPAWN, RUN_SPEED, STEP_MAX, WALK_SPEED, atLimit, canCrouch, clampToBounds, lookDelta, needsRespawn, respawnPoint, stepMovement, trackSafe } from '../../src/game/player/movement'
 
 describe('movement', () => {
   it('stepMovement sin input devuelve 0', () => {
@@ -108,5 +108,38 @@ describe('approachVelocity', () => {
     let v = { vx: 4.5, vz: 0 }
     for (let i = 0; i < 30; i++) v = approachVelocity(v, { vx: 0, vz: 0 }, 1 / 60, true)
     expect(v).toEqual({ vx: 0, vz: 0 })
+  })
+})
+
+describe('agacharse', () => {
+  const speed = (i: { x: number; z: number; run: boolean; crouch?: boolean }) => {
+    const v = stepMovement(i, 0, 1 / 60)
+    return Math.hypot(v.vx, v.vz)
+  }
+  it('camina a ~0,6x de WALK_SPEED y no corre aunque se pida', () => {
+    expect(speed({ x: 0, z: 1, run: false, crouch: true })).toBeCloseTo(WALK_SPEED * CROUCH_FACTOR)
+    expect(speed({ x: 0, z: 1, run: true, crouch: true })).toBeCloseTo(WALK_SPEED * CROUCH_FACTOR)
+    expect(CROUCH_FACTOR).toBeCloseTo(0.6)
+  })
+  it('sin crouch no cambia nada', () => {
+    expect(speed({ x: 0, z: 1, run: true })).toBeCloseTo(RUN_SPEED)
+  })
+  it('no puede agacharse en la escalera ni en la camioneta', () => {
+    expect(canCrouch({ mode: 'foot', climbing: false })).toBe(true)
+    expect(canCrouch({ mode: 'foot', climbing: true })).toBe(false)
+    expect(canCrouch({ mode: 'truck', climbing: false })).toBe(false)
+  })
+})
+
+describe('lookDelta', () => {
+  it('mouse a la derecha gira a la derecha (yaw baja) y escala con la sensibilidad', () => {
+    expect(lookDelta(10, 0, 1, false).yaw).toBeCloseTo(-0.02)
+    expect(lookDelta(10, 0, 2, false).yaw).toBeCloseTo(-0.04)
+  })
+  it('invertir Y cambia solo el signo del pitch', () => {
+    const a = lookDelta(5, 8, 1, false)
+    const b = lookDelta(5, 8, 1, true)
+    expect(b.pitch).toBeCloseTo(-a.pitch)
+    expect(b.yaw).toBeCloseTo(a.yaw)
   })
 })

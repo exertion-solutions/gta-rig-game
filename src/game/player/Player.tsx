@@ -14,7 +14,8 @@ import { nearestInteractable, useValveStore } from '../world/interactables'
 import { INTERACTABLES, LADDERS, MAX_MEASURED_SLOPE_DEG, type LadderVolume } from '../world/walkable'
 import { WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from './climb'
 import { JUMP, stepVertical, type VState } from './jump'
-import { PLAYER_RADIUS, RESPAWN, STEP_MAX, approachVelocity, atLimit, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
+import { PLAYER_RADIUS, RESPAWN, STEP_MAX, approachVelocity, atLimit, canCrouch, lookDelta, respawnPoint, stepMovement, trackSafe, type Vec3 } from './movement'
+import { useSettings } from '../settings/store'
 import { CharacterModel } from './CharacterModel'
 import { keys, onKeysCleared } from './keys'
 import { teleportTo, usePlayerStore } from './store'
@@ -38,14 +39,15 @@ let override: { x: number; z: number; run: boolean } | null = null // solo lo us
 export const playerBody: { current: RapierRigidBody | null } = { current: null }
 
 const LOOK_RATE = 2.6 // rad/s a stick lleno (valor de juego); se multiplica por la sensibilidad
-const padPrev = { jump: false, interact: false } // flancos del mando: un botón sostenido no repite
+const runLock = { on: false } // correr con alternancia (V): opcional, además de mantener Shift
+const padPrev ={ jump: false, interact: false } // flancos del mando: un botón sostenido no repite
 
 // Teclado + mando (el mando suma; teclado intacto). Con un panel abierto el mando no mueve.
 const readInput = (pad: PadInput | null) =>
   override ?? {
     x: Math.max(-1, Math.min(1, (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0) + (pad?.move.x ?? 0))),
     z: Math.max(-1, Math.min(1, (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0) + (pad?.move.z ?? 0))),
-    run: keys.has('ShiftLeft') || keys.has('ShiftRight') || !!pad?.run,
+    run: keys.has('ShiftLeft') || keys.has('ShiftRight') || !!pad?.run || runLock.on,
   }
 
 export function Player() {
@@ -79,12 +81,15 @@ export function Player() {
       if (e.repeat || usePlayerStore.getState().mode !== 'foot') return // en la camioneta Espacio es freno y E la maneja Truck
       if (e.code === 'Space') pending.jump = true
       if (e.code === 'KeyE') pending.use = true
+      if (e.code === 'KeyV') runLock.on = !runLock.on
     }
     const up = (e: KeyboardEvent) => keys.delete(e.code)
     const move = (e: MouseEvent) => {
       if (document.pointerLockElement !== gl.domElement) return
-      // mouse arriba (movementY < 0) baja la cámara => mira hacia arriba
-      usePlayerStore.setState((s) => ({ yaw: s.yaw - e.movementX * 0.002, pitch: clampPitch(s.pitch + e.movementY * 0.002) }))
+      // mouse arriba (movementY < 0) baja la cámara => mira hacia arriba (con "invertir Y", al revés)
+      const { mouseSensitivity, invertY } = useSettings.getState().settings
+      const d = lookDelta(e.movementX, e.movementY, mouseSensitivity, invertY)
+      usePlayerStore.setState((s) => ({ yaw: s.yaw + d.yaw, pitch: clampPitch(s.pitch + d.pitch) }))
     }
     const lock = () => void gl.domElement.requestPointerLock?.()
     window.addEventListener('keydown', down)
@@ -165,6 +170,7 @@ export function Player() {
     const c = ctl.current
     if (!rb || !c || usePlayerStore.getState().mode === 'truck') {
       pending.jump = pending.use = false
+      if (usePlayerStore.getState().crouching) usePlayerStore.setState({ crouching: false })
       return void (playerSpeed.current = 0)
     }
     steps++
@@ -173,12 +179,19 @@ export function Player() {
     if (pad) {
       if (pad.jump && !padPrev.jump) pending.jump = true
       if (pad.interact && !padPrev.interact) pending.use = true
-      if (pad.look.x || pad.look.y)
-        usePlayerStore.setState((s) => ({ yaw: s.yaw - pad.look.x * LOOK_RATE * dt, pitch: clampPitch(s.pitch + pad.look.y * LOOK_RATE * dt) }))
+      if (pad.look.x || pad.look.y) {
+        const { mouseSensitivity, invertY } = useSettings.getState().settings
+        const d = lookDelta(pad.look.x, pad.look.y, mouseSensitivity, invertY, LOOK_RATE * dt)
+        usePlayerStore.setState((s) => ({ yaw: s.yaw + d.yaw, pitch: clampPitch(s.pitch + d.pitch) }))
+      }
     }
     padPrev.jump = !!pad?.jump
     padPrev.interact = !!pad?.interact
-    const input = readInput(pad)
+    // Agacharse (C o Ctrl izq., mantener): solo apoyado y fuera de la escalera. Baja velocidad y cámara; el collider no cambia
+    // (una cápsula más baja arriesga clavarse al pararse bajo un caño o plataforma; se documenta como límite).
+    const crouch = (keys.has('KeyC') || keys.has('ControlLeft')) && grounded.current && canCrouch({ mode: 'foot', climbing: !!climb.current })
+    if (usePlayerStore.getState().crouching !== crouch) usePlayerStore.setState({ crouching: crouch })
+    const input = { ...readInput(pad), crouch }
     const { yaw, position } = usePlayerStore.getState()
     const place = (p: Vec3) => {
       const t = { x: p[0], y: p[1] + FOOT, z: p[2] }

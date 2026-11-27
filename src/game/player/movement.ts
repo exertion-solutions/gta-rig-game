@@ -5,16 +5,26 @@ export type Bounds = { minX: number; maxX: number; minZ: number; maxZ: number }
 export const WALK_SPEED = 1.4
 export const RUN_SPEED = 4.5
 export const PLAYER_RADIUS = 0.35
+export const CROUCH_FACTOR = 0.6 // agachado: ~0,6x la velocidad de caminata (valor de juego), sin correr
+
+/** Agacharse solo a pie y fuera de la escalera (en la camioneta no hay). */
+export const canCrouch = (s: { mode: 'foot' | 'truck'; climbing: boolean }) => s.mode === 'foot' && !s.climbing
+
+/** Giro de cámara de un movimiento del mouse (px) o del stick (valor * paso): sensibilidad 1 = 0,002 rad/px; invertY solo da vuelta el pitch. */
+export const lookDelta = (dx: number, dy: number, sensitivity: number, invertY: boolean, scale = 0.002) => ({
+  yaw: -dx * scale * sensitivity,
+  pitch: dy * scale * sensitivity * (invertY ? -1 : 1),
+})
 
 // Reaparición en el Acceso real (camPos del viewpoint "acceso" del visor), ver data/sectors.ts.
 export const RESPAWN: Vec3 = ACCESO_POSITION
 
 // input.x = strafe (+ derecha), input.z = avance (+ adelante). yaw 0 mira hacia -Z (convención three).
 // Devuelve velocidad en el plano XZ del mundo (m/s). dt se acepta por contrato; sin rampa de aceleración.
-export function stepMovement(input: { x: number; z: number; run: boolean }, yaw: number, _dt: number) {
+export function stepMovement(input: { x: number; z: number; run: boolean; crouch?: boolean }, yaw: number, _dt: number) {
   const len = Math.hypot(input.x, input.z)
   if (len === 0) return { vx: 0, vz: 0 }
-  const speed = input.run ? RUN_SPEED : WALK_SPEED
+  const speed = input.crouch ? WALK_SPEED * CROUCH_FACTOR : input.run ? RUN_SPEED : WALK_SPEED
   const x = input.x / len
   const z = input.z / len
   const s = Math.sin(yaw)

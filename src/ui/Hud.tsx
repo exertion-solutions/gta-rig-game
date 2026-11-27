@@ -16,7 +16,7 @@ import { visitedView } from './visitedView'
 import { usePlayerStore } from '../game/player/store'
 
 // Teclas que mueven al jugador o suben/bajan de la camioneta: con un panel abierto no deben llegar al juego.
-const GAME_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'Space', 'ShiftLeft', 'ShiftRight'])
+const GAME_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'Space', 'ShiftLeft', 'ShiftRight', 'KeyC', 'KeyV', 'ControlLeft'])
 
 function useHotkeys() {
   useEffect(() => {
