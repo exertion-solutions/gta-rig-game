@@ -1,6 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { ALL_MISSIONS } from '../../src/game/missions'
-import { cardLines, missionLink, parseMissionParam, resolveMissionId, WATERMARK } from '../../src/ui/share'
+import { cardLines, clipDone, clipFileName, clipSecondsLeft, missionLink, parseMissionParam, pickClipMime, resolveMissionId, WATERMARK } from '../../src/ui/share'
+
+describe('clip grabable', () => {
+  it('elige el primer mimeType soportado, o null', () => {
+    expect(pickClipMime((t) => t !== 'video/webm')).toBe('video/webm;codecs=vp8')
+    expect(pickClipMime((t) => t === 'video/webm')).toBe('video/webm')
+    expect(pickClipMime(() => false)).toBeNull()
+  })
+  it('cuenta regresiva: de 10 s a 0 sin pasarse', () => {
+    expect(clipSecondsLeft(0)).toBe(10)
+    expect(clipSecondsLeft(2_500)).toBe(8)
+    expect(clipSecondsLeft(10_000)).toBe(0)
+    expect(clipSecondsLeft(99_000)).toBe(0)
+    expect(clipDone(9_999)).toBe(false)
+    expect(clipDone(10_000)).toBe(true)
+  })
+  it('nombre de archivo .webm', () => {
+    expect(clipFileName()).toBe('clip-locacion.webm')
+  })
+})
 
 describe('enlace a una misión (?mision=)', () => {
   it('lee el parámetro y descarta valores raros', () => {
