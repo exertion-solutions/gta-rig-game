@@ -14,6 +14,7 @@ import { Environment } from '../game/world/Environment'
 import { Props } from '../game/world/Props'
 import { SiteDressing } from '../game/world/SiteDressing'
 import { RigScene } from '../game/world/loadRig'
+import { RigMotion } from '../game/world/RigMotion'
 import { ValveHighlight, Valves } from '../game/world/Valve'
 import { INTERACTABLES } from '../game/world/walkable'
 import { InteractPrompt } from '../ui/InteractPrompt'
@@ -80,6 +81,7 @@ export default function Scene() {
           <DayNight />
           <Environment />
           <RigScene />
+          <RigMotion />
           <ScenarioAdditions />
           <SiteDressing />
           <Props />

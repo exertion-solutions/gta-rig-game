@@ -6,9 +6,9 @@ import { cameraDistance } from '../camera/cameraDistance'
 import { characterOpacity } from '../camera/followCamera'
 import { exposeGame } from '../dev'
 import { assetUrl, DRACO_PATH } from '../world/assetUrl'
-import { nextLandUntil, pickClip, type Clip } from './characterAnim'
+import { nextLandUntil, pickClip, turnToward, type Clip } from './characterAnim'
 import { CLIMB_KEYS, CROUCH_KEYS, JUMP_KEYS, LAND_KEYS, poseClip } from './poseClips'
-import { playerAction, playerSpeed } from './telemetry'
+import { playerAction, playerFacing, playerSpeed } from './telemetry'
 import { usePlayerStore } from './store'
 
 // Trabajador Microsoft Rocketbox (MIT), ver NOTICE.md y scripts/build-character.py. Meshopt: decoder que agrega drei.
@@ -20,6 +20,7 @@ const JUMP_FADE = 0.08 // entrada al salto y al aterrizaje: corta, para que se v
 const SPEED_K = 10 // 1/s, suavizado de la rapidez (transiciones sin parpadeo de clip)
 // velocidad (m/s) a la que cada clip pisa sin patinar: avance original del clip Rocketbox / su duración
 const NATURAL_SPEED: Partial<Record<Clip, number>> = { walk: 1.01, run: 2.88 }
+const TURN_RATE = 10 // rad/s: el cuerpo gira hacia el rumbo sin saltar
 const FACING = Math.PI // el modelo mira a +Z; yaw 0 mira a -Z
 // 'jump' y 'climb' se generan en código (poseClips.ts); 'operate' es un clip Rocketbox (m_work_mid).
 
@@ -37,6 +38,7 @@ export function CharacterModel({ footY }: { footY: number }) {
   const clip = useRef<Clip | null>(null)
   const speed = useRef(0)
   const fade = useRef(1)
+  const facing = useRef<number | null>(null)
   const air = useRef({ was: false, landUntil: 0 })
 
   useEffect(() => {
@@ -64,7 +66,9 @@ export function CharacterModel({ footY }: { footY: number }) {
   useFrame((_, delta) => {
     const { yaw, mode } = usePlayerStore.getState()
     speed.current += (playerSpeed.current - speed.current) * (1 - Math.exp(-SPEED_K * Math.min(delta, 0.1)))
-    if (root.current) root.current.rotation.y = yaw + FACING
+    // el cuerpo mira hacia donde camina, no hacia donde mira la cámara: quieto, la cámara orbita y se le ve la cara
+    facing.current = turnToward(facing.current ?? playerFacing.current ?? yaw, playerFacing.current ?? yaw, TURN_RATE * Math.min(delta, 0.1))
+    if (root.current) root.current.rotation.y = facing.current + FACING
 
     // cámara pegada a un obstáculo: desvanece el modelo (la sombra no se toca: el material de profundidad ignora opacity)
     const op = characterOpacity(cameraDistance.current)

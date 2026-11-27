@@ -1,6 +1,6 @@
 # GTA RIG GAME
 
-Juego 3D en tercera persona (a pie + camioneta) para recorrer el Equipo 10 (pulling/workover SK-575): caminar la
+Juego 3D en tercera persona (a pie + camioneta) para recorrer el EXERTION 01 (pulling/workover SK-575): caminar la
 locación, subir al piso de trabajo y al piso de enganche, operar válvulas (registro propio, ilustrativo) y jugar misiones
 de reconocimiento. Referencia digital, no as-built: es ilustrativo, no es simulación ni validación de seguridad.
 
@@ -31,7 +31,7 @@ está siempre visible en pantalla (pantallas anchas) y en el menú de pausa.
 | Shift (o V para fijar) | correr; V alterna correr fijo | |
 | Espacio | saltar (~0,68 m; admite pulsar un instante antes de tocar el suelo) | freno |
 | C o Ctrl izq. (mantener) | agacharse (más lento, cámara más baja) | |
-| E | interactuar: subir/soltar la escalera, operar una válvula, subir a la camioneta si está cerca | bajar |
+| E | interactuar: subir/soltar una escalera (mástil, carrier, casilla del maquinista), operar una válvula, el comando de izaje o la llave de potencia, subir a la camioneta si está cerca | bajar |
 | Ratón (clic en la escena) | mirar | mirar |
 | M | panel de misiones | |
 | Tab | mapa completo | |

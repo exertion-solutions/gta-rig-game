@@ -1,5 +1,11 @@
 import { RUN_SPEED, WALK_SPEED } from './movement'
 
+/** Gira `from` hacia `to` (rad) por el camino corto, como mucho `maxStep`. */
+export function turnToward(from: number, to: number, maxStep: number) {
+  const d = Math.atan2(Math.sin(to - from), Math.cos(to - from))
+  return Math.abs(d) <= maxStep ? to : from + Math.sign(d) * maxStep
+}
+
 export type Clip = 'idle' | 'walk' | 'run' | 'seated' | 'jump' | 'land' | 'climb' | 'operate' | 'crouch'
 export type Action = { climbing?: boolean; operating?: boolean; airborne?: boolean; landing?: boolean; crouching?: boolean }
 

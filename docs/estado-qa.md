@@ -31,9 +31,13 @@ agachado ~0,8 m/s, camioneta ~12 m/s tras 2,4 s de acelerador y se detiene al fr
 - Mando: mapeo puro (`mapGamepad`) conectado a jugador y camioneta (mover, mirar, correr, saltar, usar).
 - Pausa (Esc) con ajustes guardados (sensibilidad, invertir Y, volumen, calidad), mapa completo (Tab), pantalla de título con inicio en un clic y carga con progreso real.
 - Realismo: cielo HDRI, suelo PBR, props, sombras de contacto, posproceso (bloom y ACES en calidad alta) y calidad adaptativa enlazada al ajuste.
-- Camioneta: modelo propio en GLB (`public/models/vehicle/pickup.glb`, 11.172 triángulos, 122 KB, generado con `scripts/build-truck.py` en Blender; reemplaza al procedural) con cabina, caja, vidrios, luces, llantas, suspensión visual, giro según la velocidad y faros de noche. Captura: `docs/img/camioneta-glb.png`. Límite: revisada en una sola captura de día; faros de noche y luz de freno sin revisar a ojo con este modelo.
+- Camioneta: modelo propio en GLB (`public/models/vehicle/pickup.glb`, 11.290 triángulos, 125 KB, generado con `scripts/build-truck.py` en Blender): pickup doble cabina 4x4 azul, de cuatro puertas y caja corta, con parrilla de barras, faros rectangulares con luz de posición, barra antivuelco y cubrecárter. Sin marca ni logo: la silueta es genérica. Suspensión visual, giro según la velocidad y faros de noche. Límite: faros de noche y luz de freno sin revisar a ojo con este modelo.
 - Cámara: el personaje se desvanece cuando la cámara queda pegada a un obstáculo y el alejamiento se suaviza (cierra QA-5).
 - Compartible: modo foto (P), clip de hasta 10 s (R), tarjeta de misión completada y enlace `?mision=`.
+- Personaje: el cuerpo mira hacia donde camina y no hacia donde apunta la cámara; quieto, la cámara orbita con el mouse y se le ve el rostro. En la escalera mira a los peldaños y al operar una válvula, a la válvula.
+- Nombre del equipo: EXERTION 01. El rótulo 3D del carrier y del piso de enganche se reemplaza al cargar (`src/game/world/relabel.ts`; los GLB quedan intactos); el texto de las fuentes pasa por `uiSafe` y el build limpia los JSON vendorizados. Límite: el rótulo del piso de enganche (a 21 m) no se revisó a ojo.
+- Equipo: se sube por la escalera amarilla a la cubierta del carrier y por la de la casilla a la casilla del maquinista; adentro, el comando de izaje sube y baja el aparejo; en el piso de trabajo se acciona la llave de potencia (gira y vuelve). Todo ilustrativo (`src/game/world/rigAccess.ts`, `docs/scenario-additions.md` A9 a A11). Límites: en las dos escaleras el personaje usa la pose de trepar; al entrar a la casilla atraviesa la pared; la casilla no comunica con el piso de trabajo.
+- Día y noche: cada sesión arranca a las 10:00 (antes retomaba la hora guardada y podía entrar casi de noche) y el día dura 72 min en vez de 24.
 - Robustez: la calidad automática arranca según la GPU (integrada o desconocida = Media; RTX, GTX o Radeon RX = Alta), baja de nivel en ~30 cuadros si cae de 30 FPS, y un error en el posproceso o en la escena ya no deja la pantalla en blanco (`ErrorBoundary`: el posproceso se apaga solo; si falla la escena hay aviso y botón para reintentar en calidad baja). Tests: `tests/unit/robustez.test.ts`. Límite: el aviso de la escena no se probó provocando un fallo real de WebGL.
 - Documentación: README con controles, mando, modo foto y clip, parámetros de URL y estructura del repo.
 
@@ -47,6 +51,7 @@ agachado ~0,8 m/s, camioneta ~12 m/s tras 2,4 s de acelerador y se detiene al fr
 
 ## Lo que falta
 
+- Dos e2e fallan desde antes de estos cambios (fallan igual en `8fa59a9`): `qol.e2e.ts:16` (pausa: espera pasos de física con `waitSteps` y con la pausa abierta la física está congelada, así que nunca llegan) y `missions.e2e.ts:154` (misión 2: el botón Confirmar no llega a estar clicable; causa sin determinar).
 - Probar en un equipo con GPU y con un mando físico; revisar a ojo el personaje agachado y el clip grabado.
 - Voz de la radio: no hay mp3 generados (`manifest.json` vacío); solo subtítulos y sonidos procedurales. La Task 11 del plan queda sin marcar por eso.
 - Misión 8 omitida por falta de dato en las fuentes vendorizadas.

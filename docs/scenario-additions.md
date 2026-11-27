@@ -102,3 +102,39 @@ queda de pie en el suelo y puede volver a subir. No se reubica (no está debajo 
   de la escalera (fuera de la caja `sk575_mastil_banda9`, que se solapa 0,11 m con la plancha).
 - Como la plancha del GLB no tiene abertura, en el último tramo el cuerpo atraviesa visualmente la plancha (0,08 m): el
   trepado es cinemático (sin colisión) y no hay trampa que dibujar sin inventarla.
+
+## A9. Acceso al carrier y a la casilla del maquinista (`src/game/world/rigAccess.ts`)
+
+Las dos escaleras existen en el GLB del carrier; lo añadido es poder recorrerlas y las cajas de colisión.
+
+| Dato | Valor | Origen |
+| --- | --- | --- |
+| Cubierta del carrier | y = 1,35 | MEDIDA |
+| Escalera amarilla (suelo a cubierta) | 5 huellas, x −11,45…−10,29, z 1,50…2,00 | MEDIDA |
+| Escalera de la casilla (cubierta a descanso) | 10 huellas, 54°, x −5,11…−3,55, z 0,60…1,30 | MEDIDA |
+| Descanso y piso de la casilla | y = 3,55 | MEDIDA |
+| Cajas del carrier (chasis, motor, cuadro, tambor, izaje, pedestal) | mapa de alturas de carrier + cuadro + izaje en grilla de 0,25 m | MEDIDA (redondeada a la grilla) |
+| Cornisa entre el cuadro y el borde | 0,31 m libres; apoyo invisible hasta z 1,95 | ESTIMADA (la cápsula mide 0,70 m) |
+| Descanso | 0,50 m de ancho; apoyo invisible de 0,30 m hacia −X, con la baranda corrida | ESTIMADA |
+| Puerta de la casilla | vano en la pared −X, z 1,5…2,3 | ESTIMADA (el GLB no modela la puerta abierta) |
+
+- Las dos escaleras se suben en modo escalera (E o W, igual que A3): la de la casilla tiene 54°, más que la pendiente máxima
+  del controlador (50°). El personaje usa el clip de trepar, con los brazos arriba, aunque sean escaleras con huellas.
+- El vano de la puerta no está frente a la llegada de la escalera: ahí la caja `sk575_mastil_banda1` (z ≤ 1,0) invade la
+  casilla. El personaje atraviesa visualmente la pared de la casilla al entrar.
+- La casilla no comunica con el piso de trabajo: la pared +X queda cerrada.
+
+## A10. Comando de izaje del aparejo
+
+- Interactuable `comando_izaje`, dentro de la casilla, contra la pared que mira al pozo. E alterna izar y bajar.
+- El aparejo (`sk575_aparejo`, todo menos el cable) sube hasta +6 m o baja hasta −3 m de su posición en el GLB, a 1,2 m/s
+  (valores de juego). El cable se estira o acorta desde la corona. Bajo, queda a 0,6 m sobre el tope de la llave (7,01 m).
+- No simula carga, freno ni límites de carrera reales. El cable del cuadro (línea rápida) no se mueve.
+
+## A11. Llave de potencia
+
+- Interactuable `llave_potencia`, en el piso de trabajo, junto al cuerpo de la llave. E la acciona.
+- Lo que cuelga (cuerpo, mordazas, resorte y su cable) gira 0,45 rad sobre el eje del pozo y vuelve, en 1,6 s (valores de
+  juego). Las cuñas, el poste de retención y su cable quedan fijos. La selección es por posición de cada triángulo
+  (`isTongPart`), porque el GLB no separa esas piezas en nodos.
+- No simula torque ni enrosque.

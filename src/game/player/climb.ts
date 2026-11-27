@@ -26,7 +26,8 @@ export function ladderFeet(l: LadderVolume, p: number): Vec3 {
 
 /** Dónde queda de pie al soltarse: abajo en el arranque, arriba sobre la plancha (alejado del reticulado). */
 export function ladderRelease(l: LadderVolume, end: 'bottom' | 'top'): Vec3 {
-  if (end === 'bottom') return ladderFeet(l, 0)
+  if (end === 'bottom') return l.bottomRelease ?? ladderFeet(l, 0)
+  if (l.topRelease) return l.topRelease
   const [bx, bz] = back(l, TOP_RELEASE)
   return [l.top[0] + bx, l.top[1], l.top[2] + bz]
 }

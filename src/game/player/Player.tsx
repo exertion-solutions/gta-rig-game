@@ -11,6 +11,7 @@ import { eBelongsToTruck } from '../vehicle/enterExit'
 import { LOCACION_BOUNDS } from '../world/frame'
 import { PLAYER_GROUPS } from '../world/groups'
 import { nearestInteractable, useValveStore } from '../world/interactables'
+import { CONTROLS } from '../world/rigAccess'
 import { INTERACTABLES, LADDERS, MAX_MEASURED_SLOPE_DEG, type LadderVolume } from '../world/walkable'
 import { WALK_ON_REACH, climbStep, ladderEndNear, ladderFeet, ladderLength, ladderRelease } from './climb'
 import { JUMP, stepVertical, type VState } from './jump'
@@ -19,13 +20,14 @@ import { useSettings } from '../settings/store'
 import { CharacterModel } from './CharacterModel'
 import { keys, onKeysCleared } from './keys'
 import { teleportTo, usePlayerStore } from './store'
-import { playerAction, playerSpeed } from './telemetry'
+import { playerAction, playerFacing, playerSpeed } from './telemetry'
 
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
 const FOOT = HALF + PLAYER_RADIUS // centro de la cápsula sobre los pies
 const FIXED_DT = 1 / 60 // = timeStep por defecto de <Physics>
 // Pendiente máxima: la mayor medida (escalera del trip tank, 43,4°) + 1° de tolerancia numérica; la casilla (54°) queda fuera.
 const MAX_SLOPE_DEG = MAX_MEASURED_SLOPE_DEG + 1
+const OPERABLE = [...INTERACTABLES, ...CONTROLS] // válvulas + comando de izaje y llave (rigAccess.ts)
 const HAND_Y = 1.0 // altura de las manos sobre los pies (juego) para el alcance de una válvula
 const OPERATE_MS = 1500 // duración del clip de operar tras pulsar E (juego)
 const FACING_COS = 0.7 // W engancha la escalera solo mirando hacia ella
@@ -243,7 +245,7 @@ export function Player() {
     // Si la camioneta está al alcance, E es de la camioneta (Truck.tsx).
     const near = ladderEndNear(position, LADDERS)
     const hand: Vec3 = [position[0], position[1] + HAND_Y, position[2]]
-    const valve = near ? null : nearestInteractable(hand, INTERACTABLES)
+    const valve = near ? null : nearestInteractable(hand, OPERABLE)
     const vstore = useValveStore.getState()
     if (vstore.near !== (valve?.id ?? null) || vstore.ladder !== (near?.end ?? null))
       useValveStore.setState({ near: valve?.id ?? null, ladder: near?.end ?? null })
@@ -254,6 +256,7 @@ export function Player() {
       const lc = { ladder: near.ladder, p: near.end === 'top' ? 1 : 0 }
       climb.current = lc
       playerAction.climbing = true
+      playerFacing.current = near.ladder.facing
       usePlayerStore.setState({ yaw: near.ladder.facing, climbing: true, climbAtEnd: true })
       const q = ladderFeet(lc.ladder, lc.p)
       place(q)
@@ -261,12 +264,14 @@ export function Player() {
     }
     if (eFree && valve) {
       const state = useValveStore.getState().operate(valve.id)
+      playerFacing.current = yaw // opera mirando a la válvula (está delante de la cámara)
       playerAction.operatingUntil = performance.now() + OPERATE_MS
-      useMissionStore.getState().report({ type: 'interact', targetId: valve.id, state })
+      if (valve.kind === 'valve') useMissionStore.getState().report({ type: 'interact', targetId: valve.id, state })
     }
 
     vel.current = approachVelocity(vel.current, stepMovement(input, yaw, dt), dt, grounded.current)
     const { vx, vz } = vel.current
+    if (Math.hypot(vx, vz) > 0.3) playerFacing.current = Math.atan2(-vx, -vz) // frente = (-sen, -cos)
     const wasAir = vs.current.airMs === Infinity
     vs.current = stepVertical(vs.current, grounded.current, jump, dt)
     jumpBuf.current = vs.current.airMs === Infinity && !wasAir ? 0 : Math.max(0, jumpBuf.current - dt * 1000)

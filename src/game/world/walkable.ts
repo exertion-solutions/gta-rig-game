@@ -1,16 +1,18 @@
 // Superficies caminables, barandas y anclajes de recorrido medidos de los GLB (src/game/world/traversal.json,
 // generado por scripts/extract-traversal.mjs). Escenario ilustrativo, no as-built: ver docs/traversal-inventory.md.
 import data from './traversal.json' with { type: 'json' }
+import { ACCESS_LADDERS, CARRIER_COLLIDERS } from './rigAccess'
 
 export type Vec3 = [number, number, number]
 export type Traversal = 'ground' | 'stairs' | 'ladder' | 'platform'
 export type Evidence = { status: 'documentado' | 'ilustrativo'; ref: string }
 // Caja de colisión con rotación opcional (Euler XYZ, radianes): rampas, escaleras y barandas inclinadas.
 export type BoxCollider = { id: string; center: Vec3; half: Vec3; rot?: Vec3; only?: 'stair' | 'truckBlock' }
-export type LadderVolume = { id: string; partId: string; bottom: Vec3; top: Vec3; facing: number }
+// bottomRelease / topRelease: dónde queda de pie al soltarse en ese extremo (si falta, lo calcula climb.ts).
+export type LadderVolume = { id: string; partId: string; bottom: Vec3; top: Vec3; facing: number; bottomRelease?: Vec3; topRelease?: Vec3 }
 export type Interactable = {
   id: string
-  kind: 'valve'
+  kind: 'valve' | 'hoist' | 'tong'
   partId: string
   position: Vec3
   label: string
@@ -80,12 +82,13 @@ export function walkableColliders(t: TraversalData = TRAVERSAL): BoxCollider[] {
     ...t.stairs.map(truckBlockCollider),
     ...t.ramps.map((s) => inclineCollider(s.id, s.bottom, s.top, s.width)),
     ...t.rails.map((r) => railCollider(r.id, r.a, r.b, r.height)),
+    ...CARRIER_COLLIDERS, // carrier y casilla del maquinista (rigAccess.ts)
   ]
 }
 
 // Piezas cuyo bbox completo se reemplaza por las cajas medidas de traversal.json.
-export const REPLACED_PARTS: ReadonlySet<string> = new Set(TRAVERSAL.replaces)
-export const LADDERS: readonly LadderVolume[] = TRAVERSAL.ladders
+export const REPLACED_PARTS: ReadonlySet<string> = new Set([...TRAVERSAL.replaces, 'sk575_carrier'])
+export const LADDERS: readonly LadderVolume[] = [...TRAVERSAL.ladders, ...ACCESS_LADDERS]
 export const INTERACTABLES: readonly Interactable[] = TRAVERSAL.interactables
 // Pendiente máxima medida entre escaleras y rampas (para el autostep/pendiente del controlador, Task 18B).
 export const MAX_MEASURED_SLOPE_DEG = Math.max(...[...TRAVERSAL.stairs, ...TRAVERSAL.ramps].map((s) => s.slopeDeg))

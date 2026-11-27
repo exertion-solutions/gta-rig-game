@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LAND_MS, nextLandUntil, pickClip } from '../../src/game/player/characterAnim'
+import { LAND_MS, nextLandUntil, pickClip, turnToward } from '../../src/game/player/characterAnim'
 import { RUN_SPEED, WALK_SPEED } from '../../src/game/player/movement'
 
 describe('pickClip', () => {
@@ -41,5 +41,14 @@ describe('pickClip', () => {
     expect(clipAt(2000, false)).toBe('land')
     expect(clipAt(2000 + LAND_MS - 1, false)).toBe('land')
     expect(clipAt(2000 + LAND_MS, false)).toBe('idle')
+  })
+})
+
+describe('turnToward (el cuerpo gira hacia el rumbo)', () => {
+  it('gira por el camino corto, sin pasarse, y cruza ±π', () => {
+    expect(turnToward(0, 1, 0.25)).toBeCloseTo(0.25, 6)
+    expect(turnToward(0, -1, 0.25)).toBeCloseTo(-0.25, 6)
+    expect(turnToward(0.9, 1, 0.25)).toBe(1)
+    expect(turnToward(3, -3, 0.1)).toBeCloseTo(3.1, 6) // de 3 a -3 rad hay 0,28 por el lado de π, no 6
   })
 })

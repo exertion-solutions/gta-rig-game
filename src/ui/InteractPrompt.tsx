@@ -1,6 +1,7 @@
 import { usePlayerStore } from '../game/player/store'
 import { eBelongsToTruck } from '../game/vehicle/enterExit'
 import { useValveStore } from '../game/world/interactables'
+import { CONTROLS } from '../game/world/rigAccess'
 import { INTERACTABLES } from '../game/world/walkable'
 import { useHudStore } from './hudStore'
 
@@ -38,7 +39,7 @@ export function InteractPrompt() {
       </div>
     )
   if (!near && !ladder) return null
-  const v = near ? INTERACTABLES.find((x) => x.id === near) : undefined
+  const v = near ? [...INTERACTABLES, ...CONTROLS].find((x) => x.id === near) : undefined
   return (
     <div className={box} data-testid="interact-prompt">
       {ladder ? (
@@ -46,7 +47,15 @@ export function InteractPrompt() {
           <Key k="E" /> {ladder === 'bottom' ? 'subir por la escalera' : 'bajar por la escalera'}
         </p>
       ) : (
-        v && (
+        v &&
+        (v.kind !== 'valve' ? (
+          <>
+            <p>
+              <Key k="E" />: {v.kind === 'tong' ? 'accionar' : states[v.id] === 'open' ? 'bajar el aparejo' : 'izar el aparejo'} · {v.label}
+            </p>
+            <p className="text-xs uppercase tracking-wider text-amber-300">ilustrativo: no es un procedimiento</p>
+          </>
+        ) : (
           <>
             <p>
               <Key k="E" />: operar · {v.label}
@@ -56,7 +65,7 @@ export function InteractPrompt() {
             </p>
             <p className="text-xs uppercase tracking-wider text-amber-300">ilustrativo: no es un procedimiento</p>
           </>
-        )
+        ))
       )}
     </div>
   )

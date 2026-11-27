@@ -3,6 +3,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useValveStore } from './interactables'
+import { CONTROLS } from './rigAccess'
 import { INTERACTABLES } from './walkable'
 
 // Volantes del manifold que giran al operar (ilustrativo, no es un procedimiento). En el GLB los 12 volantes están
@@ -67,7 +68,7 @@ export function Valves() {
 
 // Válvulas juntas (M1, M9 y M7 a pocos centímetros): E opera la más cercana a la mano; este aro ámbar marca cuál es, para
 // que no dependa solo del texto del aviso. Ilustrativo, sin cifras. Un draw call, oculto si no hay válvula al alcance.
-const BY_ID = new Map(INTERACTABLES.map((v) => [v.id, v]))
+const BY_ID = new Map([...INTERACTABLES, ...CONTROLS].map((v) => [v.id, v]))
 export function ValveHighlight() {
   const ref = useRef<THREE.Mesh>(null)
   useFrame(({ clock }) => {

@@ -110,7 +110,7 @@ describe('traversal.json', () => {
 describe('buildColliders con piezas reemplazadas', () => {
   it('no genera la caja completa de mástil, BOP ni piletas (las cubren las cajas medidas)', () => {
     const parts: LoadedPart[] = RIG_PARTS.map((p) => ({ id: p.id, role: p.role, bounds: new THREE.Box3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1)) }))
-    expect(buildColliders(parts, REPLACED_PARTS).map((c) => c.id)).toEqual(['sk575_carrier'])
+    expect(buildColliders(parts, REPLACED_PARTS).map((c) => c.id)).toEqual([]) // el carrier también: rigAccess.ts
   })
 })
 
