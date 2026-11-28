@@ -356,9 +356,34 @@ function Streets() {
   )
 }
 
-// Animales: un cuadrúpedo de cajas (cuerpo, cuello, cabeza, patas), escalado y teñido por especie.
-const FUR = { guanaco: '#b8854f', oveja: '#e8e3d8', caballo: '#5c3f2c' } as const
-const HERD = ANIMALS.filter((a) => a.kind !== 'guanaco')
+// Ovejas y caballos: figuras low-poly propias, en una caja unitaria (ancho X, alto Y, largo Z; frente a −Z) que se
+// escala a la medida de la especie. Colores por vértice y caras planas, como el guanaco.
+const tint = (g: THREE.BufferGeometry, c: string) => {
+  const n = g.index ? g.toNonIndexed() : g
+  const col = new THREE.Color(c)
+  n.setAttribute('color', new THREE.Float32BufferAttribute(Array.from({ length: n.attributes.position.count }, () => col.toArray()).flat(), 3))
+  return n
+}
+const blob = (sx: number, sy: number, sz: number, x: number, y: number, z: number, c: string) => tint(new THREE.IcosahedronGeometry(0.5, 1).scale(sx, sy, sz).translate(x, y, z), c)
+const part = (w: number, h: number, d: number, x: number, y: number, z: number, c: string, tilt = 0) => tint(new THREE.BoxGeometry(w, h, d).rotateX(tilt).translate(x, y, z), c)
+const legs = (w: number, h: number, d: number, dx: number, dz: number, c: string) => [-dz, dz].flatMap((z) => [-dx, dx].map((x) => part(w, h, d, x, h / 2, z, c)))
+const SHAPES = {
+  oveja: () => [
+    blob(1, 0.62, 0.8, 0, 0.62, 0.04, '#ece8dc'), // vellón
+    part(0.44, 0.24, 0.2, 0, 0.72, -0.4, '#3a332d'), // cabeza
+    part(0.7, 0.07, 0.05, 0, 0.8, -0.34, '#3a332d'), // orejas
+    ...legs(0.16, 0.42, 0.07, 0.26, 0.24, '#3a332d'),
+  ],
+  caballo: () => [
+    blob(0.92, 0.42, 0.62, 0, 0.66, 0.04, '#6b4a33'), // tronco
+    part(0.42, 0.4, 0.15, 0, 0.86, -0.3, '#6b4a33', -0.6), // cuello
+    part(0.36, 0.14, 0.26, 0, 0.98, -0.44, '#6b4a33', 0.35), // cabeza
+    part(0.12, 0.34, 0.05, 0, 0.92, -0.24, '#2a1d14', -0.6), // crin
+    part(0.2, 0.36, 0.05, 0, 0.56, 0.36, '#2a1d14', 0.25), // cola
+    ...legs(0.2, 0.5, 0.07, 0.28, 0.24, '#5a3d2a'),
+  ],
+} as const
+const HERD_KINDS = ['oveja', 'caballo'] as const
 const GUANACOS = ANIMALS.filter((a) => a.kind === 'guanaco')
 function Guanacos() {
   const part = useKit().get('guanaco')
@@ -375,34 +400,29 @@ function Guanacos() {
   return part ? <instancedMesh ref={ref} args={[part.geo, part.mat, GUANACOS.length]} name="ruta_guanacos" frustumCulled={false} castShadow /> : null
 }
 function Animals() {
-  const ref = useRef<THREE.InstancedMesh>(null)
-  const geo = useMemo(
-    () =>
-      mergeGeometries([
-        box(1, 0.36, 0.62, 0, 0.62, 0), // cuerpo (largo en Z, frente a −Z)
-        box(0.5, 0.42, 0.14, 0, 0.86, -0.3), // cuello
-        box(0.56, 0.16, 0.2, 0, 1.0, -0.4), // cabeza
-        ...[-0.24, 0.24].flatMap((z) => [-0.3, 0.3].map((x) => box(0.22, 0.46, 0.08, x, 0.23, z))), // patas
-      ])!,
-    [],
-  )
-  useLayoutEffect(() => {
-    HERD.forEach((a, i) => ref.current!.setColorAt(i, color.set(FUR[a.kind])))
-    ref.current!.instanceColor!.needsUpdate = true
-  }, [])
+  const herds = useMemo(() => HERD_KINDS.map((kind) => ({ kind, list: ANIMALS.filter((a) => a.kind === kind), geo: mergeGeometries(SHAPES[kind]())! })), [])
+  const refs = useRef<(THREE.InstancedMesh | null)[]>([])
   useFrame(() => {
-    HERD.forEach((a, i) => {
-      const p = animalAt(a, routeClock.t)
-      const [w, h, l] = ANIMAL_SIZE[a.kind]
-      put(ref.current!, i, p.x, p.y, p.z, p.yaw, w * a.scale, h * a.scale, l * a.scale)
+    herds.forEach((h, j) => {
+      const mesh = refs.current[j]
+      if (!mesh) return
+      const [w, ht, l] = ANIMAL_SIZE[h.kind]
+      h.list.forEach((a, i) => {
+        const p = animalAt(a, routeClock.t)
+        put(mesh, i, p.x, p.y, p.z, p.yaw, w * a.scale, ht * a.scale, l * a.scale)
+      })
+      mesh.instanceMatrix.needsUpdate = true
     })
-    ref.current!.instanceMatrix.needsUpdate = true
   })
-  useEffect(() => () => geo.dispose(), [geo])
+  useEffect(() => () => herds.forEach((h) => h.geo.dispose()), [herds])
   return (
-    <instancedMesh ref={ref} args={[geo, undefined, HERD.length]} name="ruta_animales" frustumCulled={false} castShadow>
-      <meshStandardMaterial roughness={1} />
-    </instancedMesh>
+    <group name="ruta_animales">
+      {herds.map((h, j) => (
+        <instancedMesh key={h.kind} ref={(m) => void (refs.current[j] = m)} args={[h.geo, undefined, h.list.length]} frustumCulled={false} castShadow>
+          <meshStandardMaterial vertexColors roughness={1} flatShading />
+        </instancedMesh>
+      ))}
+    </group>
   )
 }
 

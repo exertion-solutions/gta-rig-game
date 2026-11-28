@@ -162,7 +162,7 @@ Todo inventado por el juego: no representa ningún camino, ciudad ni lugar real.
 - Los semáforos no se hacen cumplir: son visuales. No hay tránsito transversal.
 - Ciudad y tránsito usan modelos CC0 de Kenney (64 modelos en `public/models/ruta/kenney.glb`): casas en los barrios,
   comercios y torres en el centro, una segunda fila detrás y una silueta lejana; autos, camionetas y camiones. El camión
-  cisterna y el guanaco son modelos generados (NOTICE.md). Ovejas y caballos siguen siendo cajas. Nada tiene animación
+  cisterna y el guanaco son modelos generados (NOTICE.md). Ovejas y caballos son figuras low-poly propias. Nada tiene animación
   de patas ni de ruedas. De la ciudad solo se dibuja lo que queda a menos de 440 m a lo largo del camino.
 - La ciudad tiene veredas con cordón y el asfalto, líneas blancas de borde; la base tiene playón de hormigón. Son
   visuales: la colisión sigue siendo la del terreno.
