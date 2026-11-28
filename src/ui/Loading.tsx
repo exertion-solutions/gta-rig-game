@@ -27,7 +27,7 @@ export function Loading() {
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0e1216]/95 p-4 text-slate-100" data-testid="title-screen">
       <div className="w-full max-w-md space-y-4 text-center">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-amber-400">Recorrido de locación</p>
-        <h1 className="text-3xl font-bold leading-tight">Equipo de perforación</h1>
+        <h1 className="text-3xl font-bold leading-tight">Equipo de torre</h1>
         <p className="text-sm text-slate-300">Referencia digital, no as-built / ilustrativo.</p>
         <div data-testid="loading" role="progressbar" aria-label="Carga" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="h-2 w-full overflow-hidden rounded bg-white/15">
           <div className="h-full bg-amber-400 transition-[width]" style={{ width: `${pct}%` }} />

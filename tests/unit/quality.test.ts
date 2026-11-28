@@ -4,7 +4,7 @@ import { RESPAWN } from '../../src/game/player/movement'
 import { TRUCK_SPAWN } from '../../src/game/player/store'
 import { QUALITY_PROFILE, createGovernor, parseQualityParam, pickQuality, type Quality } from '../../src/game/quality'
 import { patchGroundShader } from '../../src/game/world/GroundMaterial'
-import { CONES, BARRELS, FENCE } from '../../src/game/world/propsLayout'
+import { CONES, BARRELS } from '../../src/game/world/propsLayout'
 
 describe('pickQuality', () => {
   it('es estable por debajo de 14 ms en cualquier nivel', () => {
@@ -120,9 +120,5 @@ describe('disposición de props (solo zonas libres, sin figuras que sugieran zon
       const near = CONES.filter((o) => o !== c && Math.hypot(o.x - c.x, o.z - c.z) < 3)
       expect(near.length, `cono ${c.x},${c.z}`).toBeLessThan(2)
     }
-  })
-  it('el vallado recorre el borde de la locación', () => {
-    expect(FENCE.minX).toBeCloseTo(B.minX, 5)
-    expect(FENCE.maxZ).toBeCloseTo(B.maxZ, 5)
   })
 })

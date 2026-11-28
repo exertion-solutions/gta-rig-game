@@ -2,12 +2,10 @@ import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { TRUCK_SPAWN, TRUCK_SPAWN_HEADING } from '../player/store'
-import { FENCE as F } from './propsLayout'
 import { useGroundMaterial } from './GroundMaterial'
 import { LOCACION_BOUNDS as B } from './frame'
 
-// Escenario ilustrativo añadido por el juego, no as-built (docs/scenario-additions.md A5–A8): vallado perimetral
-// visible, cartel genérico, suelo exterior y marcas de uso del suelo (manchas, huellas cortas, charcos). Todo con
+// Escenario ilustrativo añadido por el juego, no as-built (docs/scenario-additions.md A5–A8): cartel genérico, suelo exterior y marcas de uso del suelo (manchas, huellas cortas, charcos). Todo con
 // texturas generadas en código (sin assets de terceros). Nada de esto marca zonas de exclusión ni áreas seguras.
 const mx = (B.minX + B.maxX) / 2
 const INSET = 0.06 // el vallado queda apenas adentro del borde (donde están los colliders invisibles)
@@ -85,115 +83,23 @@ const signTexture = () =>
     g.fillText('referencia digital · no as-built', 512, 196)
   })
 
-function Fence() {
-  const { panels, posts, rails, mats } = useMemo(() => {
-    const x0 = B.minX + INSET
-    const x1 = B.maxX - INSET
-    const z0 = B.minZ + INSET
-    const z1 = B.maxZ - INSET
-    const link = canvasTexture(128, 128, (g) => {
-      g.strokeStyle = '#d7dadd'
-      g.lineWidth = 5
-      g.beginPath()
-      for (let o = -128; o <= 128; o += 64) {
-        g.moveTo(o, 0)
-        g.lineTo(o + 128, 128)
-        g.moveTo(o + 128, 0)
-        g.lineTo(o, 128)
-      }
-      g.stroke()
-    })
-    link.wrapS = link.wrapT = THREE.RepeatWrapping
-    // 4 lados en una sola malla: UV = metros / 0,45 m de malla
-    const side = (len: number, ax: number, az: number, ry: number) => {
-      const g = new THREE.PlaneGeometry(len, F.height - 0.1)
-      const uv = g.attributes.uv
-      for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * len) / 0.45, (uv.getY(i) * (F.height - 0.1)) / 0.45)
-      return g.rotateY(ry).translate(ax, (F.height - 0.1) / 2 + 0.08, az)
-    }
-    const panels = mergeGeometries([
-      side(x1 - x0, (x0 + x1) / 2, z0, 0),
-      side(x1 - x0, (x0 + x1) / 2, z1, Math.PI),
-      side(z1 - z0, x0, 0, Math.PI / 2),
-      side(z1 - z0, x1, 0, -Math.PI / 2),
-    ])
-    const pts: [number, number][] = []
-    const run = (ax: number, az: number, bx: number, bz: number) => {
-      const n = Math.ceil(Math.hypot(bx - ax, bz - az) / F.postEvery)
-      for (let i = 0; i < n; i++) pts.push([ax + ((bx - ax) * i) / n, az + ((bz - az) * i) / n])
-    }
-    run(x0, z0, x1, z0)
-    run(x1, z0, x1, z1)
-    run(x1, z1, x0, z1)
-    run(x0, z1, x0, z0)
-    const posts = new THREE.InstancedMesh(
-      new THREE.CylinderGeometry(0.045, 0.05, F.height + 0.15, 8),
-      new THREE.MeshStandardMaterial({
-        color: '#8b9096',
-        metalness: 0.85,
-        roughness: 0.5,
-      }),
-      pts.length,
-    )
-    pts.forEach(([x, z], i) => posts.setMatrixAt(i, new THREE.Matrix4().makeTranslation(x, (F.height + 0.15) / 2, z)))
-    // travesaño superior de cada lado (caja unitaria escalada)
-    const railMat = posts.material as THREE.Material
-    const rails = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.05, 0.05), railMat, 4)
-    const rail = (i: number, len: number, x: number, z: number, ry: number) =>
-      rails.setMatrixAt(
-        i,
-        new THREE.Matrix4().compose(
-          new THREE.Vector3(x, F.height + 0.06, z),
-          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry),
-          new THREE.Vector3(len, 1, 1),
-        ),
-      )
-    rail(0, x1 - x0, (x0 + x1) / 2, z0, 0)
-    rail(1, x1 - x0, (x0 + x1) / 2, z1, 0)
-    rail(2, z1 - z0, x0, 0, Math.PI / 2)
-    rail(3, z1 - z0, x1, 0, Math.PI / 2)
-    const mats = [
-      new THREE.MeshStandardMaterial({
-        map: link,
-        alphaTest: 0.4,
-        side: THREE.DoubleSide,
-        metalness: 0.7,
-        roughness: 0.5,
-        color: '#b9bec4',
-      }),
-    ]
-    return { panels, posts, rails, mats }
-  }, [])
-  useEffect(
-    () => () => {
-      panels.dispose()
-      posts.geometry.dispose()
-      posts.dispose()
-      rails.geometry.dispose()
-      rails.dispose()
-      ;(posts.material as THREE.Material).dispose()
-      mats[0].map?.dispose()
-      mats[0].dispose()
-    },
-    [panels, posts, rails, mats],
-  )
-  return (
-    <group name="escenario_vallado">
-      <mesh geometry={panels} material={mats[0]} />
-      <primitive object={posts} />
-      <primitive object={rails} />
-    </group>
-  )
-}
-
 function Sign() {
   const tex = useMemo(signTexture, [])
   useEffect(() => () => tex.dispose(), [tex])
   return (
-    <mesh position={[-33, 1.45, B.minZ + INSET + 0.04]} name="escenario_cartel">
-      <planeGeometry args={[3.2, 0.8]} />
-      <meshStandardMaterial map={tex} roughness={0.6} metalness={0.1} />
-    </mesh>
+    <group position={[-33, 0, B.minZ + INSET + 0.04]} name="escenario_cartel">
+      <mesh position={[0, 1.45, 0]}>
+        <planeGeometry args={[3.2, 0.8]} />
+        <meshStandardMaterial map={tex} roughness={0.6} metalness={0.1} />
+      </mesh>
+      {/* sin alambrado donde colgarlo: va sobre dos postes */}
+      {[-1.4, 1.4].map((x) => (
+        <mesh key={x} position={[x, 0.925, -0.04]}>
+          <boxGeometry args={[0.06, 1.85, 0.06]} />
+          <meshStandardMaterial color="#3a3f45" roughness={0.6} metalness={0.5} />
+        </mesh>
+      ))}
+    </group>
   )
 }
 
@@ -303,7 +209,6 @@ export function SiteDressing() {
   return (
     <>
       <OuterGround />
-      <Fence />
       <Sign />
       <GroundMarks />
     </>

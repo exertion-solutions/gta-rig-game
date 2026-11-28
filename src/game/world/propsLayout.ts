@@ -31,6 +31,3 @@ export const CONES: readonly Spot[] = [
   s(-40.5, -6),
   s(-31, 9.5),
 ]
-
-// perímetro del vallado = borde de la locación (el mismo donde están los colliders invisibles)
-export const FENCE = { ...B, height: 2.4, postEvery: 3.5 }
