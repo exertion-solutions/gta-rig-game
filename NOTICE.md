@@ -77,7 +77,22 @@ Texturas de la ruta, también CC0 de Poly Haven, color (diffuse) a 1k convertido
 | `public/textures/ruta_asfalto.webp` | Road Damaged Clean | Dimitrios Savva | CC0 | https://polyhaven.com/a/road_damaged_clean |
 | `public/textures/ruta_barda.webp` | Cliff Side | James Ray Cock, Jenelle van Heerden, Dario Barresi | CC0 | https://polyhaven.com/a/cliff_side |
 
-El resto del realismo (conos, cartelería, marcas de suelo, sombras de contacto) y todo lo que puebla la ruta (terreno, edificios, semáforos, árboles, tránsito, animales, obstáculos) es procedural y propio.
+Ciudad y tránsito de la ruta: modelos CC0 de Kenney (https://kenney.nl, licencia en cada kit: Creative Commons Zero), sin marcas ni logos. `scripts/build-kenney.py` junta los 64 modelos elegidos en un solo archivo, comprimido con Draco:
+
+| Archivo | Kit | Autor | Licencia | Fuente |
+|---|---|---|---|---|
+| `public/models/ruta/kenney.glb` (autos, camionetas, camiones) | Car Kit 3.1 | Kenney | CC0 | https://kenney.nl/assets/car-kit |
+| `public/models/ruta/kenney.glb` (comercios, torres, edificios lejanos) | City Kit (Commercial) | Kenney | CC0 | https://kenney.nl/assets/city-kit-commercial |
+| `public/models/ruta/kenney.glb` (casas) | City Kit (Suburban) | Kenney | CC0 | https://kenney.nl/assets/city-kit-suburban |
+
+Dos modelos generados con 3D AI Studio (modelo Prism 3.1, texto a 3D, cuenta del dueño del proyecto, 2026-11-28), reducidos de ≈1,4 M a pocos miles de triángulos y comprimidos con Draco. El sitio declara que lo generado es del usuario y admite uso comercial (https://www.3daistudio.com/Pricing, leído el 2026-11-28); no se revisaron los términos completos:
+
+| Archivo | Pedido (prompt) |
+|---|---|
+| `public/models/ruta/cisterna.glb` | camión cisterna low-poly, cabina blanca, tanque plateado, sin logos ni texto |
+| `public/models/ruta/guanaco.glb` | guanaco low-poly, lomo canela, panza blanca |
+
+El resto del realismo (conos, cartelería, marcas de suelo, sombras de contacto) y lo demás que puebla la ruta (terreno, veredas, playón, semáforos, árboles, ovejas, caballos, obstáculos) es procedural y propio.
 
 La camioneta (`public/models/vehicle/pickup.glb`) es un modelo propio de pickup doble cabina, sin marcas, logos ni texto, generado por `scripts/build-truck.py` (Blender) y comprimido con meshopt.
 

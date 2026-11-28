@@ -160,5 +160,10 @@ Todo inventado por el juego: no representa ningún camino, ciudad ni lugar real.
   jugador y bajo la camioneta, y 5 × 5 tramos dibujados de 192 m, con vértices cada 8 m.
 - El mapa termina en una caja que contiene la ruta y la locación con 700 m de margen ("Límite del mapa").
 - Los semáforos no se hacen cumplir: son visuales. No hay tránsito transversal.
-- Edificios, tránsito y animales son cajas instanciadas, sin modelos ni animación de patas o ruedas.
+- Ciudad y tránsito usan modelos CC0 de Kenney (64 modelos en `public/models/ruta/kenney.glb`): casas en los barrios,
+  comercios y torres en el centro, una segunda fila detrás y una silueta lejana; autos, camionetas y camiones. El camión
+  cisterna y el guanaco son modelos generados (NOTICE.md). Ovejas y caballos siguen siendo cajas. Nada tiene animación
+  de patas ni de ruedas. De la ciudad solo se dibuja lo que queda a menos de 440 m a lo largo del camino.
+- La ciudad tiene veredas con cordón y el asfalto, líneas blancas de borde; la base tiene playón de hormigón. Son
+  visuales: la colisión sigue siendo la del terreno.
 - En la ruta el indicador superior muestra kilómetros de camino al equipo, tramo y velocidad. Es navegación del juego.

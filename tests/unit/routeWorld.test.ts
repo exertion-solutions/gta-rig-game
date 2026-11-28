@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { LIGHTS_S, ROAD_HALF, inLocacion, nearest, zoneAt } from '../../src/game/world/route'
-import { ANIMALS, BUILDINGS, LIGHT_CYCLE, OBSTACLES, PLANTS, VEHICLES, animalAt, lightPost, lightState, vehicleAt } from '../../src/game/world/routeWorld'
+import { ANIMALS, BUILDINGS, KIT, LIGHT_CYCLE, OBSTACLES, PLANTS, VEHICLES, animalAt, lightPost, lightState, vehicleAt } from '../../src/game/world/routeWorld'
 
 describe('lo que puebla la ruta', () => {
   it('ningún edificio pisa la calzada ni las bocacalles', () => {
     expect(BUILDINGS.length).toBeGreaterThan(80)
+    for (const b of BUILDINGS) expect(KIT[b.model!], `modelo ${b.model}`).toBeDefined() // todos salen del kit
+    expect(new Set(BUILDINGS.map((b) => b.model)).size).toBeGreaterThan(30)
     for (const b of BUILDINGS) {
       const n = nearest(b.x, b.z)
       expect(n.d - b.d / 2, `edificio en s ${n.s.toFixed(0)}`).toBeGreaterThan(ROAD_HALF + 2)
@@ -37,6 +39,8 @@ describe('lo que puebla la ruta', () => {
   })
   it('tránsito: cada vehículo va por su mano (derecha), en los dos sentidos, y nunca entra a la locación', () => {
     expect(VEHICLES.some((v) => v.kind === 'camion')).toBe(true)
+    expect(VEHICLES.some((v) => v.model === 'cisterna')).toBe(true)
+    for (const v of VEHICLES) expect(v.len / v.scale, v.model).toBeLessThan(3.5) // la caja de colisión no excede al modelo
     expect(VEHICLES.some((v) => v.dir === 1) && VEHICLES.some((v) => v.dir === -1)).toBe(true)
     for (const v of VEHICLES)
       for (const t of [0, 77, 500, 2345]) {

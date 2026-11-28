@@ -132,6 +132,19 @@ const tiled = (t: THREE.Texture) => {
   c.needsUpdate = true
   return c
 }
+// El asfalto de Poly Haven tira a pardo y parecía tierra: se pasa a gris oscuro, conservando el grano.
+const grey = (t: THREE.Texture) => {
+  const c = document.createElement('canvas')
+  c.width = c.height = 512
+  const g = c.getContext('2d')!
+  g.filter = 'grayscale(1) brightness(0.62) contrast(0.8)'
+  g.drawImage(t.image as CanvasImageSource, 0, 0, 512, 512)
+  const out = new THREE.CanvasTexture(c)
+  out.wrapS = out.wrapT = THREE.RepeatWrapping
+  out.colorSpace = THREE.SRGBColorSpace
+  out.anisotropy = 8
+  return out
+}
 // Texturas de Poly Haven (CC0), 1k: ver NOTICE.md.
 const TEX = ['estepa', 'barda', 'ripio', 'asfalto'].map((n) => assetUrl(`textures/ruta_${n}.webp`))
 const flat = { roughness: 0.95, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }
@@ -155,7 +168,7 @@ export function Terrain() {
       rock,
       ground,
       gravel: new THREE.MeshStandardMaterial({ map: tiled(ripio), ...flat }),
-      asphalt: new THREE.MeshStandardMaterial({ map: tiled(asfalto), color: '#7f858f', ...flat }), // la textura tira a pardo: se enfría
+      asphalt: new THREE.MeshStandardMaterial({ map: grey(asfalto), ...flat }),
       line: new THREE.MeshStandardMaterial({ color: '#d9b833', ...flat, polygonOffsetFactor: -4 }),
     }
   }, [estepa, barda, ripio, asfalto])

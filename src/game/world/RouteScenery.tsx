@@ -1,11 +1,14 @@
+import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { RIG_NAME } from '../data/evidence'
+import { exposeGame } from '../dev'
 import { usePlayerStore } from '../player/store'
-import { LIGHTS_S, ROAD_HALF, inLocacion, nearest, roadY } from './route'
-import { ANIMALS, ANIMAL_SIZE, BUILDINGS, OBSTACLES, PLANTS, VEHICLES, animalAt, beside, lightPost, lightState, routeClock, vehicleAt, type Plant } from './routeWorld'
+import { assetUrl, DRACO_PATH } from './assetUrl'
+import { LIGHTS_S, ROAD_HALF, inLocacion, nearest, pointAt, roadY, terrainY } from './route'
+import { ANIMALS, ANIMAL_SIZE, BUILDINGS, CITY, CROSS_HALF, OBSTACLES, PLANTS, SIDEWALK, VEHICLES, animalAt, beside, lightPost, lightState, routeClock, vehicleAt, type Plant } from './routeWorld'
 
 // Dibujo de lo que puebla la ruta (routeWorld.ts). Casi todo va en mallas instanciadas: un draw call por tipo.
 const Y = new THREE.Vector3(0, 1, 0)
@@ -17,41 +20,6 @@ const color = new THREE.Color()
 const put = (mesh: THREE.InstancedMesh, i: number, x: number, y: number, z: number, yaw: number, sx: number, sy: number, sz: number) =>
   mesh.setMatrixAt(i, m4.compose(v3.set(x, y, z), q.setFromAxisAngle(Y, yaw), sc.set(sx, sy, sz)))
 const box = (w: number, h: number, d: number, x = 0, y = 0, z = 0) => new THREE.BoxGeometry(w, h, d).translate(x, y, z)
-
-// Ventanas: una grilla oscura sobre el color de cada edificio (textura generada, sin assets).
-function windowsTexture() {
-  const c = document.createElement('canvas')
-  c.width = c.height = 64
-  const g = c.getContext('2d')!
-  g.fillStyle = '#fff'
-  g.fillRect(0, 0, 64, 64)
-  g.fillStyle = '#39424c'
-  for (let y = 8; y < 60; y += 16) for (let x = 6; x < 60; x += 14) g.fillRect(x, y, 8, 9)
-  const t = new THREE.CanvasTexture(c)
-  t.colorSpace = THREE.SRGBColorSpace
-  return t
-}
-
-function Buildings() {
-  const ref = useRef<THREE.InstancedMesh>(null)
-  const tex = useMemo(windowsTexture, [])
-  const geo = useMemo(() => box(1, 1, 1, 0, 0.5, 0), [])
-  useLayoutEffect(() => {
-    const m = ref.current!
-    BUILDINGS.forEach((b, i) => {
-      put(m, i, b.x, b.y - 0.3, b.z, b.yaw, b.d, b.h + 0.3, b.w) // eje Z local a lo largo del camino
-      m.setColorAt(i, color.set(b.color))
-    })
-    m.instanceMatrix.needsUpdate = true
-    m.instanceColor!.needsUpdate = true
-  }, [])
-  useEffect(() => () => (tex.dispose(), geo.dispose()), [tex, geo])
-  return (
-    <instancedMesh ref={ref} args={[geo, undefined, BUILDINGS.length]} name="ruta_edificios" frustumCulled={false} receiveShadow>
-      <meshStandardMaterial map={tex} roughness={0.9} />
-    </instancedMesh>
-  )
-}
 
 // Semáforos y bocacalles. La luz encendida es emisiva; las otras dos quedan apagadas.
 const LAMP = { red: '#ff2a1f', yellow: '#ffc21a', green: '#22e06a' } as const
@@ -204,56 +172,208 @@ function Obstacles() {
   )
 }
 
-// Tránsito: carrocería (color por instancia) y partes oscuras (ruedas y vidrios), para autos y para camiones.
-function vehicleGeometry(truck: boolean) {
-  // caja unitaria: ancho X, alto Y, largo Z; el frente mira a −Z (como la camioneta)
-  const body = truck
-    ? [box(0.92, 0.5, 0.2, 0, 0.42, -0.4), box(1, 0.68, 0.72, 0, 0.6, 0.12)] // cabina y caja de carga
-    : [box(1, 0.36, 1, 0, 0.36, 0), box(0.86, 0.3, 0.5, 0, 0.72, 0.04)] // carrocería y habitáculo
-  const dark = [
-    ...[-0.36, 0.34].flatMap((z) => [-0.46, 0.46].map((x) => box(0.14, 0.2, truck ? 0.1 : 0.18, x, 0.1, z))), // ruedas
-    truck ? box(0.84, 0.14, 0.02, 0, 0.56, -0.505) : box(0.8, 0.2, 0.52, 0, 0.74, 0.04), // parabrisas / vidrios
-  ]
-  return [mergeGeometries(body)!, mergeGeometries(dark)!] as const
+// Modelos de Kenney (CC0, NOTICE.md): un GLB con un `scene` por modelo (scripts/build-kenney.py). De cada uno sale una sola
+// geometría (carrocería y ruedas juntas, con sus transformaciones aplicadas) para dibujarla instanciada.
+const KIT_URL = assetUrl('models/ruta/kenney.glb')
+type KitPart = { geo: THREE.BufferGeometry; mat: THREE.Material }
+// Modelos generados con 3D AI Studio (NOTICE.md), reducidos a ~5.800 triángulos: van normalizados (apoyados en y = 0,
+// centrados, de frente a +Z; la cisterna con 1 m de largo y el guanaco con 1 m de alto).
+const EXTRA = [
+  { name: 'cisterna', url: assetUrl('models/ruta/cisterna.glb'), turn: 0, unit: 'z' },
+  { name: 'guanaco', url: assetUrl('models/ruta/guanaco.glb'), turn: -Math.PI / 2, unit: 'y' },
+] as const
+const KIT_URLS = [KIT_URL, ...EXTRA.map((e) => e.url)]
+function bake(root: THREE.Object3D): KitPart | undefined {
+  root.updateMatrixWorld(true)
+  const geos: THREE.BufferGeometry[] = []
+  let mat: THREE.Material | undefined
+  root.traverse((o) => {
+    const m = o as THREE.Mesh
+    if (!m.isMesh) return
+    geos.push(m.geometry.clone().applyMatrix4(m.matrixWorld))
+    mat = m.material as THREE.Material
+  })
+  return geos.length && mat ? { geo: geos.length > 1 ? mergeGeometries(geos)! : geos[0], mat } : undefined
 }
-function Traffic() {
-  const kinds = useMemo(() => (['auto', 'camion'] as const).map((k) => ({ list: VEHICLES.filter((v) => v.kind === k), geo: vehicleGeometry(k === 'camion') })), [])
-  const body = useRef<(THREE.InstancedMesh | null)[]>([])
-  const dark = useRef<(THREE.InstancedMesh | null)[]>([])
-  useLayoutEffect(() => {
-    kinds.forEach((k, j) => {
-      k.list.forEach((v, i) => body.current[j]!.setColorAt(i, color.set(v.color)))
-      body.current[j]!.instanceColor!.needsUpdate = true
+function useKit() {
+  const all = useGLTF(KIT_URLS, DRACO_PATH)
+  const kit = useMemo(() => {
+    const [gltf, ...extra] = all
+    const out = new Map<string, KitPart>()
+    for (const sc of gltf.scenes) {
+      const part = bake(sc)
+      if (part) out.set(sc.name, part)
+    }
+    EXTRA.forEach((e, i) => {
+      const part = bake(extra[i].scene)
+      if (!part) return
+      part.geo.rotateY(e.turn).computeBoundingBox()
+      const bb = part.geo.boundingBox!
+      const k = 1 / (bb.max[e.unit] - bb.min[e.unit])
+      part.geo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2).scale(k, k, k)
+      out.set(e.name, part)
     })
-  }, [kinds])
+    return out
+  }, [all])
+  useEffect(() => () => kit.forEach((p) => p.geo.dispose()), [kit])
+  return kit
+}
+const byModel = <T extends { model?: string }>(list: T[]) => [...new Set(list.map((b) => b.model!))].map((model) => ({ model, list: list.filter((b) => b.model === model) }))
+
+// Ciudad: solo se dibujan los edificios cercanos (por distancia a lo largo de la ruta); la niebla tapa el resto.
+const CITY_NEAR = 440
+function City() {
+  const kit = useKit()
+  const groups = useMemo(() => byModel(BUILDINGS.filter((b) => b.model)), [])
+  const refs = useRef<(THREE.InstancedMesh | null)[]>([])
+  const at = useRef(-1e9)
   useFrame(() => {
-    kinds.forEach((k, j) => {
-      k.list.forEach((v, i) => {
+    const p = usePlayerStore.getState().position
+    const s = nearest(p[0], p[2]).s
+    if (Math.abs(s - at.current) < 80 || groups.some((_, j) => !refs.current[j])) return
+    at.current = s
+    groups.forEach((g, j) => {
+      const mesh = refs.current[j]!
+      let n = 0
+      for (const b of g.list) if (Math.abs(b.s! - s) < CITY_NEAR) put(mesh, n++, b.x, b.y - 0.12, b.z, b.face!, b.scale!, b.scale!, b.scale!)
+      mesh.count = n
+      mesh.instanceMatrix.needsUpdate = true
+    })
+  })
+  return (
+    <group name="ruta_ciudad">
+      {groups.map((g, j) => {
+        const part = kit.get(g.model)
+        return part && <instancedMesh key={g.model} ref={(m) => void (refs.current[j] = m)} args={[part.geo, part.mat, g.list.length]} count={0} frustumCulled={false} receiveShadow />
+      })}
+    </group>
+  )
+}
+
+// Tránsito: autos, camionetas y camiones del kit; el frente del modelo mira a +Z (el del juego, a −Z).
+function Traffic() {
+  const kit = useKit()
+  // para las pruebas: dónde va a estar cada vehículo y cada guanaco
+  useEffect(() => exposeGame({ routeTraffic: (dt = 0) => VEHICLES.map((v) => ({ model: v.model, dir: v.dir, ...vehicleAt(v, routeClock.t + dt) })), routeGuanacos: () => GUANACOS.map((a) => animalAt(a, routeClock.t)) }), [])
+  const groups = useMemo(() => byModel(VEHICLES), [])
+  const refs = useRef<(THREE.InstancedMesh | null)[]>([])
+  useFrame(() => {
+    groups.forEach((g, j) => {
+      const mesh = refs.current[j]
+      if (!mesh) return
+      g.list.forEach((v, i) => {
         const p = vehicleAt(v, routeClock.t)
-        for (const m of [body.current[j]!, dark.current[j]!]) put(m, i, p.x, p.y + 0.02, p.z, p.yaw, v.wid, v.hgt, v.len)
+        put(mesh, i, p.x, p.y + 0.02, p.z, p.yaw + Math.PI, v.scale, v.scale, v.scale)
       })
-      body.current[j]!.instanceMatrix.needsUpdate = true
-      dark.current[j]!.instanceMatrix.needsUpdate = true
+      mesh.instanceMatrix.needsUpdate = true
     })
   })
   return (
     <group name="ruta_transito">
-      {kinds.map((k, j) => (
-        <group key={j}>
-          <instancedMesh ref={(m) => void (body.current[j] = m)} args={[k.geo[0], undefined, k.list.length]} frustumCulled={false} castShadow>
-            <meshStandardMaterial roughness={0.5} metalness={0.3} />
-          </instancedMesh>
-          <instancedMesh ref={(m) => void (dark.current[j] = m)} args={[k.geo[1], undefined, k.list.length]} frustumCulled={false}>
-            <meshStandardMaterial color="#15171a" roughness={0.6} />
-          </instancedMesh>
-        </group>
-      ))}
+      {groups.map((g, j) => {
+        const part = kit.get(g.model)
+        return part && <instancedMesh key={g.model} ref={(m) => void (refs.current[j] = m)} args={[part.geo, part.mat, g.list.length]} frustumCulled={false} castShadow />
+      })}
+    </group>
+  )
+}
+
+// Veredas con cordón en la ciudad, líneas blancas de borde en todo el asfalto y playón de hormigón en la base.
+// Todo sigue al terreno (terrainY): cintas fijas, armadas una vez.
+function strip(from: number, to: number, a: number, b: number, lift: number, skip?: (s: number) => boolean, liftB = lift) {
+  const pos: number[] = []
+  const uv: number[] = []
+  const idx: number[] = []
+  let prev = -1
+  for (let s = from; s <= to; s += 5) {
+    if (skip?.(s)) {
+      prev = -1
+      continue
+    }
+    const p = pointAt(s)
+    const k = pos.length / 3
+    for (const o of [a, b]) {
+      const x = p.x - p.tz * o
+      const z = p.z + p.tx * o
+      pos.push(x, terrainY(x, z) + (o === a ? lift : liftB), z)
+      uv.push(o / 1.5, s / 1.5)
+    }
+    if (prev >= 0) idx.push(prev, prev + 1, k, prev + 1, k + 1, k)
+    prev = k
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
+  g.setIndex(idx)
+  g.computeVertexNormals()
+  return g
+}
+function slabTexture() {
+  const c = document.createElement('canvas')
+  c.width = c.height = 64
+  const g = c.getContext('2d')!
+  g.fillStyle = '#c4c1b8'
+  g.fillRect(0, 0, 64, 64)
+  g.strokeStyle = '#8f8c84'
+  g.lineWidth = 2
+  g.strokeRect(0, 0, 64, 64)
+  const t = new THREE.CanvasTexture(c)
+  t.wrapS = t.wrapT = THREE.RepeatWrapping
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = 8
+  return t
+}
+const PAVED_TO = 3100
+function Streets() {
+  const [tex, walk, lines, yard] = useMemo(() => {
+    const atCross = (s: number) => LIGHTS_S.some((l) => Math.abs(s - l) < CROSS_HALF + 2.5)
+    const R = ROAD_HALF
+    const walk = mergeGeometries(
+      [-1, 1].flatMap((k) => [
+        strip(CITY.from - 60, CITY.to + 30, k * R, k * (R + SIDEWALK), 0.15, atCross),
+        strip(CITY.from - 60, CITY.to + 30, k * (R - 0.001), k * R, 0.02, atCross, 0.15), // canto del cordón
+      ]),
+    )!
+    const lines = mergeGeometries([-1, 1].map((k) => strip(0, PAVED_TO, k * (R - 0.4), k * (R - 0.25), 0.115)))!
+    // playón: una grilla a la derecha del arranque, entre la calzada y los galpones
+    const yard = mergeGeometries(Array.from({ length: 14 }, (_, i) => strip(0, 110, R + i * 5, R + i * 5 + 5, 0.07)))!
+    return [slabTexture(), walk, lines, yard] as const
+  }, [])
+  useEffect(() => () => (tex.dispose(), walk.dispose(), lines.dispose(), yard.dispose()), [tex, walk, lines, yard])
+  const off = { polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }
+  return (
+    <group name="ruta_calles">
+      <mesh geometry={walk} receiveShadow>
+        <meshStandardMaterial map={tex} roughness={0.95} side={THREE.DoubleSide} {...off} />
+      </mesh>
+      <mesh geometry={lines}>
+        <meshStandardMaterial color="#e8e8e2" roughness={0.9} side={THREE.DoubleSide} {...off} polygonOffsetFactor={-4} />
+      </mesh>
+      <mesh geometry={yard} receiveShadow>
+        <meshStandardMaterial map={tex} color="#a9a9a6" roughness={0.95} side={THREE.DoubleSide} {...off} />
+      </mesh>
     </group>
   )
 }
 
 // Animales: un cuadrúpedo de cajas (cuerpo, cuello, cabeza, patas), escalado y teñido por especie.
 const FUR = { guanaco: '#b8854f', oveja: '#e8e3d8', caballo: '#5c3f2c' } as const
+const HERD = ANIMALS.filter((a) => a.kind !== 'guanaco')
+const GUANACOS = ANIMALS.filter((a) => a.kind === 'guanaco')
+function Guanacos() {
+  const part = useKit().get('guanaco')
+  const ref = useRef<THREE.InstancedMesh>(null)
+  useFrame(() => {
+    if (!ref.current) return
+    GUANACOS.forEach((a, i) => {
+      const p = animalAt(a, routeClock.t)
+      const h = ANIMAL_SIZE.guanaco[1] * a.scale
+      put(ref.current!, i, p.x, p.y, p.z, p.yaw + Math.PI, h, h, h)
+    })
+    ref.current.instanceMatrix.needsUpdate = true
+  })
+  return part ? <instancedMesh ref={ref} args={[part.geo, part.mat, GUANACOS.length]} name="ruta_guanacos" frustumCulled={false} castShadow /> : null
+}
 function Animals() {
   const ref = useRef<THREE.InstancedMesh>(null)
   const geo = useMemo(
@@ -267,11 +387,11 @@ function Animals() {
     [],
   )
   useLayoutEffect(() => {
-    ANIMALS.forEach((a, i) => ref.current!.setColorAt(i, color.set(FUR[a.kind])))
+    HERD.forEach((a, i) => ref.current!.setColorAt(i, color.set(FUR[a.kind])))
     ref.current!.instanceColor!.needsUpdate = true
   }, [])
   useFrame(() => {
-    ANIMALS.forEach((a, i) => {
+    HERD.forEach((a, i) => {
       const p = animalAt(a, routeClock.t)
       const [w, h, l] = ANIMAL_SIZE[a.kind]
       put(ref.current!, i, p.x, p.y, p.z, p.yaw, w * a.scale, h * a.scale, l * a.scale)
@@ -280,7 +400,7 @@ function Animals() {
   })
   useEffect(() => () => geo.dispose(), [geo])
   return (
-    <instancedMesh ref={ref} args={[geo, undefined, ANIMALS.length]} name="ruta_animales" frustumCulled={false} castShadow>
+    <instancedMesh ref={ref} args={[geo, undefined, HERD.length]} name="ruta_animales" frustumCulled={false} castShadow>
       <meshStandardMaterial roughness={1} />
     </instancedMesh>
   )
@@ -336,11 +456,15 @@ export function RouteWorld() {
   })
   return (
     <group ref={group} name="ruta">
-      <Buildings />
+      <Streets />
       <Lights />
       <Plants />
       <Obstacles />
-      <Traffic />
+      <Suspense fallback={null}>
+        <City />
+        <Traffic />
+        <Guanacos />
+      </Suspense>
       <Animals />
       <BaseSign />
     </group>

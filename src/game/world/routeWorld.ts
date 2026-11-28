@@ -1,7 +1,7 @@
 // Lo que puebla la ruta: base operativa, ciudad, semáforos, árboles, obstáculos, tránsito y animales. Todo inventado
 // por el juego y generado con una semilla fija (igual en cada carga). Las posiciones que se mueven son función del
 // tiempo de simulación: el dibujo y la colisión evalúan la misma función y no se desfasan.
-import { BASE, LIGHTS_S, ROAD_HALF, ROUTE_END_S, pointAt, roadY, terrainY } from './route'
+import { BASE, LIGHTS_S, ROAD_HALF, ROUTE_END_S, nearest, pointAt, roadY, terrainY } from './route'
 
 function rng(seed: number) {
   let a = seed >>> 0
@@ -22,36 +22,72 @@ export function beside(s: number, side: number, onRoad = false) {
 }
 
 // --- Edificios (caja: centro en el suelo, ancho a lo largo del camino, fondo, alto) ---
-export type Box = { x: number; y: number; z: number; yaw: number; w: number; d: number; h: number; color: string }
-const CITY = { from: 780, to: 3060 }
-const WALLS = ['#b9b2a6', '#c8bca8', '#a8adb3', '#bfa58e', '#9aa6a0', '#d1c7b5', '#8f9499']
-const CROSS_HALF = 6 // semi-ancho de las calles transversales
+/** `model`: modelo del kit (public/models/ruta/kenney.glb) a escala `scale`, con el frente hacia `face`; sin modelo, una caja. */
+export type Box = { x: number; y: number; z: number; yaw: number; w: number; d: number; h: number; color: string; s?: number; model?: string; scale?: number; face?: number }
+export const CITY = { from: 780, to: 3060 }
+export const CROSS_HALF = 6 // semi-ancho de las calles transversales
+export const SIDEWALK = 5.5 // ancho de la vereda de la ciudad
+
+// Medidas (ancho, alto, fondo) de los modelos de Kenney (CC0, NOTICE.md), en unidades del kit: un piso ≈ 0,4.
+const dims = (prefix: string, rows: string) =>
+  Object.fromEntries(rows.split(' ').map((r) => r.split(':')).map(([k, v]) => [prefix + k, v.split(',').map(Number) as [number, number, number]]))
+export const KIT: Record<string, [number, number, number]> = {
+  ...dims('building-', 'a:.88,1.29,.94 b:.98,1.29,.94 c:.88,.89,1.1 d:.84,1.29,.9 e:1.64,.89,1 f:.84,1.69,1.03 g:.98,1.69,.92 h:.88,1.29,1 i:1.24,1.68,1.3 k:2.08,1.47,.94 l:1.38,2.27,1.4 m:1.24,3.15,1.24'),
+  ...dims('building-skyscraper-', 'a:1.36,2.88,1.36 b:1.36,4.48,1.36 c:1.28,4.08,1.38 d:1.28,5.47,1.38 e:1.3,4.08,1.24'),
+  ...dims('building-type-', 'a:1.3,.83,1.02 b:1.82,1.14,1.14 c:1.28,1.03,1.02 d:1.76,1.24,1.02 e:1.3,1.14,1.02 f:1.42,1.14,1.4 g:1.46,.77,1.18 h:1.3,.74,.92 i:1.28,.74,1.02 j:1.38,1.04,.92 k:.92,1.15,1.02 l:1.04,1.05,1.02 m:1.42,.74,1.42 n:1.78,1.14,1.38 o:1.27,1.14,1.02 p:1.24,.92,1 q:1.24,.92,.88 r:1.02,1.14,1.02 s:1.4,1.14,1.08 t:1.31,1.16,1.4 u:1.42,1.14,1.08'),
+  ...dims('low-detail-building-', 'a:.5,2,.5 b:.5,2.23,.5 c:.5,2.25,.5 d:.5,1.75,.5 e:.5,1.8,.5 f:.5,2,.5 g:.5,2,.5 h:.5,2.1,.5 i:.5,1.77,.5 j:.5,1.75,.5 k:.5,1.55,.5 l:.5,1.85,.5 m:.5,1.98,.5'),
+}
+const named = (prefix: string, ids: string) => [...ids].map((c) => prefix + c)
+const HOUSES = named('building-type-', 'abcdefghijklmnopqrstu')
+const SHOPS = named('building-', 'abcdeh')
+const MID = named('building-', 'fgiklm')
+const TOWERS = named('building-skyscraper-', 'abcde')
+const FAR = named('low-detail-building-', 'abcdefghijklm')
+const CENTRO = { from: 1450, to: 2400 }
+
+// Ciudad: casas en los barrios y comercios en el centro sobre la avenida; una segunda fila detrás (torres en el centro) y,
+// más lejos, la silueta de edificios de pocos triángulos.
 function buildings(): Box[] {
   const r = rng(7)
   const out: Box[] = []
-  for (const side of [-1, 1])
-    for (let s = CITY.from; s < CITY.to; ) {
-      const w = 12 + r() * 12
-      const d = 9 + r() * 8
-      const h = r() < 0.2 ? 12 + r() * 10 : 3.5 + r() * 5
-      const mid = s + w / 2
-      // deja libres las bocacalles de los semáforos y la curva de la ciudad (ahí el frente de las casas se cruzaría)
-      const clear = LIGHTS_S.every((l) => Math.abs(mid - l) > CROSS_HALF + w / 2 + 3)
-      if (clear && r() > 0.12) {
-        const p = beside(mid, side * (ROAD_HALF + 5 + d / 2 + r() * 3))
-        out.push({ x: p.x, y: p.y, z: p.z, yaw: p.yaw, w, d, h, color: WALLS[Math.floor(r() * WALLS.length)] })
+  const pick = (l: string[]) => l[Math.floor(r() * l.length)]
+  const centro = (s: number) => s > CENTRO.from && s < CENTRO.to
+  const row = (from: number, to: number, off: number, gap: number, skip: number, scale: number, choose: (s: number) => string) => {
+    for (const side of [-1, 1])
+      for (let s = from; s < to; ) {
+        const model = choose(s)
+        const [mx, my, mz] = KIT[model]
+        const w = mx * scale
+        const d = mz * scale
+        const mid = s + w / 2
+        const c = pointAt(mid)
+        const o = side * (ROAD_HALF + off + d / 2)
+        const x = c.x - c.tz * o
+        const z = c.z + c.tx * o
+        // libres: las bocacalles, la calzada del lado de adentro de las curvas, y el lugar de otro edificio
+        const clear =
+          LIGHTS_S.every((l) => Math.abs(mid - l) > CROSS_HALF + w / 2 + 3) &&
+          nearest(x, z).d > ROAD_HALF + off + d / 2 - 1 &&
+          out.every((b) => Math.hypot(b.x - x, b.z - z) > (b.w + w) * 0.45)
+        if (clear && r() >= skip) out.push({ x, y: terrainY(x, z), z, yaw: c.yaw, w, d, h: my * scale, color: '#fff', s: mid, model, scale, face: Math.atan2(c.tz * o, -c.tx * o) })
+        s += w + gap * (0.4 + r())
       }
-      s += w + 2 + r() * 7
-    }
+  }
+  row(CITY.from, CITY.to, SIDEWALK + 0.5, 3, 0.06, 8, (s) => (centro(s) ? pick(r() < 0.3 ? MID : SHOPS) : pick(r() < 0.15 ? SHOPS : HOUSES)))
+  row(CITY.from, CITY.to, 30, 6, 0.25, 8, (s) => (centro(s) ? pick(r() < 0.35 ? TOWERS : MID) : pick(HOUSES)))
+  row(CENTRO.from - 150, CENTRO.to + 150, 62, 14, 0.2, 16, () => pick(FAR))
   return out
 }
 // Base operativa: galpón, oficinas y depósito alrededor del playón, del lado derecho del arranque.
 function baseBuildings(): Box[] {
-  const at = (along: number, side: number, w: number, d: number, h: number, color: string): Box => {
+  const at = (along: number, side: number, model: string, scale: number): Box => {
     const p = beside(40 + along, side)
-    return { x: p.x, y: p.y, z: p.z, yaw: p.yaw, w, d, h, color }
+    const c = pointAt(40 + along)
+    const [mx, my, mz] = KIT[model]
+    return { x: p.x, y: p.y, z: p.z, yaw: p.yaw, w: mx * scale, d: mz * scale, h: my * scale, color: '#fff', s: 40 + along, model, scale, face: Math.atan2(c.tz, -c.tx) }
   }
-  return [at(-6, 62, 34, 16, 8, '#8e969c'), at(34, 54, 16, 9, 3.6, '#d7d2c4'), at(-38, 44, 12, 12, 5, '#a38a6f'), at(48, 30, 6, 6, 3, '#c2b8a6')]
+  // galpón, oficinas, depósito y garita
+  return [at(-6, 62, 'building-e', 18), at(34, 56, 'building-k', 9), at(-38, 46, 'building-c', 11), at(48, 30, 'building-type-h', 5)]
 }
 export const BUILDINGS: Box[] = [...baseBuildings(), ...buildings()]
 
@@ -105,7 +141,18 @@ function obstacles(): Obstacle[] {
 export const OBSTACLES: Obstacle[] = obstacles()
 
 // --- Tránsito: autos y camiones que recorren la ruta en los dos sentidos ---
-export type Vehicle = { kind: 'auto' | 'camion'; dir: 1 | -1; speed: number; phase: number; color: string; len: number; wid: number; hgt: number }
+/** `model`: modelo del kit de autos de Kenney (frente hacia +Z), dibujado a escala `scale`. */
+export type Vehicle = { kind: 'auto' | 'camion'; dir: 1 | -1; speed: number; phase: number; color: string; len: number; wid: number; hgt: number; model: string; scale: number }
+const CARS = ['sedan', 'suv', 'truck', 'suv-luxury', 'van', 'hatchback-sports', 'taxi', 'truck', 'police', 'sedan', 'ambulance']
+// modelo, escala, largo, ancho, alto. La cisterna (generada, NOTICE.md) viene normalizada a 1 m de largo.
+const TRUCKS: [string, number, number, number, number][] = [
+  ['cisterna', 8.6, 8.6, 2.9, 3.2],
+  ['delivery-flat', 1.75, 5.9, 2.7, 2.9],
+  ['truck-flat', 1.75, 5.9, 2.7, 2.9],
+  ['cisterna', 8.6, 8.6, 2.9, 3.2],
+  ['garbage-truck', 1.75, 5.9, 2.7, 2.9],
+  ['firetruck', 1.75, 5.9, 2.7, 2.9],
+]
 const LANE = 2.25
 const T_FROM = 500
 const T_SPAN = 18300 // circulan entre la base y el pie de la meseta, no entran a la locación
@@ -114,15 +161,18 @@ function vehicles(): Vehicle[] {
   const r = rng(404)
   return Array.from({ length: 26 }, (_, i) => {
     const camion = r() < 0.35
+    const t = TRUCKS[i % TRUCKS.length]
     return {
       kind: camion ? 'camion' : 'auto',
       dir: i % 2 ? 1 : -1,
       speed: camion ? 13 + r() * 5 : 17 + r() * 7,
       phase: (i / 26) * T_SPAN + r() * 300,
       color: camion ? '#d9d6cf' : PAINT[Math.floor(r() * PAINT.length)],
-      len: camion ? 9.5 : 4.4,
-      wid: camion ? 2.5 : 1.9,
-      hgt: camion ? 3.4 : 1.5,
+      len: camion ? t[2] : 3.7,
+      wid: camion ? t[3] : 1.95,
+      hgt: camion ? t[4] : 1.7,
+      model: camion ? t[0] : CARS[i % CARS.length],
+      scale: camion ? t[1] : 1.3,
     } as Vehicle
   })
 }
