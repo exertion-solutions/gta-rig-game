@@ -309,10 +309,13 @@ function BaseSign() {
   const p = beside(70, ROAD_HALF + 4)
   return (
     <group position={[p.x, roadY(70), p.z]} rotation={[0, p.yaw + Math.PI, 0]} name="ruta_cartel_base">
-      <mesh position={[0, 3.2, 0]}>
-        <planeGeometry args={[6, 1.5]} />
-        <meshStandardMaterial map={tex} roughness={0.6} side={THREE.DoubleSide} />
-      </mesh>
+      {/* dos caras: con una sola de doble faz, desde el playón se leía espejado */}
+      {[0, Math.PI].map((r) => (
+        <mesh key={r} position={[0, 3.2, r ? -0.11 : 0.01]} rotation={[0, r, 0]}>
+          <planeGeometry args={[6, 1.5]} />
+          <meshStandardMaterial map={tex} roughness={0.6} />
+        </mesh>
+      ))}
       {[-2.6, 2.6].map((x) => (
         <mesh key={x} position={[x, 1.6, -0.05]}>
           <boxGeometry args={[0.1, 3.2, 0.1]} />
