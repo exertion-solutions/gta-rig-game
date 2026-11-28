@@ -1,0 +1,1 @@
+var e=new Set,t=new Set,n=e=>(t.add(e),()=>void t.delete(e));function r(){e.clear(),t.forEach(e=>e())}typeof window<`u`&&(window.addEventListener(`blur`,r),document.addEventListener(`visibilitychange`,()=>document.visibilityState===`hidden`&&r()));export{e as n,n as r,r as t};
