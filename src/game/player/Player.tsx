@@ -8,7 +8,7 @@ import { uiBlocking } from '../../ui/hudStore'
 import { exposeGame } from '../dev'
 import { useMissionStore } from '../missions/store'
 import { eBelongsToTruck } from '../vehicle/enterExit'
-import { LOCACION_BOUNDS } from '../world/frame'
+import { WORLD_BOUNDS, terrainY } from '../world/route'
 import { PLAYER_GROUPS } from '../world/groups'
 import { nearestInteractable, useValveStore } from '../world/interactables'
 import { CONTROLS } from '../world/rigAccess'
@@ -19,7 +19,7 @@ import { PLAYER_RADIUS, RESPAWN, STEP_MAX, approachVelocity, atLimit, canCrouch,
 import { useSettings } from '../settings/store'
 import { CharacterModel } from './CharacterModel'
 import { keys, onKeysCleared } from './keys'
-import { teleportTo, usePlayerStore } from './store'
+import { teleportTo, usePlayerStore, START } from './store'
 import { playerAction, playerFacing, playerSpeed } from './telemetry'
 
 const HALF = 0.55 // semi-largo del cilindro: 2*0.55 + 2*PLAYER_RADIUS = 1.8 m de alto
@@ -62,7 +62,7 @@ export function Player() {
   const grounded = useRef(true)
   const vel = useRef({ vx: 0, vz: 0 }) // velocidad horizontal con rampa de aceleración
   const jumpBuf = useRef(0) // ms restantes del salto pedido antes de aterrizar
-  const safe = useRef<Vec3>(RESPAWN)
+  const safe = useRef<Vec3>(START.position)
   const climb = useRef<{ ladder: LadderVolume; p: number } | null>(null)
   const ctl = useRef<ReturnType<typeof world.createCharacterController> | null>(null)
 
@@ -310,7 +310,8 @@ export function Player() {
     const next = { x: t.x + m.x, y: t.y + m.y, z: t.z + m.z }
     const pos: Vec3 = [next.x, next.y - FOOT, next.z]
     // Sin daño por caída: debajo del suelo o fuera del vallado -> al último punto firme.
-    const back = respawnPoint(pos, safe.current, LOCACION_BOUNDS)
+    const groundY = terrainY(pos[0], pos[2])
+    const back = respawnPoint(pos, safe.current, WORLD_BOUNDS, groundY)
     if (back) {
       vs.current = { vy: 0, airMs: 0 }
       playerAction.airborne = false
@@ -318,10 +319,10 @@ export function Player() {
       teleportTo(back)
       return
     }
-    safe.current = trackSafe(safe.current, pos, grounded.current, LOCACION_BOUNDS)
+    safe.current = trackSafe(safe.current, pos, grounded.current, WORLD_BOUNDS, groundY)
     jumpLog.apex = Math.max(jumpLog.apex, pos[1])
     // QA D-11: el vallado no se ve; si se empuja contra él, el HUD lo dice (sin distancias)
-    const limit = (input.x !== 0 || input.z !== 0) && atLimit(pos, PLAYER_RADIUS + 0.05, LOCACION_BOUNDS)
+    const limit = (input.x !== 0 || input.z !== 0) && atLimit(pos, PLAYER_RADIUS + 0.05, WORLD_BOUNDS)
     if (usePlayerStore.getState().atLimit !== limit) usePlayerStore.setState({ atLimit: limit })
     rb.setNextKinematicTranslation(next)
     usePlayerStore.setState({ position: pos })
@@ -335,7 +336,7 @@ export function Player() {
       }}
       type="kinematicPosition"
       colliders={false}
-      position={[RESPAWN[0], RESPAWN[1] + FOOT + 0.02, RESPAWN[2]]}
+      position={[START.position[0], START.position[1] + FOOT + 0.02, START.position[2]]}
     >
       <CapsuleCollider args={[HALF, PLAYER_RADIUS]} collisionGroups={PLAYER_GROUPS} />
       <CharacterModel footY={FOOT} />

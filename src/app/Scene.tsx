@@ -15,9 +15,12 @@ import { Props } from '../game/world/Props'
 import { SiteDressing } from '../game/world/SiteDressing'
 import { RigScene } from '../game/world/loadRig'
 import { RigMotion } from '../game/world/RigMotion'
+import { RouteWorld } from '../game/world/RouteScenery'
+import { Terrain } from '../game/world/Terrain'
 import { ValveHighlight, Valves } from '../game/world/Valve'
 import { INTERACTABLES } from '../game/world/walkable'
 import { InteractPrompt } from '../ui/InteractPrompt'
+import { RouteHud } from '../ui/RouteHud'
 import { SceneProbes, ScenarioAdditions } from '../game/world/scenario/Additions'
 import { useHudStore } from '../ui/hudStore'
 import { useProgress } from '@react-three/drei'
@@ -80,6 +83,8 @@ export default function Scene() {
           </Suspense>
           <DayNight />
           <Environment />
+          <Terrain />
+          <RouteWorld />
           <RigScene />
           <RigMotion />
           <ScenarioAdditions />
@@ -102,6 +107,7 @@ export default function Scene() {
         <Hud />
       </Suspense>
       <InteractPrompt />
+      <RouteHud />
     </>
   )
 }

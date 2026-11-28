@@ -17,6 +17,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('en escritorio, draw calls < 250 y triángulos visibles < 1 M', async ({ page }) => {
+  test.slow() // mide a las 12 h y a las 0 h y cuenta cuadros: con render por software no entra en 120 s
   for (const hour of [12, 0]) {
     await g(page, 'setHour', hour)
     await waitFrames(page, 5)

@@ -4,7 +4,9 @@ import * as THREE from 'three'
 import { create } from 'zustand'
 import { exposeGame } from '../dev'
 import { QUALITY_PROFILE, useQualityStore } from '../quality'
+import { usePlayerStore } from '../player/store'
 import { LOCACION_BOUNDS as B } from './frame'
+import { inLocacion } from './route'
 
 // Ciclo día/noche: sol direccional con sombra y luz hemisférica; el cielo, la niebla y los reflejos están en
 // Environment.tsx (usan lightingAt). De noche se encienden (emissive) las luminarias de la torre (sk575_mastil_luz).
@@ -13,6 +15,7 @@ const START_HOUR = 10 // media mañana
 const HOURS_PER_SECOND = 1 / 180 // 1 hora de juego cada 3 minutos reales: un día dura 72 min (de las 10 al atardecer, 24 min)
 const LAMP_MATERIAL = 'sk575_mastil_luz'
 const CENTER = new THREE.Vector3((B.minX + B.maxX) / 2, 0, 0)
+const focus = CENTER.clone()
 const SUN_DISTANCE = 80
 
 /** Sombra del sol (requisito de la tarea; e2e la lee del renderer). Canvas: shadows="percentage" = PCFShadowMap. */
@@ -155,11 +158,18 @@ export function DayNight() {
     advanceClock(delta)
     lightingAt(exact, light)
     if (sun.current) {
+      // En la locación la sombra queda centrada en el equipo (como siempre); en la ruta sigue al jugador, a saltos de
+      // 8 m para que no tiemble al avanzar.
+      const p = usePlayerStore.getState().position
+      if (inLocacion(p[0], p[2], 60)) focus.copy(CENTER)
+      else focus.set(Math.round(p[0] / 8) * 8, Math.round(p[1] / 8) * 8, Math.round(p[2] / 8) * 8)
       sun.current.intensity = light.sun
       sun.current.position
         .set(...light.sunDir)
         .multiplyScalar(SUN_DISTANCE)
-        .add(CENTER)
+        .add(focus)
+      sun.current.target.position.copy(focus)
+      sun.current.target.updateMatrixWorld()
     }
     if (hemi.current) hemi.current.intensity = light.hemi
     for (const m of lamps.current) m.emissiveIntensity = light.lamps

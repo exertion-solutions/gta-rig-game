@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { getSectors } from '../data/sectors'
+import { BASE } from '../world/route'
 import { RESPAWN, type Vec3 } from './movement'
 
 // Primer cuadro (QA B P0-2): desde el Acceso, mirando al centro de los sectores con equipo (antes yaw 0 = -Z, hacia el
@@ -13,6 +14,15 @@ export const INITIAL_PITCH = 0.12
 // y mirando al equipo.
 export const TRUCK_SPAWN: Vec3 = [RESPAWN[0] + 3.5 * Math.cos(INITIAL_YAW), RESPAWN[1], RESPAWN[2] - 3.5 * Math.sin(INITIAL_YAW)]
 export const TRUCK_SPAWN_HEADING = INITIAL_YAW
+
+// Cada sesión arranca en la base operativa, a 20 km de camino del equipo. En automatización (e2e) arranca en la locación,
+// salvo `?inicio=base`; `?inicio=locacion` también lo fuerza a mano.
+const hasPage = typeof window !== 'undefined' && !!window.location && typeof navigator !== 'undefined'
+const inicio = hasPage ? new URLSearchParams(window.location.search).get('inicio') : null
+export const START_AT_BASE = hasPage && (inicio === 'base' || (inicio !== 'locacion' && !navigator.webdriver))
+export const START: { position: Vec3; yaw: number; truck: Vec3; truckHeading: number } = START_AT_BASE
+  ? { position: BASE.player, yaw: BASE.yaw, truck: BASE.truck, truckHeading: BASE.yaw }
+  : { position: RESPAWN, yaw: INITIAL_YAW, truck: TRUCK_SPAWN, truckHeading: TRUCK_SPAWN_HEADING }
 
 export type PlayerState = {
   position: Vec3
@@ -28,8 +38,8 @@ export type PlayerState = {
 }
 
 export const usePlayerStore = create<PlayerState>(() => ({
-  position: RESPAWN,
-  yaw: INITIAL_YAW,
+  position: START.position,
+  yaw: START.yaw,
   pitch: INITIAL_PITCH,
   mode: 'foot',
   teleportSeq: 0,
@@ -37,7 +47,7 @@ export const usePlayerStore = create<PlayerState>(() => ({
   climbAtEnd: false,
   atLimit: false,
   crouching: false,
-  truck: { position: TRUCK_SPAWN, heading: TRUCK_SPAWN_HEADING },
+  truck: { position: START.truck, heading: START.truckHeading },
 }))
 
 export const teleportTo = (p: Vec3) => usePlayerStore.setState((s) => ({ position: p, teleportSeq: s.teleportSeq + 1 }))

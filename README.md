@@ -40,6 +40,8 @@ está siempre visible en pantalla (pantallas anchas) y en el menú de pausa.
 | P | modo foto (ver abajo) | |
 | Esc | cerrar el panel abierto; si no hay ninguno, pausa y ajustes | |
 
+El juego arranca en la base operativa, a 20 km de camino del equipo: hay que subir a la camioneta (E) y manejar. `?inicio=locacion` arranca directamente en la locación.
+
 Pausa (Esc): sensibilidad del ratón, invertir eje Y, volumen general, calidad gráfica (automática, alta, media, baja) y,
 si hay una misión en curso, salir de ella. Los ajustes se guardan en este navegador. El juego queda congelado mientras
 está abierta.

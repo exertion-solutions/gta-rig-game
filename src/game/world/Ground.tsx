@@ -9,11 +9,12 @@ import { useGroundMaterial } from './GroundMaterial'
 import { LOCACION_BOUNDS as B, LOCACION_M, RIG_PARTS } from './frame'
 import { stripLines } from './stripLines'
 import { STAIR_GROUPS, TRUCK_BLOCK_GROUPS } from './groups'
+import { WORLD_BOUNDS as W } from './route'
 import { REPLACED_PARTS, walkableColliders } from './walkable'
 
-const FENCE_HALF_H = 20 // semi-altura del vallado invisible en el borde de la locación (20 => 40 m de alto)
 const mx = (B.minX + B.maxX) / 2
-const T = 0.5
+const EDGE_T = 1 // semi-espesor de la pared del borde del mapa
+const EDGE_H = 900 // semi-altura: cubre de la base (−180 m) a los cerros
 
 export function PhysicsWorld({ children }: { children: ReactNode }) {
   // Con el menú de pausa abierto Rapier no avanza (la camioneta no sigue rodando); solo lectura del hudStore.
@@ -31,10 +32,11 @@ export function Ground() {
     <RigidBody type="fixed" colliders={false}>
       {/* suelo liso: tapa en y=0 */}
       <CuboidCollider args={[LOCACION_M.x / 2, 0.5, LOCACION_M.z / 2]} position={[mx, -0.5, 0]} />
-      <CuboidCollider args={[T, FENCE_HALF_H, LOCACION_M.z / 2]} position={[B.minX - T, FENCE_HALF_H, 0]} />
-      <CuboidCollider args={[T, FENCE_HALF_H, LOCACION_M.z / 2]} position={[B.maxX + T, FENCE_HALF_H, 0]} />
-      <CuboidCollider args={[LOCACION_M.x / 2, FENCE_HALF_H, T]} position={[mx, FENCE_HALF_H, B.minZ - T]} />
-      <CuboidCollider args={[LOCACION_M.x / 2, FENCE_HALF_H, T]} position={[mx, FENCE_HALF_H, B.maxZ + T]} />
+      {/* borde del mapa: paredes invisibles (la locación ya no tiene alambrado; el mundo termina en WORLD_BOUNDS) */}
+      <CuboidCollider args={[EDGE_T, EDGE_H, (W.maxZ - W.minZ) / 2]} position={[W.minX - EDGE_T, 0, (W.minZ + W.maxZ) / 2]} />
+      <CuboidCollider args={[EDGE_T, EDGE_H, (W.maxZ - W.minZ) / 2]} position={[W.maxX + EDGE_T, 0, (W.minZ + W.maxZ) / 2]} />
+      <CuboidCollider args={[(W.maxX - W.minX) / 2, EDGE_H, EDGE_T]} position={[(W.minX + W.maxX) / 2, 0, W.minZ - EDGE_T]} />
+      <CuboidCollider args={[(W.maxX - W.minX) / 2, EDGE_H, EDGE_T]} position={[(W.minX + W.maxX) / 2, 0, W.maxZ + EDGE_T]} />
       <mesh rotation-x={-Math.PI / 2} position={[mx, 0, 0]} receiveShadow material={material}>
         <planeGeometry args={[LOCACION_M.x, LOCACION_M.z]} />
       </mesh>

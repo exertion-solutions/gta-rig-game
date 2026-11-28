@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { WORLD_BOUNDS as W, terrainY } from '../../src/game/world/route'
 import { settle, waitFrames } from './wait'
 
 // QA A D-04 / QA B P0-7, P1-5: a ningún tamaño se superponen radar, tarjetas, leyenda, ficha, botón y chip de sector;
@@ -144,11 +145,11 @@ for (const [vw, vh] of VIEWPORTS)
     await expect(page.getByTestId('interact-prompt')).toBeVisible()
     await audit(page, vw, vh, 'aviso de camioneta')
 
-    // contra el vallado del borde: aviso "Límite de la locación"
+    // contra el borde del mapa: aviso "Límite del mapa"
     await g(page, 'setYaw', -Math.PI / 2)
-    await g(page, 'teleport', [32.5, 0, 10])
+    await g(page, 'teleport', [W.maxX - 1, terrainY(W.maxX - 1, 10), 10])
     await g(page, 'setInput', { x: 0, z: 1, run: true })
     await expect(page.getByTestId('hud-limit')).toBeVisible()
-    await audit(page, vw, vh, 'límite de la locación')
+    await audit(page, vw, vh, 'límite del mapa')
     await g(page, 'setInput', null)
   })

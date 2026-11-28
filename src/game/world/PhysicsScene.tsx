@@ -4,12 +4,16 @@ import { FollowCamera } from '../camera/CameraRig'
 import { Player } from '../player/Player'
 import { Truck } from '../vehicle/Truck'
 import { Ground, PhysicsWorld, RigColliders, WalkableColliders } from './Ground'
+import { RouteBodies } from './RouteBodies'
+import { TerrainColliders } from './TerrainColliders'
 
 export default function PhysicsScene({ onReady }: { onReady: () => void }) {
   useEffect(onReady, [onReady])
   return (
     <PhysicsWorld>
       <Ground />
+      <TerrainColliders />
+      <RouteBodies />
       <RigColliders />
       <WalkableColliders />
       <Player />

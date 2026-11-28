@@ -1,5 +1,5 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
 import { exposeGame } from '../dev'
@@ -67,6 +67,8 @@ export function Environment() {
   const scene = useThree((s) => s.scene)
   const gl = useThree((s) => s.gl)
   const setDpr = useThree((s) => s.setDpr)
+  const camera = useThree((s) => s.camera)
+  const dome = useRef<THREE.Mesh>(null)
   const quality = useQualityStore((s) => s.quality)
   const light = useMemo(newLighting, [])
   const sunDir = useMemo(() => new THREE.Vector3(0, 1, 0), [])
@@ -166,6 +168,7 @@ export function Environment() {
     const day = THREE.MathUtils.clamp((light.sun - 0.15) / 2.6, 0, 1)
     sunDir.set(...light.sunDir)
     sky.uniforms.day.value = day
+    dome.current?.position.copy(camera.position) // el domo acompaña a la cámara: la ruta se aleja 12 km del equipo
     fog.color.copy(light.skyBottom)
     scene.environmentIntensity = 0.06 + 0.5 * day // reflejos tenues de noche
   })
@@ -173,7 +176,7 @@ export function Environment() {
   return (
     <>
       <MaterialUpgrade />
-      <mesh material={sky} frustumCulled={false} renderOrder={-1} name="cielo">
+      <mesh ref={dome} material={sky} frustumCulled={false} renderOrder={-1} name="cielo">
         <sphereGeometry args={[400, 32, 16]} />
       </mesh>
     </>

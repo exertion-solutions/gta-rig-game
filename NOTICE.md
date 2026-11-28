@@ -68,7 +68,16 @@ Tres assets CC0 (dominio público) de Poly Haven (https://polyhaven.com/license)
 | `public/textures/ground_{diff,nor,rough}.webp` (conversión a webp) | Gravel Ground 01 | Rob Tuytel | CC0 | https://polyhaven.com/a/gravel_ground_01 |
 | `public/models/props/barrel.glb` (comprimido con meshopt/draco) | Barrel 03 | Serhii Khromov | CC0 | https://polyhaven.com/a/barrel_03 |
 
-El resto del realismo (conos, vallado, cartelería, marcas de suelo, sombras de contacto) es procedural y propio.
+Texturas de la ruta, también CC0 de Poly Haven, color (diffuse) a 1k convertido a webp, sin marcas ni logos:
+
+| Archivo | Asset | Autor | Licencia | Fuente |
+|---|---|---|---|---|
+| `public/textures/ruta_ripio.webp` | Gravel Road | Amal Kumar | CC0 | https://polyhaven.com/a/gravel_road |
+| `public/textures/ruta_estepa.webp` | Dry Ground 01 | Rob Tuytel | CC0 | https://polyhaven.com/a/dry_ground_01 |
+| `public/textures/ruta_asfalto.webp` | Road Damaged Clean | Dimitrios Savva | CC0 | https://polyhaven.com/a/road_damaged_clean |
+| `public/textures/ruta_barda.webp` | Cliff Side | James Ray Cock, Jenelle van Heerden, Dario Barresi | CC0 | https://polyhaven.com/a/cliff_side |
+
+El resto del realismo (conos, cartelería, marcas de suelo, sombras de contacto) y todo lo que puebla la ruta (terreno, edificios, semáforos, árboles, tránsito, animales, obstáculos) es procedural y propio.
 
 La camioneta (`public/models/vehicle/pickup.glb`) es un modelo propio de pickup doble cabina, sin marcas, logos ni texto, generado por `scripts/build-truck.py` (Blender) y comprimido con meshopt.
 

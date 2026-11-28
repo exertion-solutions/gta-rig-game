@@ -172,7 +172,7 @@ export function Hud() {
         </div>
         {atLimit && (
           <p className={`${card} self-start px-3 py-1.5 text-sm text-amber-300`} role="status" data-testid="hud-limit">
-            Límite de la locación
+            Límite del mapa
           </p>
         )}
         {ficha && !fichaOpen && (

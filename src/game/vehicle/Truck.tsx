@@ -11,7 +11,7 @@ import { TRUCK_SPAWN, TRUCK_SPAWN_HEADING, teleportTo, usePlayerStore } from '..
 import { truckSpeed } from '../player/telemetry'
 import { useTime } from '../world/DayNight'
 import { assetUrl, DRACO_PATH } from '../world/assetUrl'
-import { LOCACION_BOUNDS } from '../world/frame'
+import { WORLD_BOUNDS, inLocacion, pointAt, roadSpawn, terrainY } from '../world/route'
 import { PLAYER_GROUPS, TRUCK_GROUPS } from '../world/groups'
 import { toggleMode } from './enterExit'
 import { TRUCK, WHEEL_POINTS, approach, driveCommand, headlightsOn, inclinationDeg, leanTarget, tiltTimer, truckModelFrom } from './truckModel'
@@ -62,9 +62,14 @@ function placeTruck(rb: RapierRigidBody, ground: Vec3, heading: number) {
   if (usePlayerStore.getState().mode === 'truck') teleportTo(ground) // el conductor viaja con ella (y la cámara se reinicia)
 }
 
-// Vuelve a ponerla en el Acceso (ver TRUCK_SPAWN).
+// En la locación vuelve al Acceso (TRUCK_SPAWN); en la ruta, a la calzada más cercana, en su carril.
 export function respawnTruck() {
-  if (truckBody.current) placeTruck(truckBody.current, TRUCK_SPAWN, TRUCK_SPAWN_HEADING)
+  const rb = truckBody.current
+  if (!rb) return
+  const t = rb.translation()
+  if (inLocacion(t.x, t.z, 40)) return placeTruck(rb, TRUCK_SPAWN, TRUCK_SPAWN_HEADING)
+  const r = roadSpawn(t.x, t.z)
+  placeTruck(rb, r.position, r.yaw)
 }
 
 export function Truck() {
@@ -102,7 +107,7 @@ export function Truck() {
 
   useEffect(() => {
     const isFree = (p: Vec3) =>
-      !needsRespawn(p, LOCACION_BOUNDS) &&
+      !needsRespawn(p, WORLD_BOUNDS, terrainY(p[0], p[2])) &&
       !world.intersectionWithShape({ x: p[0], y: p[1] + 0.9, z: p[2] }, { x: 0, y: 0, z: 0, w: 1 }, new rapier.Ball(PLAYER_RADIUS), rapier.QueryFilterFlags.EXCLUDE_SENSORS, PLAYER_GROUPS)
     const down = (e: KeyboardEvent) => {
       if (e.code === 'KeyE' && !e.repeat) toggleMode(isFree)
@@ -137,6 +142,10 @@ export function Truck() {
       truckSteps: () => truckSteps,
       teleportTruck: (p: Vec3, heading = 0) => body.current && placeTruck(body.current, p, heading),
       respawnTruck,
+      routeSpot: (sAlong: number) => { // DEV: punto de la calzada a `sAlong` m de la base, en el carril propio
+        const p = pointAt(sAlong)
+        return roadSpawn(p.x, p.z)
+      },
       flipTruck: () => body.current?.setRotation({ x: 0, y: 0, z: 1, w: 0 }, true), // boca abajo (test del respawn por vuelco)
       setTilt: (seconds: number) => (tilt.current = seconds), // para probar el respawn por vuelco sin esperar
     })
@@ -174,7 +183,8 @@ export function Truck() {
     truckSpeed.current = speed
     // a pie: estacionada (freno puesto)
     const drive = mode === 'truck' ? readDrive() : { throttle: 0, steer: 0, brake: true }
-    const cmd = driveCommand(drive, speed)
+    const t0 = rb.translation()
+    const cmd = driveCommand(drive, speed, inLocacion(t0.x, t0.z, 15) ? TRUCK.maxSpeed : TRUCK.roadSpeed) // en la locación, a paso de hombre
     steerNow.current = approach(steerNow.current, cmd.steer, STEER_RATE * FIXED_DT)
     braking.current = mode === 'truck' && cmd.brake > TRUCK.idleBrake
     for (let i = 0; i < WHEEL_POINTS.length; i++) {
@@ -187,14 +197,14 @@ export function Truck() {
     const t = rb.translation()
     const ground: Vec3 = [t.x, t.y - TRUCK.rideHeight, t.z]
     tilt.current = tiltTimer(tilt.current, inclinationDeg(q), FIXED_DT)
-    if (tilt.current >= TRUCK.tiltSeconds || needsRespawn(ground, LOCACION_BOUNDS)) {
+    if (tilt.current >= TRUCK.tiltSeconds || needsRespawn(ground, WORLD_BOUNDS, terrainY(ground[0], ground[2]))) {
       tilt.current = 0
       respawnTruck()
       return
     }
     usePlayerStore.setState({ truck: { position: ground, heading: headingOf(q) } })
     if (mode === 'truck') {
-      const limit = drive.throttle !== 0 && atLimit(ground, TRUCK.halfLength + 0.5, LOCACION_BOUNDS) // QA D-11
+      const limit = drive.throttle !== 0 && atLimit(ground, TRUCK.halfLength + 0.5, WORLD_BOUNDS) // QA D-11
       usePlayerStore.setState(usePlayerStore.getState().atLimit !== limit ? { position: ground, atLimit: limit } : { position: ground })
     }
   })

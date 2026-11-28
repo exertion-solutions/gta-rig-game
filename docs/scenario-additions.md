@@ -138,3 +138,27 @@ Las dos escaleras existen en el GLB del carrier; lo añadido es poder recorrerla
   juego). Las cuñas, el poste de retención y su cable quedan fijos. La selección es por posición de cada triángulo
   (`isTongPart`), porque el GLB no separa esas piezas en nodos.
 - No simula torque ni enrosque.
+
+## A12. Ruta de la base operativa al equipo (`src/game/world/route.ts`, `routeWorld.ts`)
+
+Todo inventado por el juego: no representa ningún camino, ciudad ni lugar real.
+
+| Dato | Valor | Origen |
+| --- | --- | --- |
+| Largo del camino | 20 km, en 7 tramos: base, ciudad, chacras, estepa, bardas, sierra y llegada | Juego |
+| Superficie | asfalto en la base y la ciudad (hasta 3,1 km); ripio después | Juego |
+| Desnivel | la base queda 180 m por debajo de la locación; el paso de la sierra sube 30 m sobre ella | Juego |
+| Pendiente máxima | menor a 11 % | Juego (test) |
+| Radio mínimo de curva | mayor a 50 m | Juego (test) |
+| Velocidad de la camioneta | 30 m/s (108 km/h) en la ruta; 12 m/s en la locación | Juego |
+| Semáforos | 3 en la ciudad; ciclo de 24 s (10 verde, 3 amarillo, 11 rojo) | Juego |
+| Tránsito | 26 vehículos (autos y camiones) en los dos sentidos, cada uno por su mano | Juego |
+| Animales | tropillas de guanacos, ovejas y caballos; algunos cruzan la calzada | Juego |
+| Obstáculos | rocas en bardas y sierra, obra con vallas y conos en la ciudad, 2 guardaganados | Juego |
+
+- El terreno es una función de la posición (`terrainY`); se arma solo lo cercano: 3 × 3 tramos de colisión de 96 m bajo el
+  jugador y bajo la camioneta, y 5 × 5 tramos dibujados de 192 m, con vértices cada 8 m.
+- El mapa termina en una caja que contiene la ruta y la locación con 700 m de margen ("Límite del mapa").
+- Los semáforos no se hacen cumplir: son visuales. No hay tránsito transversal.
+- Edificios, tránsito y animales son cajas instanciadas, sin modelos ni animación de patas o ruedas.
+- En la ruta el indicador superior muestra kilómetros de camino al equipo, tramo y velocidad. Es navegación del juego.

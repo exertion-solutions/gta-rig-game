@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { WORLD_BOUNDS as W, terrainY } from '../../src/game/world/route'
 import { PLAYER_RADIUS, RESPAWN } from '../../src/game/player/movement'
 import { settle, waitFrames, waitSteps } from './wait'
 
@@ -140,26 +141,29 @@ test('piso de enganche: la baranda del frente +X frena en su cara dibujada y no 
   expect(Math.abs(end[1] - PE)).toBeLessThan(0.06)
 })
 
-// QA D-11: el vallado del borde es invisible; empujar contra él muestra "Límite de la locación" (sin distancias).
-test('contra el borde de la locación aparece el aviso y se va al alejarse', async ({ page }) => {
-  await place(page, [30, 0, 10], YAW.toPlusX)
+// QA D-11: el borde del mapa (la caja que contiene la ruta y la locación) es invisible; empujar contra él muestra
+// "Límite del mapa" (sin distancias). La locación ya no tiene alambrado: se sale caminando.
+const EDGE: Pos = [W.maxX - 3, terrainY(W.maxX - 3, 10), 10]
+test('contra el borde del mapa aparece el aviso y se va al alejarse', async ({ page }) => {
+  await place(page, EDGE, YAW.toPlusX)
   await expect(page.getByTestId('hud-limit')).toHaveCount(0)
   await page.evaluate(() => (window as any).__game.setInput({ x: 0, z: 1, run: true }))
-  await expect(page.getByTestId('hud-limit')).toHaveText('Límite de la locación')
+  await expect(page.getByTestId('hud-limit')).toHaveText('Límite del mapa')
   expect(await page.getByTestId('hud-limit').innerText()).not.toMatch(/\d/)
   await page.evaluate(() => (window as any).__game.setYaw(Math.PI / 2)) // da media vuelta
   await expect(page.getByTestId('hud-limit')).toHaveCount(0)
   await page.evaluate(() => (window as any).__game.setInput(null))
 })
 
-test('si cae o sale del vallado reaparece en el Acceso (RESPAWN)', async ({ page }) => {
-  await page.evaluate(() => (window as any).__game.teleport([200, 0, 0]))
+test('si sale del mapa reaparece en el último punto firme (el Acceso, RESPAWN)', async ({ page }) => {
+  await page.evaluate((x) => (window as any).__game.teleport([x, 0, 0]), W.maxX + 50)
   await waitSteps(page, 30) // medio segundo de simulación
   const p = await pos(page)
   expect(Math.hypot(p[0] - RESPAWN[0], p[2] - RESPAWN[2])).toBeLessThan(0.5)
 })
 
 test('cámara de seguimiento: detrás del jugador y no dentro del BOP con el jugador pegado a él', async ({ page }) => {
+  test.slow() // camina hasta el BOP y espera a la cámara: con render por software va al límite de los 120 s
   const m = (await boundsIn(page, 'sk575_bop', [[-3, -1, -3], [3, 3.6, 3]]))! // BOP debajo del piso (una caja de colisión)
   // pegado a la cara +X del BOP, mirando hacia +X: "detrás" del jugador queda justo contra/dentro del BOP
   await place(page, [m.max[0] + PLAYER_RADIUS + 0.05, 0, 0], YAW.toPlusX)

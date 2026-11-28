@@ -3,7 +3,8 @@ import type { Vec3 } from '../player/movement'
 
 // Valores arcade, sin pretensión realista. Chasis en el origen del cuerpo; la camioneta mira a -Z local (convención three).
 export const TRUCK = {
-  maxSpeed: 12, // m/s
+  maxSpeed: 12, // m/s, dentro de la locación
+  roadSpeed: 30, // m/s en la ruta (108 km/h): los 20 km se hacen en unos 12 minutos
   maxReverse: 5,
   wheelBase: 2.9, // distancia entre ejes
   halfWidth: 1.0,
@@ -49,8 +50,8 @@ export function leanTarget(longAccel: number, latAccel: number) {
 export const headlightsOn = (hour: number) => hour >= 18.5 || hour < 6.5
 
 // Mapea input a fuerzas por rueda. speed = velocidad firmada hacia adelante (m/s). Corta la fuerza al llegar al tope.
-export function driveCommand(i: { throttle: number; steer: number; brake: boolean }, speed: number) {
-  const limit = i.throttle >= 0 ? TRUCK.maxSpeed : TRUCK.maxReverse
+export function driveCommand(i: { throttle: number; steer: number; brake: boolean }, speed: number, maxSpeed: number = TRUCK.maxSpeed) {
+  const limit = i.throttle >= 0 ? maxSpeed : TRUCK.maxReverse
   let engine = 0
   let brake = 0
   if (i.brake) brake = TRUCK.brakeForce

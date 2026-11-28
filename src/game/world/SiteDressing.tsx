@@ -103,17 +103,6 @@ function Sign() {
   )
 }
 
-// Suelo exterior (más allá del vallado): mismo material, sin colisión; la niebla lo funde con el horizonte.
-function OuterGround() {
-  const SIZE = 1400
-  const mat = useGroundMaterial(SIZE, SIZE, '#cfc7b8')
-  return (
-    <mesh rotation-x={-Math.PI / 2} position={[mx, -0.04, 0]} material={mat} name="suelo_exterior">
-      <planeGeometry args={[SIZE, SIZE]} />
-    </mesh>
-  )
-}
-
 type Mark = { x: number; z: number; w: number; h: number; rot: number }
 function marks(list: Mark[], y: number, geo: THREE.BufferGeometry, mat: THREE.Material) {
   const m = new THREE.InstancedMesh(geo, mat, list.length)
@@ -208,7 +197,6 @@ function GroundMarks() {
 export function SiteDressing() {
   return (
     <>
-      <OuterGround />
       <Sign />
       <GroundMarks />
     </>

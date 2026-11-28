@@ -70,9 +70,10 @@ export function clampToBounds(p: Vec3, b: Bounds): Vec3 {
 // Sin daño por caída: solo se reubica si quedó por debajo del suelo (atravesó un piso) o fuera del vallado.
 // Estar arriba (piso de enganche a 20,65 m) es válido.
 export const FALL_LIMIT_Y = -5
-export function needsRespawn(p: Vec3, b: Bounds): boolean {
+/** `groundY`: altura del terreno bajo `p` (0 en la locación; en la ruta el suelo sube y baja). */
+export function needsRespawn(p: Vec3, b: Bounds, groundY = 0): boolean {
   const c = clampToBounds(p, b)
-  return p[1] < FALL_LIMIT_Y || c[0] !== p[0] || c[2] !== p[2]
+  return p[1] < groundY + FALL_LIMIT_Y || c[0] !== p[0] || c[2] !== p[2]
 }
 
 /** Contra el vallado invisible del borde de la locación (a `margin` o menos de algún lado). Sin cifras en pantalla. */
@@ -80,9 +81,9 @@ export const atLimit = (p: Vec3, margin: number, b: Bounds) =>
   p[0] <= b.minX + margin || p[0] >= b.maxX - margin || p[2] <= b.minZ + margin || p[2] >= b.maxZ - margin
 
 /** Último punto firme: se actualiza solo con el jugador de pie (grounded) y dentro del vallado. */
-export const trackSafe = (safe: Vec3, p: Vec3, grounded: boolean, b: Bounds): Vec3 => (grounded && !needsRespawn(p, b) ? p : safe)
+export const trackSafe = (safe: Vec3, p: Vec3, grounded: boolean, b: Bounds, groundY = 0): Vec3 => (grounded && !needsRespawn(p, b, groundY) ? p : safe)
 /** Adónde reubicar (último punto firme) o null si no hace falta. */
-export const respawnPoint = (p: Vec3, safe: Vec3, b: Bounds): Vec3 | null => (needsRespawn(p, b) ? safe : null)
+export const respawnPoint = (p: Vec3, safe: Vec3, b: Bounds, groundY = 0): Vec3 | null => (needsRespawn(p, b, groundY) ? safe : null)
 
 // Autostep del controlador (valor de juego): cubre la contrahuella mayor medida (0,26 m, trip tank; docs/traversal-inventory.md);
 // las escaleras se recorren como rampas por su línea de narices, el autostep es para bordes chicos.
